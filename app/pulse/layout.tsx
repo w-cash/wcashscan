@@ -1,9 +1,9 @@
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'Zcash Network Pulse — Statistical Anomaly Feed | CipherScan',
+  title: 'Wcash Network Pulse — Statistical Anomaly Feed | WcashExplorer',
   description:
-    'Auto-detected on-chain anomalies for Zcash: unusual transaction volumes, shielding spikes, cross-chain flows, fee surges, and valuation signals.',
+    'Auto-detected on-chain anomalies for Wcash: unusual transaction volumes, shielding spikes, cross-chain flows, fee surges, and valuation signals.',
   keywords: [
     'zcash anomalies',
     'zcash pulse',
@@ -13,7 +13,7 @@ export const metadata = buildPageMetadata({
   ],
   path: '/pulse',
   networks: ['mainnet'],
-  imageAlt: 'CipherScan Zcash network pulse — anomaly feed',
+  imageAlt: 'WcashExplorer Wcash network pulse — anomaly feed',
 });
 
 export default function PulseLayout({ children }: { children: React.ReactNode }) {

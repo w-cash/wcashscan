@@ -4,27 +4,27 @@ import { buildPageMetadata, getNetwork } from '@/lib/seo';
 export function generateMetadata(): Metadata {
   if (getNetwork() === 'crosslink-testnet') {
     return {
-      title: 'Page Not Found | CipherScan',
-      description: 'This Zcash Ironwood tracker is not available on the Crosslink deployment.',
+      title: 'Page Not Found | WcashExplorer',
+      description: 'This Wcash Ironwood tracker is not available on the Crosslink deployment.',
       robots: { index: false, follow: false },
     };
   }
 
   return buildPageMetadata({
-    title: 'Zcash Ironwood Upgrade & Migration Tracker | CipherScan',
+    title: 'Wcash Ironwood Upgrade & Migration Tracker | WcashExplorer',
     description:
-      'Track the Zcash Ironwood (NU6.3) activation, Orchard migration, Ironwood shielded supply, and observable turnstile activity on CipherScan.',
+      'Track the Wcash Ironwood (NU6.3) activation, Orchard migration, Ironwood shielded supply, and observable turnstile activity on WcashExplorer.',
     keywords: [
-      'Zcash Ironwood',
-      'Ironwood Zcash',
-      'Zcash Ironwood upgrade',
+      'Wcash Ironwood',
+      'Ironwood Wcash',
+      'Wcash Ironwood upgrade',
       'NU6.3',
       'Ironwood migration',
       'Orchard to Ironwood',
-      'Zcash migration tracker',
+      'Wcash migration tracker',
     ],
     path: '/ironwood',
-    imageAlt: 'CipherScan Zcash Ironwood upgrade and migration tracker',
+    imageAlt: 'WcashExplorer Wcash Ironwood upgrade and migration tracker',
     networks: ['mainnet'],
   });
 }

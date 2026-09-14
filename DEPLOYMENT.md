@@ -105,6 +105,7 @@ Never commit secrets. Reference `.env.example` (frontend) and `server/api/.env` 
 | `ZEBRA_RPC_COOKIE_FILE` | Yes | Path to node's `.cookie` file for RPC auth (mainnet; testnet Zakura runs without cookie auth) |
 | `ZEBRA_GRPC_URL` | Recommended | gRPC indexer for real-time mempool/blocks |
 | `ZEBRA_HEALTH_URL` | No | Default `http://127.0.0.1:8080` |
+| `LIGHTWALLETD_ADDRESS` or `LIGHTWALLETD_HOST` / `LIGHTWALLETD_PORT` | No | Compact-block scanner gRPC target. Defaults to `127.0.0.1:9067`; the local Wcash node profile uses `127.0.0.1:48234`. |
 | `PORT` | No | Default `3001` |
 | `NODE_ENV` | Recommended | `production` in prod |
 | `SERVICE_API_KEYS` | Recommended | Comma-separated keys; requests with a matching `X-Service-Key` header bypass rate limiting (used by the Vercel frontend's SSR, CipherPay, Telegram bot) |

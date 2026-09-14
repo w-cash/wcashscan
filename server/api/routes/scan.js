@@ -13,6 +13,7 @@ const path = require('path');
 const { logSafeError } = require('../lib/safe-log');
 const { streamInbox } = require('../lib/scan-stream');
 const { compactBlockToJSON, isCompleteRange, compactBlockToInbox } = require('../lib/compact-blocks');
+const { getLightwalletdAddress } = require('../lib/lightwalletd-config');
 
 // Dependencies injected via app.locals
 let pool;
@@ -199,7 +200,7 @@ router.post('/api/scan/orchard', async (req, res) => {
 async function fetchBlockRange(CompactTxStreamer, grpc, start, end) {
   return new Promise((resolve, reject) => {
     const client = new CompactTxStreamer(
-      '127.0.0.1:9067',
+      getLightwalletdAddress(),
       grpc.credentials.createInsecure()
     );
 
@@ -260,7 +261,7 @@ router.post('/api/lightwalletd/scan', async (req, res) => {
     let finalEndHeight = endHeight;
     if (!finalEndHeight) {
       const tempClient = new CompactTxStreamer(
-        '127.0.0.1:9067',
+        getLightwalletdAddress(),
         grpc.credentials.createInsecure()
       );
       finalEndHeight = await new Promise((resolve, reject) => {

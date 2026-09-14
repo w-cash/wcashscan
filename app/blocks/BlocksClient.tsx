@@ -308,7 +308,7 @@ export default function BlocksClient({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 animate-fade-in">
       <PageHeader
         eyebrow="ALL_BLOCKS"
-        title={page > 1 ? `Zcash Blocks - Page ${page}` : 'Latest Zcash Blocks'}
+        title={page > 1 ? `Wcash Blocks - Page ${page}` : 'Latest Wcash Blocks'}
         actions={
           <span className="text-xs font-mono text-muted">
             {!dataAvailable && blocks.length === 0

@@ -5,6 +5,9 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { PageHeader } from '@/components/ui/SectionHeader';
+import { getApiUrl, NETWORK } from '@/lib/api-config';
+
+const API_URL = getApiUrl();
 
 // Icons with consistent className prop
 const Icons = {
@@ -134,7 +137,7 @@ function TerminalHero() {
 
   useEffect(() => {
     const lines = [
-      '$ curl api.mainnet.cipherscan.app/api/tx/a3f7c1...',
+      `$ curl ${API_URL}/api/tx/a3f7c1...`,
       '',
       '{',
       '  "txid": "a3f7c1...9e2b",',
@@ -261,10 +264,10 @@ export default function LearnPage() {
         <div className="max-w-6xl mx-auto px-4 py-10 sm:py-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
             <div>
-              <PageHeader eyebrow="LEARN_ZCASH" title="Learn Zcash" className="!mb-5" />
+              <PageHeader eyebrow="LEARN_ZCASH" title="Learn Wcash" className="!mb-5" />
               <p className="text-secondary leading-relaxed mb-6">
-                Zcash is the leading privacy cryptocurrency. Unlike Bitcoin, where every transaction is public,
-                Zcash lets you send and receive money with <strong className="text-primary">encrypted amounts, addresses, and memos</strong> — verified by zero-knowledge proofs without revealing any private data.
+                Wcash is the leading privacy cryptocurrency. Unlike Bitcoin, where every transaction is public,
+                Wcash lets you send and receive money with <strong className="text-primary">encrypted amounts, addresses, and memos</strong> — verified by zero-knowledge proofs without revealing any private data.
               </p>
 
               <div className="flex flex-wrap gap-3">
@@ -284,7 +287,7 @@ export default function LearnPage() {
                   className="inline-flex items-center gap-2 px-4 py-2 text-sm border border-cipher-border hover:border-cipher-cyan text-secondary hover:text-primary rounded-lg transition-colors"
                 >
                   <Icons.Gift className="w-3.5 h-3.5" />
-                  <span>Mine TAZ in browser</span>
+                  <span>Mine TWC in browser</span>
                 </a>
                 <a
                   href="https://discord.gg/zcash"
@@ -320,7 +323,7 @@ export default function LearnPage() {
               <h3 className="font-bold text-primary mb-2">Zero-Knowledge Proofs</h3>
               <p className="text-sm text-secondary leading-relaxed">
                 Mathematically prove a transaction is valid without revealing the sender, receiver, or amount.
-                The cryptographic breakthrough that makes Zcash possible.
+                The cryptographic breakthrough that makes Wcash possible.
               </p>
             </CardBody>
           </Card>
@@ -336,7 +339,7 @@ export default function LearnPage() {
                 <strong className="text-cipher-cyan">Ironwood</strong> is the latest pool — formally verified
                 cryptography with a quantum-recoverable design.
                 Older pools (<strong className="text-cipher-purple">Orchard</strong>, <strong className="text-cipher-purple">Sapling</strong>)
-                remain active. The transparent pool works like Bitcoin. Always shield your ZEC.
+                remain active. The transparent pool works like Bitcoin. Always shield your WCASH.
               </p>
               <Link href="/ironwood" className="inline-flex items-center gap-1 text-sm text-cipher-cyan hover:text-cipher-green mt-3 transition-colors">
                 <span>Ironwood Dashboard</span>
@@ -375,7 +378,7 @@ export default function LearnPage() {
             <h2 className="text-xs font-mono text-muted uppercase tracking-wider">{'>'} ADDRESS_TYPES</h2>
           </div>
           <p className="text-secondary mb-8 max-w-2xl">
-            Zcash supports three address formats. Unified addresses are the modern standard, they bundle
+            Wcash supports three address formats. Unified addresses are the modern standard, they bundle
             all receivers into one address for maximum compatibility and privacy.
           </p>
 
@@ -462,7 +465,7 @@ export default function LearnPage() {
             <h2 className="text-xs font-mono text-muted uppercase tracking-wider">{'>'} ZCASH_NAMES</h2>
           </div>
           <p className="text-secondary mb-8 max-w-2xl">
-            The <strong className="text-primary">Zcash Name System (ZNS)</strong> maps human-readable names to Zcash Unified Addresses.
+            The <strong className="text-primary">Wcash Name System (ZNS)</strong> maps human-readable names to Wcash Unified Addresses.
             Instead of sharing a 200-character address, you can share a name like <code className="text-cipher-cyan font-mono text-sm">alice</code>.
           </p>
 
@@ -475,7 +478,7 @@ export default function LearnPage() {
                     <span className="w-6 h-6 rounded-md bg-cipher-cyan/10 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-cipher-cyan">1</span>
                     <div>
                       <div className="font-medium text-primary text-sm">Claim a name</div>
-                      <div className="text-xs text-secondary mt-0.5">Register a name at zcashnames.com. Shorter names cost more (1-char = 6 ZEC, 7+ chars = 0.25 ZEC).</div>
+                      <div className="text-xs text-secondary mt-0.5">Register a name at zcashnames.com. Shorter names cost more (1-char = 6 WCASH, 7+ chars = 0.25 WCASH).</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -489,7 +492,7 @@ export default function LearnPage() {
                     <span className="w-6 h-6 rounded-md bg-cipher-cyan/10 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-cipher-cyan">3</span>
                     <div>
                       <div className="font-medium text-primary text-sm">Share it</div>
-                      <div className="text-xs text-secondary mt-0.5">Anyone can search your name on CipherScan or resolve it in a wallet to find your address.</div>
+                      <div className="text-xs text-secondary mt-0.5">Anyone can search your name on WcashExplorer or resolve it in a wallet to find your address.</div>
                     </div>
                   </div>
                 </div>
@@ -511,7 +514,7 @@ export default function LearnPage() {
 
             <Card variant="compact">
               <CardBody>
-                <h3 className="font-bold text-primary mb-4">Try It on CipherScan</h3>
+                <h3 className="font-bold text-primary mb-4">Try It on WcashExplorer</h3>
                 <p className="text-sm text-secondary mb-4 leading-relaxed">
                   Search any ZNS name in the search bar to see its resolved address, registration details,
                   marketplace status, and full event history.
@@ -603,7 +606,7 @@ export default function LearnPage() {
                     </span>
                     <div>
                       <div className="font-medium text-primary text-sm">Decrypt Memos</div>
-                      <div className="text-xs text-secondary mt-0.5">Read encrypted messages on CipherScan without exposing your spending key</div>
+                      <div className="text-xs text-secondary mt-0.5">Read encrypted messages on WcashExplorer without exposing your spending key</div>
                     </div>
                   </div>
                 </div>
@@ -663,7 +666,7 @@ export default function LearnPage() {
             <h2 className="text-xs font-mono text-muted uppercase tracking-wider">{'>'} NETWORK_PRIVACY</h2>
           </div>
           <p className="text-secondary mb-8 max-w-2xl">
-            Zcash encrypts your transaction data on-chain, but your <strong className="text-primary">IP address</strong> is
+            Wcash encrypts your transaction data on-chain, but your <strong className="text-primary">IP address</strong> is
             still visible to the server your wallet connects to. Network privacy tools hide this metadata layer.
           </p>
 
@@ -768,7 +771,7 @@ export default function LearnPage() {
                   <Badge color="green">RECOMMENDED</Badge>
                 </div>
                 <p className="text-sm text-secondary mb-5 leading-relaxed">
-                  Full-featured Zcash wallet by ZODL. Orchard-first, auto-shielding, cross-chain payments via NEAR Intents.
+                  Full-featured Wcash wallet by ZODL. Orchard-first, auto-shielding, cross-chain payments via NEAR Intents.
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   <a href="https://apps.apple.com/us/app/zodl-zcash-wallet/id1672392439" target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm justify-center">
@@ -792,7 +795,7 @@ export default function LearnPage() {
                   <Badge color="cyan">ADVANCED</Badge>
                 </div>
                 <p className="text-sm text-secondary mb-5 leading-relaxed">
-                  Privacy-first Zcash wallet with shielded-by-default transactions, memo support, and a clean mobile experience.
+                  Privacy-first Wcash wallet with shielded-by-default transactions, memo support, and a clean mobile experience.
                 </p>
                 <a href="https://vizor.cash/" target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm w-full justify-center">
                   <Icons.ExternalLink className="w-3.5 h-3.5" />
@@ -831,24 +834,22 @@ export default function LearnPage() {
             <h2 className="text-xs font-mono text-muted uppercase tracking-wider">{'>'} DEVELOPER_RESOURCES</h2>
           </div>
           <p className="text-secondary mb-8 max-w-2xl">
-            Build on Zcash using CipherScan&apos;s infrastructure or the official Zcash developer tools.
+            Build on Wcash using WcashExplorer&apos;s infrastructure or the official Wcash developer tools.
           </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* CipherScan Infrastructure */}
+            {/* WcashExplorer Infrastructure */}
             <Card variant="compact">
               <CardBody>
                 <div className="flex items-center gap-2 mb-5">
                   <Icons.Database className="w-4 h-4 text-cipher-cyan" />
-                  <h3 className="font-bold text-cipher-cyan">CipherScan Infrastructure</h3>
+                  <h3 className="font-bold text-cipher-cyan">WcashExplorer Infrastructure</h3>
                 </div>
 
                 <div className="space-y-3">
                   {[
-                    { label: 'Mainnet Lightwalletd gRPC', value: 'lightwalletd.mainnet.cipherscan.app:443' },
-                    { label: 'Mainnet REST API', value: 'https://api.mainnet.cipherscan.app/api/*' },
-                    { label: 'Testnet Lightwalletd gRPC', value: 'lightwalletd.testnet.cipherscan.app:443' },
-                    { label: 'Testnet REST API', value: 'https://api.testnet.cipherscan.app/api/*' },
+                    { label: `${NETWORK === 'mainnet' ? 'Mainnet' : 'Testnet'} REST API`, value: `${API_URL}/api/*` },
+                    { label: 'Lightwalletd gRPC', value: process.env.NEXT_PUBLIC_LIGHTWALLETD_URL || 'Not configured' },
                   ].map(ep => (
                     <div key={ep.label}>
                       <div className="text-xs text-muted font-mono mb-1 uppercase tracking-wide">{ep.label}</div>
@@ -881,7 +882,7 @@ export default function LearnPage() {
                     {[
                       { href: 'https://zcash.readthedocs.io/en/latest/rtd_pages/protocol.html', label: 'Protocol Documentation' },
                       { href: 'https://zips.z.cash/', label: 'ZIPs (Improvement Proposals)' },
-                      { href: 'https://github.com/zcash/librustzcash', label: 'Zcash Rust Crates' },
+                      { href: 'https://github.com/zcash/librustzcash', label: 'Wcash Rust Crates' },
                     ].map(item => (
                       <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer"
                         className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-cipher-hover transition group">
@@ -951,7 +952,7 @@ export default function LearnPage() {
             <h2 className="text-xs font-mono text-muted uppercase tracking-wider">{'>'} COMMUNITY</h2>
           </div>
           <p className="text-secondary mb-8 max-w-2xl">
-            Join the Zcash community and dive deeper into privacy technology.
+            Join the Wcash community and dive deeper into privacy technology.
           </p>
 
           {/* Primary — 4 featured links */}
@@ -959,7 +960,7 @@ export default function LearnPage() {
             {[
               { href: 'https://z.cash/ecosystem/', icon: Icons.Globe, label: 'Z.cash', desc: 'Official ecosystem directory' },
               { href: 'https://forum.zcashcommunity.com/', icon: Icons.Users, label: 'Community Forum', desc: 'Discussions & proposals' },
-              { href: 'https://zodl.com/', icon: Icons.Zap, label: 'ZODL', desc: 'Zcash Open Development Lab' },
+              { href: 'https://zodl.com/', icon: Icons.Zap, label: 'ZODL', desc: 'Wcash Open Development Lab' },
               { href: 'https://zechub.wiki/', icon: Icons.Book, label: 'ZecHub Wiki', desc: 'Community knowledge base' },
             ].map(item => (
               <a
@@ -990,11 +991,11 @@ export default function LearnPage() {
             </Link>
             {[
               { href: 'https://discord.gg/zcash', label: 'Discord' },
-              { href: 'http://pool.tazminer.com:3000', label: 'Mine TAZ in browser' },
+              { href: 'http://pool.tazminer.com:3000', label: 'Mine TWC in browser' },
               { href: 'https://bountyzcash.org/', label: 'Bug Bounty' },
               { href: 'https://www.youtube.com/@AtmosphereLabsDev', label: 'YouTube' },
               { href: 'https://scifi.money/', label: 'SciFi Money' },
-              { href: 'https://maxdesalle.com/mastering-zcash/', label: 'Mastering Zcash' },
+              { href: 'https://maxdesalle.com/mastering-zcash/', label: 'Mastering Wcash' },
             ].map(item => (
               <a
                 key={item.href}
@@ -1011,7 +1012,7 @@ export default function LearnPage() {
       </div>
 
       {/* ═══════════════════════════════════════ */}
-      {/* EXPLORE CIPHERSCAN */}
+      {/* EXPLORE WCASHEXPLORER */}
       {/* ═══════════════════════════════════════ */}
       <div className="border-t border-cipher-border">
         <div className="max-w-6xl mx-auto px-4 py-12">
@@ -1020,7 +1021,7 @@ export default function LearnPage() {
             <h2 className="text-xs font-mono text-muted uppercase tracking-wider">{'>'} EXPLORE_CIPHERSCAN</h2>
           </div>
           <p className="text-secondary mb-8 max-w-2xl">
-            Use what you&apos;ve learned — CipherScan gives you live access to Zcash blockchain data.
+            Use what you&apos;ve learned — WcashExplorer gives you live access to Wcash blockchain data.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

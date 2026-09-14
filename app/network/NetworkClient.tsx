@@ -213,7 +213,7 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
         <PageHeader
           eyebrow="NETWORK_STATUS"
           title="Network Overview"
-          subtitle="Live Zcash network statistics: block height, hashrate, difficulty, peer count, circulating supply, shielded pool balances, and mining pool distribution — indexed directly from a Zebra full node."
+          subtitle="Live Wcash network statistics: block height, hashrate, difficulty, peer count, circulating supply, shielded pool balances, and mining pool distribution — indexed directly from a Zebra full node."
         />
         <div className="mb-6 h-24 bg-cipher-border-alpha/30 rounded-lg animate-pulse" />
         <div className="mb-8 h-[300px] bg-cipher-border-alpha/30 rounded-lg animate-pulse" />
@@ -261,7 +261,7 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
       <PageHeader
         eyebrow="NETWORK_STATUS"
         title="Network Overview"
-        subtitle="Live Zcash network statistics: block height, hashrate, difficulty, peer count, circulating supply, shielded pool balances, and mining pool distribution — indexed directly from a Zebra full node."
+        subtitle="Live Wcash network statistics: block height, hashrate, difficulty, peer count, circulating supply, shielded pool balances, and mining pool distribution — indexed directly from a Zebra full node."
       />
 
       <NetworkSectionNav />
@@ -412,7 +412,7 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
                                   />
                                 </div>
                                 <span className="text-[11px] font-mono text-primary text-right w-24 tabular-nums">
-                                  {c.totalBalance >= 1000 ? `${(c.totalBalance / 1000).toFixed(1)}K` : c.totalBalance.toFixed(0)} ZEC
+                                  {c.totalBalance >= 1000 ? `${(c.totalBalance / 1000).toFixed(1)}K` : c.totalBalance.toFixed(0)} WCASH
                                 </span>
                                 <span className="text-[10px] font-mono text-muted text-right w-12 tabular-nums">
                                   {c.percentage.toFixed(1)}%
@@ -425,7 +425,7 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
                                 <span className="text-[11px] font-mono text-muted w-20">Unlabeled</span>
                                 <div className="flex-1" />
                                 <span className="text-[11px] font-mono text-muted text-right w-24 tabular-nums">
-                                  {unlabeled.totalBalance >= 1000 ? `${(unlabeled.totalBalance / 1000).toFixed(1)}K` : unlabeled.totalBalance.toFixed(0)} ZEC
+                                  {unlabeled.totalBalance >= 1000 ? `${(unlabeled.totalBalance / 1000).toFixed(1)}K` : unlabeled.totalBalance.toFixed(0)} WCASH
                                 </span>
                                 <span className="text-[10px] font-mono text-muted text-right w-12 tabular-nums">
                                   {unlabeled.percentage.toFixed(1)}%
@@ -665,22 +665,22 @@ function ChainInfoStrip({
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8 animate-fade-in-up stagger-4">
       <ChainInfoChip
         label="Lockbox"
-        value={`${supply.lockbox.toLocaleString(undefined, { maximumFractionDigits: 0 })} ZEC`}
+        value={`${supply.lockbox.toLocaleString(undefined, { maximumFractionDigits: 0 })} WCASH`}
         subtitle={zecPrice ? `$${((supply.lockbox * zecPrice) / 1e6).toFixed(1)}M` : undefined}
-        tooltip="ZEC reserved in the protocol lockbox for future Zcash development funding."
+        tooltip="WCASH reserved in the protocol lockbox for future Wcash development funding."
       />
       <ChainInfoChip
         label="Blockchain size"
         value={`${stats.blockchain.sizeGB.toFixed(2)} GB`}
-        tooltip="Total disk space used by the full Zcash blockchain on this node."
+        tooltip="Total disk space used by the full Wcash blockchain on this node."
       />
       <ChainInfoChip
         label="Latest block"
         value={latestBlockAgo}
         subtitle={new Date(stats.blockchain.latestBlockTime * 1000).toLocaleTimeString()}
-        tooltip="Time since the most recent block was mined. Zcash targets a new block every 75 seconds."
+        tooltip="Time since the most recent block was mined. Wcash targets a new block every 75 seconds."
       />
-      <HoverTip tip="The currently active Zcash network upgrade.">
+      <HoverTip tip="The currently active Wcash network upgrade.">
         <div className="card p-3 h-full cursor-help">
           <div className="text-[10px] text-muted font-mono uppercase tracking-wider mb-1">Network upgrade</div>
           {upgradeUrl ? (

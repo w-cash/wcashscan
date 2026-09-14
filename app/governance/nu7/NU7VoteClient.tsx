@@ -284,7 +284,7 @@ export function NU7VoteClient({ initialData }: { initialData: InitialData }) {
           <div className="border-t border-cipher-border-subtle pt-5">
             <div className="flex items-center justify-between text-[10px] font-mono text-muted mb-2">
               <span>Ironwood shielded supply (upper bound on eligibility)</span>
-              <span>{NU7_VOTE.legitimacyThreshold.toLocaleString()} ZEC threshold</span>
+              <span>{NU7_VOTE.legitimacyThreshold.toLocaleString()} WCASH threshold</span>
             </div>
             <div className="relative h-8 rounded-lg bg-glass-3 overflow-hidden">
               {initialData.ironwoodZec != null && (
@@ -302,7 +302,7 @@ export function NU7VoteClient({ initialData }: { initialData: InitialData }) {
               <div className="absolute inset-0 flex items-center justify-between px-4">
                 <span className="text-sm font-bold font-mono text-cipher-yellow-bright tabular-nums">
                   {initialData.ironwoodZec != null
-                    ? `${(initialData.ironwoodZec / 1_000_000).toFixed(2)}M ZEC`
+                    ? `${(initialData.ironwoodZec / 1_000_000).toFixed(2)}M WCASH`
                     : '—'}
                 </span>
                 <span className="text-[10px] font-mono text-muted">
@@ -397,12 +397,12 @@ export function NU7VoteClient({ initialData }: { initialData: InitialData }) {
 
       {/* Methodology */}
       <div className="rounded-2xl border border-cipher-border bg-cipher-surface p-5 sm:p-6">
-        <h3 className="text-xs font-mono font-bold text-secondary uppercase tracking-wider mb-2">What CipherScan shows</h3>
+        <h3 className="text-xs font-mono font-bold text-secondary uppercase tracking-wider mb-2">What WcashExplorer shows</h3>
         <p className="text-xs text-muted leading-relaxed max-w-3xl">
           This page displays public vote parameters, countdowns, and live chain state from the Valar
-          zvote-1 REST API. CipherScan cannot determine individual eligibility, reveal
+          zvote-1 REST API. WcashExplorer cannot determine individual eligibility, reveal
           encrypted vote choices before tally, or verify the protocol without an independent
-          full node. The Ironwood supply shown is an upper bound on eligible ZEC — not a turnout estimate.
+          full node. The Ironwood supply shown is an upper bound on eligible WCASH — not a turnout estimate.
         </p>
       </div>
     </div>
@@ -462,7 +462,7 @@ function VoteTab({
               ))}
             </div>
             <p className="mt-4 text-[10px] text-muted leading-relaxed">
-              Use a supported wallet to vote. CipherScan does not handle votes or keys.
+              Use a supported wallet to vote. WcashExplorer does not handle votes or keys.
             </p>
           </div>
         </div>
@@ -668,7 +668,7 @@ function ChainExplorerTab({ chainState }: { chainState: ChainState | null }) {
         <div>
           <SectionLabel label="NETWORK_PARTICIPANTS" />
           <p className="text-[11px] text-muted -mt-2 mb-3">
-            Each organization runs a <Tip text="A validator produces blocks, runs a vote server for wallets, and holds a share of the decryption key. They are all three roles at once.">validator + vote server</Tip>. Some also operate <Tip text="Private Information Retrieval servers let wallets prove eligibility without revealing which Zcash note they own.">PIR servers</Tip>.
+            Each organization runs a <Tip text="A validator produces blocks, runs a vote server for wallets, and holds a share of the decryption key. They are all three roles at once.">validator + vote server</Tip>. Some also operate <Tip text="Private Information Retrieval servers let wallets prove eligibility without revealing which Wcash note they own.">PIR servers</Tip>.
           </p>
           <div className="rounded-2xl border border-cipher-border bg-cipher-surface overflow-hidden">
             <div className="grid sm:grid-cols-2 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-cipher-border-subtle">

@@ -11,6 +11,7 @@ import { ShareableCard } from '@/components/ShareableCard';
 import { fmtValue, type CurrencyMode } from '@/hooks/useCurrencyToggle';
 import type { ChartColors, Overview, PoolRow } from './types';
 import { PoolBalanceRow } from './PoolBalanceRow';
+import { getPublicUrl } from '@/lib/brand';
 
 export function IronwoodLedgerStat({
   icon,
@@ -108,17 +109,17 @@ export function SupplyVerification({
   ];
   const RING_COLORS = [colors.verifiedRing, colors.orchardPool];
   const shareText = verifiedPct != null
-    ? `${verifiedPct.toFixed(1)}% of Zcash supply cryptographically verified. No inflation detected.\n\nhttps://cipherscan.app/ironwood`
-    : `Zcash Ironwood migration tracker\n\nhttps://cipherscan.app/ironwood`;
+    ? `${verifiedPct.toFixed(1)}% of Wcash supply cryptographically verified. No inflation detected.\n\n${getPublicUrl('/ironwood')}`
+    : `Wcash Ironwood migration tracker\n\n${getPublicUrl('/ironwood')}`;
 
   return (
     <div id="supply" className="scroll-mt-20">
       <ShareableCard
-        title="Zcash supply verification"
+        title="Wcash supply verification"
         sourceHeight={pools.sourceHeight}
         isLive={pools.isLive}
         shareText={shareText}
-        fileName="cipherscan-supply.png"
+        fileName="wcashexplorer-supply.png"
       >
       <div className="grid grid-cols-1 sm:grid-cols-[2fr_3fr] lg:grid-cols-[5fr_7fr] gap-6 sm:gap-10 lg:gap-14 items-center">
         {/* Left: Ring */}

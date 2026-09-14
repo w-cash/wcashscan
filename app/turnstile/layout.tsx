@@ -1,21 +1,21 @@
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'Zcash Turnstile Tracker | CipherScan',
+  title: 'Wcash Turnstile Tracker | WcashExplorer',
   description:
-    'Track where deshielded ZEC goes: transparent addresses, reshielding, exchanges, and other transfers. Updated hourly.',
+    'Track where deshielded WCASH goes: transparent addresses, reshielding, exchanges, and other transfers. Updated hourly.',
   keywords: [
     'zcash turnstile',
     'zcash deshielding',
     'zcash shielded pool',
-    'deshielded ZEC',
+    'deshielded WCASH',
     'zcash exchange flow',
     'zcash privacy analytics',
-    'ZEC turnstile tracker',
-    'CipherScan',
+    'WCASH turnstile tracker',
+    'WcashExplorer',
   ],
   path: '/turnstile',
-  imageAlt: 'CipherScan Turnstile Tracker — Zcash deshielding analytics',
+  imageAlt: 'WcashExplorer Turnstile Tracker — Wcash deshielding analytics',
   networks: ['mainnet'],
 });
 

@@ -62,7 +62,7 @@ test('path parameters use OpenAPI braces and server URLs do not duplicate /v1', 
   assert.ok(doc.paths['/v1/blocks/{heightOrHash}']);
   assert.equal(Object.keys(doc.paths).some((routePath) => routePath.includes(':')), false);
   assert.equal(doc.servers.some(({ url }) => url.endsWith('/v1')), false);
-  assert.equal(doc.servers[0].url, 'https://api.mainnet.cipherscan.app');
+  assert.equal(doc.servers[0].url, 'http://127.0.0.1:3001');
 });
 
 test('no OpenAPI path is emitted for an excluded manifest entry', () => {

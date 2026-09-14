@@ -5,6 +5,7 @@ import ApiSidebar from './components/ApiSidebar';
 import ApiEndpoint from './components/ApiEndpoint';
 import { getEndpoints, getEndpointsByCategory } from './endpoints';
 import { getApiUrl, NETWORK } from '@/lib/api-config';
+import { SCANNER_REPOSITORY_URL } from '@/lib/brand';
 
 export default function DocsPage() {
   const baseUrl = getApiUrl();
@@ -36,7 +37,7 @@ export default function DocsPage() {
             API Documentation
           </h1>
           <p className="text-base sm:text-lg text-secondary max-w-3xl">
-            Free, open API for accessing Zcash blockchain data. {endpoints.length} endpoints, no authentication required.
+            Free, open API for accessing Wcash blockchain data. {endpoints.length} endpoints, no authentication required.
           </p>
         </div>
 
@@ -70,7 +71,7 @@ export default function DocsPage() {
           </h2>
           <div className="space-y-3 text-sm text-secondary">
             <p>
-              <strong className="text-primary">Shielded Addresses:</strong> Due to Zcash&apos;s privacy features,
+              <strong className="text-primary">Shielded Addresses:</strong> Due to Wcash&apos;s privacy features,
               shielded addresses (z-addresses) and their balances cannot be queried. Transparent addresses
               (t-addresses) are queryable. A Unified Address can be decoded client-side to reveal its receiver
               types, but activity is queried only through an extracted transparent receiver.
@@ -78,9 +79,9 @@ export default function DocsPage() {
             <p>
               <strong className="text-primary">Networks:</strong> This API is available on both{' '}
               <code className="text-cipher-cyan">mainnet</code> ({' '}
-              <code className="text-xs text-muted">api.mainnet.cipherscan.app</code>) and{' '}
+              <code className="text-xs text-muted">{baseUrl}</code>) and{' '}
               <code className="text-cipher-cyan">testnet</code> ({' '}
-              <code className="text-xs text-muted">api.testnet.cipherscan.app</code>).
+              <code className="text-xs text-muted">{baseUrl}</code>).
               The base URL above reflects the network you are currently viewing.
             </p>
             <p>
@@ -91,7 +92,7 @@ export default function DocsPage() {
             <p>
               <strong className="text-primary">Values:</strong> Units are field-defined in the legacy API; do not
               infer a unit from a bare number. Exact integer fields ending in <code>Zat</code> or <code>Zats</code>{' '}
-              are decimal-string zatoshis (1 ZEC = 100,000,000 zatoshis). Separately named ZEC fields are
+              are decimal-string zatoshis (1 WCASH = 100,000,000 zatoshis). Separately named WCASH fields are
               display values and should not be used for accounting.
             </p>
           </div>
@@ -136,7 +137,7 @@ const { metrics } = await stats.json();
 console.log('Privacy score:', metrics.privacyScore, 'v' + metrics.scoreVersion);
 console.log('Usage (30d tx share):', metrics.scoreBreakdown?.usage?.percent + '%');
 
-// Blend check — how common is 1 ZEC?
+// Blend check — how common is 1 WCASH?
 const blend = await fetch(BASE + '/api/blend-check?amount=1.0');
 console.log(await blend.json());`}
               </pre>
@@ -153,13 +154,13 @@ BASE = '${baseUrl}'
 
 # Circulating supply
 supply = requests.get(f'{BASE}/api/circulating-supply?format=json').json()
-print(f"Circulating: {supply['circulatingSupply']} ZEC")
+print(f"Circulating: {supply['circulatingSupply']} WCASH")
 
 # Rich list top 10
 rich = requests.get(f'{BASE}/api/rich-list?limit=10').json()
 for addr in rich['addresses']:
     label = addr.get('label', 'Unknown')
-    print(f"#{addr['rank']} {label}: {addr['balance'] / 1e8:.2f} ZEC")
+    print(f"#{addr['rank']} {label}: {addr['balance'] / 1e8:.2f} WCASH")
 
 # Mempool
 mempool = requests.get(f'{BASE}/api/mempool').json()
@@ -220,7 +221,7 @@ curl '${baseUrl}/api/stats/shielded-count?since=2025-01-01&detailed=true'`}
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <a
-              href="https://github.com/Kenbak/cipherscan"
+              href={SCANNER_REPOSITORY_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 card-bg border border-cipher-border rounded-lg hover:border-cipher-cyan transition-colors text-sm text-secondary"

@@ -21,6 +21,7 @@ import { formatZecCompact } from '@/lib/format-numbers';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { ShareableCard } from '@/components/ShareableCard';
 import { PeriodPillTags } from '@/components/ui/PeriodPillTags';
+import { getPublicUrl } from '@/lib/brand';
 
 type Period = '30d' | '90d' | '1y';
 type PoolFilter = 'all' | 'ironwood' | 'sapling' | 'orchard';
@@ -82,7 +83,7 @@ function FlowTooltip({
           <p key={key} className="tabular-nums text-secondary">
             <span style={{ color: entry.color }}>{entryLabel}</span>
             {': '}
-            {abs.toFixed(2)} ZEC
+            {abs.toFixed(2)} WCASH
           </p>
         );
       })}
@@ -108,7 +109,7 @@ export function FlowVolumeChart() {
   );
 
   const poolLabel = POOL_OPTIONS.find((p) => p.key === poolFilter)?.label ?? 'All';
-  const shareText = `Zcash shielding and deshielding flow (${poolLabel}, ${period.toUpperCase()}) on CipherScan.\n\nhttps://cipherscan.app/pools#flows`;
+  const shareText = `Wcash shielding and deshielding flow (${poolLabel}, ${period.toUpperCase()}) on WcashExplorer.\n\n${getPublicUrl('/pools#flows')}`;
 
   const barSize = useMemo(
     () => Math.max(4, Math.floor(600 / Math.max(points.length, 1))),
@@ -229,13 +230,13 @@ export function FlowVolumeChart() {
       sourceHeight={0}
       isLive
       shareText={shareText}
-      fileName="cipherscan-flow-volume.png"
+      fileName="wcashexplorer-flow-volume.png"
       watermark
       className=""
       footerNote={`${poolLabel} · ${period.toUpperCase()}`}
     >
       <p className="mb-4 max-w-2xl text-xs leading-relaxed text-secondary font-sans">
-        Shielding means moving ZEC into a private pool. Deshielding means moving it back to a public address. Bars up
+        Shielding means moving WCASH into a private pool. Deshielding means moving it back to a public address. Bars up
         = into privacy. Bars down = out of privacy.
       </p>
       {controls}

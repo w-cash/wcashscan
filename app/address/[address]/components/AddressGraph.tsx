@@ -316,7 +316,7 @@ export function AddressGraph({ address }: { address: string }) {
 
                 {hovered.role === 'peer' && hovered.valueZec > 0 && (
                   <p className="text-secondary mt-2 font-mono">
-                    Balance {fmtZec(hovered.valueZec)} ZEC
+                    Balance {fmtZec(hovered.valueZec)} WCASH
                     {hovered.txCount > 0 && <span className="text-muted"> · {hovered.txCount} tx</span>}
                   </p>
                 )}
@@ -324,10 +324,10 @@ export function AddressGraph({ address }: { address: string }) {
                 {hovered.role !== 'peer' && hovered.role !== 'self' && hovered.valueZec > 0 && (
                   <p className="text-secondary mt-2 font-mono leading-relaxed">
                     {hovered.receivedZec > 0 && (
-                      <span className="block">They sent {fmtZec(hovered.receivedZec)} ZEC → this address</span>
+                      <span className="block">They sent {fmtZec(hovered.receivedZec)} WCASH → this address</span>
                     )}
                     {hovered.sentZec > 0 && (
-                      <span className="block">This address sent {fmtZec(hovered.sentZec)} ZEC → them</span>
+                      <span className="block">This address sent {fmtZec(hovered.sentZec)} WCASH → them</span>
                     )}
                     {hovered.txCount > 0 && (
                       <span className="block text-muted mt-1">{hovered.txCount} tx in sample</span>
@@ -400,7 +400,7 @@ export function AddressGraph({ address }: { address: string }) {
                 <p className="text-muted mt-3 leading-relaxed">
                   <strong className="text-secondary font-normal">How addresses are chosen:</strong>{' '}
                   tan peers {isFullCluster ? 'are every co-spent address in the cluster' : 'are ranked by on-chain balance'}.
-                  Blue partners are the top {API_MAX_COUNTERPARTIES} by ZEC moved in the last {sampledTxs}{' '}
+                  Blue partners are the top {API_MAX_COUNTERPARTIES} by WCASH moved in the last {sampledTxs}{' '}
                   transactions (sampled for high-activity addresses like exchanges).
                 </p>
 

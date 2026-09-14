@@ -19,8 +19,8 @@ const STAT_TOOLTIPS: Record<string, string> = {
   'Finalized': 'Highest block confirmed as final by the validator network. Finalized blocks can never be reversed.',
   'Finality Gap': 'Blocks between the PoW tip and the last finalized block. A smaller gap means faster finalization.',
   'Finalizers': 'Validator nodes that vote on blocks to confirm them as final. More finalizers means stronger security.',
-  'Total Stake': 'Total cTAZ locked in delegation bonds across all finalizers. Stake determines voting power.',
-  'Peers': 'Number of network peers connected to the CipherScan node. More peers means better network visibility.',
+  'Total Stake': 'Total cTWC locked in delegation bonds across all finalizers. Stake determines voting power.',
+  'Peers': 'Number of network peers connected to the WcashExplorer node. More peers means better network visibility.',
 };
 
 function StatCard({ label, value, sub, color, tooltip }: {

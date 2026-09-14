@@ -183,7 +183,7 @@ export function SupplyTimelineScrubber({
                 value={mode === 'live' ? Math.round((selectedPct / 100) * CALENDAR_STEPS) : calendarValue}
                 onChange={(e) => handleCalendarScrub(parseInt(e.target.value, 10))}
                 className="absolute inset-0 z-[3] h-full w-full cursor-grab opacity-0 active:cursor-grabbing"
-                aria-label="Zcash supply timeline from 2016"
+                aria-label="Wcash supply timeline from 2016"
               />
             </div>
           </div>

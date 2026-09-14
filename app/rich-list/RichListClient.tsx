@@ -173,7 +173,7 @@ export default function RichListClient({
       cell: (entry) => (
         <>
           <div className="font-mono text-sm text-primary font-bold">
-            {entry.balance >= 1000 ? formatZec(entry.balance) : entry.balance.toFixed(2)} ZEC
+            {entry.balance >= 1000 ? formatZec(entry.balance) : entry.balance.toFixed(2)} WCASH
           </div>
           {zecPrice && (
             <div className="text-[10px] text-muted font-mono">
@@ -255,7 +255,7 @@ export default function RichListClient({
                 {concentration.top10Pct.toFixed(1)}%
               </div>
               <div className="text-[10px] text-muted mt-0.5">
-                {formatZec(concentration.top10)} of {formatZec(concentration.totalTransparent)} transparent ZEC
+                {formatZec(concentration.top10)} of {formatZec(concentration.totalTransparent)} transparent WCASH
               </div>
             </CardBody>
           </Card>
@@ -269,7 +269,7 @@ export default function RichListClient({
                 {concentration.top100Pct.toFixed(1)}%
               </div>
               <div className="text-[10px] text-muted mt-0.5">
-                {formatZec(concentration.top100)} of {formatZec(concentration.totalTransparent)} transparent ZEC
+                {formatZec(concentration.top100)} of {formatZec(concentration.totalTransparent)} transparent WCASH
               </div>
             </CardBody>
           </Card>
@@ -280,7 +280,7 @@ export default function RichListClient({
                 Transparent Supply
               </div>
               <div className="text-2xl font-bold text-primary font-mono">
-                {formatZec(concentration.totalTransparent)} ZEC
+                {formatZec(concentration.totalTransparent)} WCASH
               </div>
               <div className="text-xs text-muted mt-0.5">
                 {labeledCount > 0 && (

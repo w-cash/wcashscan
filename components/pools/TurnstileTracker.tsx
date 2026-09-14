@@ -5,6 +5,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { getApiUrl } from '@/lib/api-config';
+import { CURRENCY } from '@/lib/config';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getChartColors } from '@/lib/chart-theme';
 import { getFlowColors, TURNSTILE_CATEGORY_LABELS } from '@/lib/flow-colors';
@@ -237,13 +238,13 @@ export function TurnstileTracker({ showCardHeader = false }: TurnstileTrackerPro
                         </div>
                         <MetricWithTooltip
                           label="Deshielded"
-                          tooltip="ZEC that left a shielded pool to a transparent address in this period"
+                          tooltip="WCASH that left a shielded pool to a transparent address in this period"
                         >
                           <div className="flex items-baseline gap-2 flex-wrap">
                             <span className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-primary">
                               {formatZecCompact(summary.totalDeshielded)}
                             </span>
-                            <span className="text-sm font-mono text-muted">ZEC</span>
+                            <span className="text-sm font-mono text-muted">{CURRENCY}</span>
                           </div>
                           <p className="text-xs font-mono text-muted mt-1">
                             across {summary.txCount.toLocaleString()} txs
@@ -272,13 +273,13 @@ export function TurnstileTracker({ showCardHeader = false }: TurnstileTrackerPro
                           </div>
                           <MetricWithTooltip
                             label="Shielded"
-                            tooltip="Total ZEC moved into shielded pools during this period — from transparent addresses, exchanges, bridges, and other sources. Not limited to deshielded outputs below."
+                            tooltip="Total WCASH moved into shielded pools during this period — from transparent addresses, exchanges, bridges, and other sources. Not limited to deshielded outputs below."
                           >
                             <div className="flex items-baseline gap-2 flex-wrap">
                               <span className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-primary">
                                 {formatZecCompact(totalShielded)}
                               </span>
-                              <span className="text-sm font-mono text-muted">ZEC</span>
+                              <span className="text-sm font-mono text-muted">{CURRENCY}</span>
                             </div>
                             <p className="text-xs font-mono text-muted mt-1">
                               all shield inflows this period
@@ -299,7 +300,7 @@ export function TurnstileTracker({ showCardHeader = false }: TurnstileTrackerPro
                           ) : (
                             <>
                               <span className="text-secondary tabular-nums">{inflowRatio.toFixed(2)}×</span>
-                              {' '}shielded in per 1 ZEC deshielded out
+                              {' '}shielded in per 1 {CURRENCY} deshielded out
                               {netOutflow != null && netOutflow > 0 && (
                                 <>
                                   {' '}· net{' '}
@@ -368,18 +369,18 @@ export function TurnstileTracker({ showCardHeader = false }: TurnstileTrackerPro
                 };
 
                 const tooltips: Record<string, string> = {
-                  held: 'Deshielded ZEC still sitting on the original transparent address',
-                  reshielded: 'ZEC that moved back into a shielded pool after deshielding',
-                  moved: 'ZEC sent elsewhere — transferred, bridged, or deposited to an exchange',
-                  transferred: 'ZEC sent to another transparent address (not an exchange or bridge)',
-                  bridge: 'ZEC sent to a labeled cross-chain bridge address (e.g. NEAR Intents)',
-                  exchange: 'ZEC sent to a labeled exchange deposit address',
+                  held: 'Deshielded WCASH still sitting on the original transparent address',
+                  reshielded: 'WCASH that moved back into a shielded pool after deshielding',
+                  moved: 'WCASH sent elsewhere — transferred, bridged, or deposited to an exchange',
+                  transferred: 'WCASH sent to another transparent address (not an exchange or bridge)',
+                  bridge: 'WCASH sent to a labeled cross-chain bridge address (e.g. NEAR Intents)',
+                  exchange: 'WCASH sent to a labeled exchange deposit address',
                 };
 
                 return (
                   <>
                     <p className="text-[10px] font-mono uppercase tracking-wider text-muted mb-3">
-                      Where deshielded ZEC went
+                      Where deshielded WCASH went
                     </p>
                     <InteractiveCompositionBar
                       className="mb-6"
@@ -392,7 +393,7 @@ export function TurnstileTracker({ showCardHeader = false }: TurnstileTrackerPro
                         color: categoryColors[key] ?? flowColors.transferred,
                         opacity: key === 'transferred' ? 0.5 : key === 'held' ? 0.85 : key === 'moved' ? 0.6 : key === 'bridge' ? 0.65 : 0.7,
                         hint: TURNSTILE_HINTS[key as TurnstileCategory] ?? '',
-                        title: `${categoryLabels[key]}: ${formatZecCompact(amount)} ZEC (${pct.toFixed(1)}%)`,
+                        title: `${categoryLabels[key]}: ${formatZecCompact(amount)} ${CURRENCY} (${pct.toFixed(1)}%)`,
                       }))}
                     />
 
@@ -447,13 +448,13 @@ export function TurnstileTracker({ showCardHeader = false }: TurnstileTrackerPro
           )}
 
           <p className="text-xs text-secondary font-sans mt-6 leading-relaxed">
-            Tracks what happens after ZEC leaves a shielded pool — held, reshielded, transferred, bridged cross-chain, or sent to exchanges.
+            Tracks what happens after WCASH leaves a shielded pool — held, reshielded, transferred, bridged cross-chain, or sent to exchanges.
             {lastUpdated && ` Updated ${new Date(lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at ${new Date(lastUpdated).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}.`}
             {!lastUpdated && ' Updated daily.'}
           </p>
           {(period === 'all' || period === '1y') && (
             <p className="text-[10px] text-muted/60 font-mono mt-2 leading-relaxed italic">
-              Note: cumulative volume — the same ZEC can be deshielded and reshielded multiple times, so totals may exceed circulating supply.
+              Note: cumulative volume — the same WCASH can be deshielded and reshielded multiple times, so totals may exceed circulating supply.
             </p>
           )}
         </CardBody>
@@ -466,7 +467,7 @@ export function TurnstileTracker({ showCardHeader = false }: TurnstileTrackerPro
         }));
 
         return (
-          <ChartCard title="DAILY_DESHIELDED_ZEC_BREAKDOWN" height={280}>
+          <ChartCard title="DAILY_DESHIELDED_WCASH_BREAKDOWN" height={280}>
             <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height={280}>
               <AreaChart data={chartData}>
                 <CartesianGrid strokeDasharray="2 6" stroke={colors.grid} opacity={0.5} />
@@ -498,7 +499,7 @@ export function TurnstileTracker({ showCardHeader = false }: TurnstileTrackerPro
                       bridge: 'To Bridge',
                       exchange: 'To Exchange',
                     };
-                    return [`${Number(value).toFixed(2)} ZEC`, labels[String(name)] || String(name)];
+                    return [`${Number(value).toFixed(2)} ${CURRENCY}`, labels[String(name)] || String(name)];
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />

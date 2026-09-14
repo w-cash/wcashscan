@@ -3,8 +3,8 @@ import Link from 'next/link';
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'Newsletter | CipherScan',
-  description: 'Weekly Zcash intelligence — protocol updates, network stats, and privacy insights. No tracking. No surveillance.',
+  title: 'Newsletter | WcashExplorer',
+  description: 'Weekly Wcash intelligence — protocol updates, network stats, and privacy insights. No tracking. No surveillance.',
   path: '/newsletter',
   networks: ['mainnet'],
 });
@@ -21,10 +21,10 @@ export default function NewsletterPage() {
           <span className="opacity-50">{'>'}</span> NEWSLETTER
         </p>
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-mono text-primary mb-6">
-          CipherScan Weekly
+          WcashExplorer Weekly
         </h1>
         <p className="text-lg sm:text-xl text-secondary max-w-2xl leading-relaxed">
-          Weekly Zcash intelligence — protocol updates, network stats, and privacy insights.
+          Weekly Wcash intelligence — protocol updates, network stats, and privacy insights.
           No tracking pixels. No surveillance. Just signal.
         </p>
 
@@ -101,7 +101,7 @@ export default function NewsletterPage() {
               First issue dropping soon
             </h2>
             <p className="text-secondary max-w-md mx-auto mb-8 leading-relaxed">
-              A weekly digest of Zcash protocol updates, on-chain analytics,
+              A weekly digest of Wcash protocol updates, on-chain analytics,
               privacy insights, and ecosystem news — curated with zero tracking.
             </p>
 

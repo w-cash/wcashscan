@@ -59,7 +59,7 @@ function FlowAddressNode({ address }: { address: string }) {
 
 function FlowNodeView({ node }: { node: FlowNode }) {
   switch (node.kind) {
-    // Per-node ZEC amounts are intentionally not shown for address/pool/more
+    // Per-node WCASH amounts are intentionally not shown for address/pool/more
     // — that breakdown is already available in the Inputs/Outputs tab, and
     // repeating it here just adds numbers to double-check against the
     // center amount instead of a quick "who/what" read.

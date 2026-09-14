@@ -1,10 +1,11 @@
 'use strict';
 const { createGzip, constants } = require('node:zlib');
 const { compactBlockToJSON, compactBlockToInbox } = require('./compact-blocks');
+const { getLightwalletdAddress } = require('./lightwalletd-config');
 
 // Bound projection/output buffering; gRPC's Readable iterator supplies backpressure.
 async function streamInbox(res, Client, grpc, start, end) {
-  const client = new Client('127.0.0.1:9067', grpc.credentials.createInsecure());
+  const client = new Client(getLightwalletdAddress(), grpc.credentials.createInsecure());
   const call = client.GetBlockRange({ start: { height: start }, end: { height: end } });
   const close = () => call.cancel();
   res.once('close', close);

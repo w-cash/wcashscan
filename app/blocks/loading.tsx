@@ -10,7 +10,7 @@ import { PageHeader, SkeletonTable } from '@/components/ui';
 export default function BlocksLoading() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 animate-fade-in">
-      <PageHeader eyebrow="ALL_BLOCKS" title="Latest Zcash Blocks" />
+      <PageHeader eyebrow="ALL_BLOCKS" title="Latest Wcash Blocks" />
       <SkeletonTable rows={25} className="mt-4" label="Loading blocks…" />
     </div>
   );

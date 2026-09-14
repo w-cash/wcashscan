@@ -8,7 +8,7 @@
  * than pointing at a live docs host that may not exist yet.
  */
 
-const PROBLEM_BASE = 'https://docs.cipherscan.app/errors';
+const PROBLEM_BASE = process.env.WCASHEXPLORER_PROBLEM_BASE || 'http://localhost:3000/api/errors';
 
 /** Registry of known problem "type" slugs -> default title/status. */
 const PROBLEM_TYPES = {

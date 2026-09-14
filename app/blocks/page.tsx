@@ -13,7 +13,6 @@ type UnavailablePolicy = 'shell' | 'throw';
 
 interface BlocksPageProps {
   searchParams: Promise<SearchParams>;
-  unavailablePolicy?: UnavailablePolicy;
 }
 
 interface BlocksRequest {
@@ -67,13 +66,13 @@ export async function generateMetadata({ searchParams }: BlocksPageProps): Promi
   const pageSuffix = request.page > 1 ? ` - Page ${request.page}` : '';
 
   return buildPageMetadata({
-    title: `Latest Zcash Blocks${pageSuffix} | CipherScan`,
+    title: `Latest Wcash Blocks${pageSuffix} | WcashExplorer`,
     description: request.page > 1
-      ? `Browse Zcash block archive page ${request.page}, including block heights, hashes, transaction counts, sizes, miners, and timestamps.`
-      : 'Browse the latest Zcash blocks with transaction counts, sizes, mining rewards, and timestamps. Real-time block explorer data.',
+      ? `Browse Wcash block archive page ${request.page}, including block heights, hashes, transaction counts, sizes, miners, and timestamps.`
+      : 'Browse the latest Wcash blocks with transaction counts, sizes, mining rewards, and timestamps. Real-time block explorer data.',
     path: isForwardArchive ? getArchiveCanonicalPath(request) : '/blocks',
     index: isForwardArchive && request.page === 1,
-    keywords: ['zcash blocks', 'zcash block explorer', 'zcash latest blocks', 'ZEC blocks', 'zcash block height'],
+    keywords: ['zcash blocks', 'zcash block explorer', 'zcash latest blocks', 'WCASH blocks', 'zcash block height'],
   });
 }
 
@@ -164,10 +163,8 @@ async function getInitialBlocks(request: BlocksRequest, unavailablePolicy: Unava
   }
 }
 
-export default async function BlocksPage({
-  searchParams,
-  unavailablePolicy = 'shell',
-}: BlocksPageProps) {
+export default async function BlocksPage({ searchParams }: BlocksPageProps) {
+  const unavailablePolicy: UnavailablePolicy = 'shell';
   const request = parseBlocksRequest(await searchParams);
   const { blocks, trailingBlock, pagination, available } = await getInitialBlocks(
     request,
@@ -183,7 +180,7 @@ export default async function BlocksPage({
         '@type': 'CollectionPage',
         '@id': `${collectionUrl}#collection`,
         url: collectionUrl,
-        name: request.page > 1 ? `Zcash block archive page ${request.page}` : 'Latest Zcash blocks',
+        name: request.page > 1 ? `Wcash block archive page ${request.page}` : 'Latest Wcash blocks',
         isPartOf: { '@id': `${getBaseUrl()}/#website` },
         mainEntity: {
           '@type': 'ItemList',
@@ -191,7 +188,7 @@ export default async function BlocksPage({
             '@type': 'ListItem',
             position: index + 1,
             url: `${getBaseUrl()}/block/${Number(block.height)}`,
-            name: `Zcash block #${Number(block.height).toLocaleString('en-US')}`,
+            name: `Wcash block #${Number(block.height).toLocaleString('en-US')}`,
           })),
         },
       }
@@ -220,13 +217,13 @@ export default async function BlocksPage({
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         <div className="border-t border-cipher-border pt-8 max-w-3xl">
           <h2 className="text-sm font-bold font-mono text-secondary mb-3 uppercase tracking-wider">
-            About Zcash Blocks
+            About Wcash Blocks
           </h2>
           <div className="space-y-3 text-sm text-muted leading-relaxed">
             <p>
-              Zcash produces a new block roughly every 75 seconds. Each block bundles
+              Wcash produces a new block roughly every 75 seconds. Each block bundles
               transparent and shielded transactions, a coinbase reward for the miner, and a
-              commitment to the current state of the shielded pools. CipherScan indexes every
+              commitment to the current state of the shielded pools. WcashExplorer indexes every
               block directly from a Zebra full node, so heights, hashes, sizes, and intervals
               on this page reflect the canonical chain in real time.
             </p>

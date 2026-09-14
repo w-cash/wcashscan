@@ -32,7 +32,7 @@ export default function TxError({
             </div>
             <h2 className="text-lg font-semibold text-primary mb-2">Something Went Wrong</h2>
             <p className="text-sm text-secondary mb-6 max-w-md mx-auto">
-              CipherScan hit an unexpected error rendering this transaction. This has been logged.
+              WcashExplorer hit an unexpected error rendering this transaction. This has been logged.
             </p>
             <div className="flex items-center justify-center gap-4">
               <button

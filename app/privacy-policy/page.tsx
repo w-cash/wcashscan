@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { buildPageMetadata } from '@/lib/seo';
 import { PageHeader } from '@/components/ui/SectionHeader';
+import { BRAND_NAME, SCANNER_REPOSITORY_URL } from '@/lib/brand';
 
 export const metadata = buildPageMetadata({
-  title: 'Privacy Policy | CipherScan',
-  description: 'Read how CipherScan handles analytics, logs, local browser data, and public Zcash blockchain information while protecting visitor privacy.',
+  title: 'Privacy Policy | WcashExplorer',
+  description: 'Read how WcashExplorer handles analytics, logs, local browser data, and public Wcash blockchain information while protecting visitor privacy.',
   path: '/privacy-policy',
   networks: ['mainnet'],
 });
@@ -24,8 +25,8 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-lg font-bold text-primary mb-3">1. Who We Are</h2>
           <p>
-            CipherScan (<Link href="/" className="text-cipher-cyan hover:underline">cipherscan.app</Link>) is
-            an open-source Zcash blockchain explorer operated by Atmosphere Labs (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;).
+            {BRAND_NAME} (<Link href="/" className="text-cipher-cyan hover:underline">local WcashExplorer site</Link>) is
+            an open-source Wcash blockchain explorer operated by Atmosphere Labs (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;).
           </p>
         </section>
 
@@ -34,7 +35,7 @@ export default function PrivacyPolicyPage() {
           <p className="mb-3"><strong className="text-primary">We do not collect personal data.</strong> No accounts, no registration, no IP logging, no analytics.</p>
           <ul className="list-disc pl-5 space-y-1.5">
             <li><strong className="text-primary">No server logs:</strong> We do not log IP addresses, user-agents, or browsing activity.</li>
-            <li><strong className="text-primary">Blockchain data:</strong> All blockchain data displayed on CipherScan is publicly available on the Zcash network. Shielded transaction contents are never visible to us or anyone without the appropriate viewing keys.</li>
+            <li><strong className="text-primary">Blockchain data:</strong> All blockchain data displayed on WcashExplorer is publicly available on the Wcash network. Shielded transaction contents are never visible to us or anyone without the appropriate viewing keys.</li>
             <li><strong className="text-primary">Viewing keys:</strong> If you use our Decrypt Memo tool, viewing keys are processed entirely in your browser (client-side) and are never transmitted to our servers.</li>
             <li><strong className="text-primary">Wallet addresses:</strong> If you use the Swap feature and connect a wallet, your wallet address is used solely to facilitate the transaction and is not stored by us.</li>
           </ul>
@@ -92,12 +93,8 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className="text-lg font-bold text-primary mb-3">9. Contact</h2>
           <p>
-            Questions? Reach us on{' '}
-            <a href="https://twitter.com/cipherscan_app" target="_blank" rel="noopener noreferrer" className="text-cipher-cyan hover:underline">
-              X / Twitter
-            </a>{' '}
-            or open an issue on{' '}
-            <a href="https://github.com/Kenbak/cipherscan" target="_blank" rel="noopener noreferrer" className="text-cipher-cyan hover:underline">
+            Questions? Open an issue in the{' '}
+            <a href={SCANNER_REPOSITORY_URL} target="_blank" rel="noopener noreferrer" className="text-cipher-cyan hover:underline">
               GitHub
             </a>.
           </p>

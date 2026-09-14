@@ -2,11 +2,12 @@ import Link from 'next/link';
 import { getApiUrl } from '@/lib/api-config';
 import { NETWORK_LABEL } from '@/lib/config';
 import { buildPageMetadata } from '@/lib/seo';
+import { SCANNER_REPOSITORY_URL } from '@/lib/brand';
 
 export const metadata = buildPageMetadata({
-  title: 'About | CipherScan',
+  title: 'About | WcashExplorer',
   description:
-    'Privacy-first Zcash blockchain explorer. Born at the Zypherpunk hackathon. Making privacy visual, understandable, and accessible to all.',
+    'Privacy-first Wcash blockchain explorer. Born at the Zypherpunk hackathon. Making privacy visual, understandable, and accessible to all.',
   path: '/about',
   networks: ['mainnet'],
 });
@@ -65,7 +66,7 @@ const timeline = [
     dotColor: 'bg-cipher-cyan shadow-[0_0_8px_rgb(var(--color-cyan-rgb)_/_0.6)]',
     title: 'Built at Zypherpunk',
     description:
-      "Created at the world's first Zcash privacy hackathon. 300+ projects. Won 4 tracks: Project Tachyon, Gemini, Raybot, and Network State. From zero to a working explorer in days.",
+      "Created at the world's first Wcash privacy hackathon. 300+ projects. Won 4 tracks: Project Tachyon, Gemini, Raybot, and Network State. From zero to a working explorer in days.",
   },
   {
     date: 'DEC 2025',
@@ -74,7 +75,7 @@ const timeline = [
     dotColor: 'bg-cipher-purple shadow-[0_0_8px_rgb(var(--color-purple-rgb)_/_0.6)]',
     title: 'Browser-Native Decryption',
     description:
-      'First frontend WASM-powered Zcash transaction decoder. Decrypt shielded memos entirely in-browser — no server, no keys shared, no trust required.',
+      'First frontend WASM-powered Wcash transaction decoder. Decrypt shielded memos entirely in-browser — no server, no keys shared, no trust required.',
   },
   // {
   //   date: 'DEC 2025',
@@ -83,7 +84,7 @@ const timeline = [
   //   dotColor: 'bg-cipher-green shadow-[0_0_8px_rgba(0,255,148,0.6)]',
   //   title: 'Near Intents',
   //   description:
-  //     'Cross-chain integration connecting Zcash privacy with the broader multichain ecosystem.',
+  //     'Cross-chain integration connecting Wcash privacy with the broader multichain ecosystem.',
   // },
   {
     date: 'JAN 2026',
@@ -92,7 +93,7 @@ const timeline = [
     dotColor: 'bg-cipher-cyan shadow-[0_0_8px_rgb(var(--color-cyan-rgb)_/_0.6)]',
     title: 'Privacy Risks & Batch Patterns',
     description:
-      'Advanced deshielding pattern detection and linkability analysis. Identifying on-chain behaviors that compromise Zcash privacy — and making that data accessible to everyone.',
+      'Advanced deshielding pattern detection and linkability analysis. Identifying on-chain behaviors that compromise Wcash privacy — and making that data accessible to everyone.',
   },
   {
     date: 'FEB 2026',
@@ -101,7 +102,7 @@ const timeline = [
     dotColor: 'bg-cipher-yellow shadow-[0_0_8px_rgb(var(--color-yellow-rgb)_/_0.6)]',
     title: 'ZCG Grant Awarded',
     description:
-      'Funded by the Zcash Community Grants program. Community recognition that privacy visibility infrastructure is essential for the ecosystem.',
+      'Funded by the Wcash Community Grants program. Community recognition that privacy visibility infrastructure is essential for the ecosystem.',
   },
   {
     date: 'MAR 2026',
@@ -110,7 +111,7 @@ const timeline = [
     dotColor: 'bg-cipher-green shadow-[0_0_8px_rgba(0,255,148,0.6)]',
     title: 'Bridge & Cross-Chain Analytics',
     description:
-      'Tracking ZEC flowing across bridges — ETH, BTC, and beyond. Mapping the cross-chain ecosystem with swap detection, volume analytics, and bridge health monitoring.',
+      'Tracking WCASH flowing across bridges — ETH, BTC, and beyond. Mapping the cross-chain ecosystem with swap detection, volume analytics, and bridge health monitoring.',
   },
   {
     date: 'APR 2026',
@@ -126,7 +127,7 @@ const timeline = [
     tag: 'INDEXER',
     tagColor: 'text-cipher-purple',
     dotColor: 'bg-cipher-purple shadow-[0_0_8px_rgb(var(--color-purple-rgb)_/_0.6)]',
-    title: 'CipherScan Rust Indexer',
+    title: 'WcashExplorer Rust Indexer',
     description:
       'High-performance Rust-based blockchain indexer. Full chain state in PostgreSQL — every transaction, output, and shielded action indexed for instant queries across 3.3M+ blocks.',
   },
@@ -161,7 +162,7 @@ export default async function AboutPage() {
             <span className="text-cipher-cyan">Protect the user.</span>
           </h1>
           <p className="text-base sm:text-lg text-muted max-w-2xl leading-relaxed mb-6">
-            CipherScan is a privacy-first Zcash blockchain explorer.
+            WcashExplorer is a privacy-first Wcash blockchain explorer.
             Not just a block browser — a tool for understanding, analyzing, and
             visualizing what privacy means on-chain. Making the invisible visible
             without compromising individuals.
@@ -256,12 +257,12 @@ export default async function AboutPage() {
             </span>
           </div>
           <p className="text-sm sm:text-base text-muted leading-relaxed max-w-2xl mb-4">
-            Zcash has the strongest privacy technology in crypto. But privacy is invisible
+            Wcash has the strongest privacy technology in crypto. But privacy is invisible
             by default — that&apos;s the point. The problem: if you can&apos;t see it, you can&apos;t
             understand it, measure it, or improve it.
           </p>
           <p className="text-sm sm:text-base text-muted leading-relaxed max-w-2xl">
-            CipherScan makes privacy visual, understandable, and accessible to all — developers,
+            WcashExplorer makes privacy visual, understandable, and accessible to all — developers,
             researchers, and everyday users. We show the shielded pool&apos;s health, detect patterns
             that risk privacy, and provide the tools to explore a blockchain designed to be private.
           </p>
@@ -275,13 +276,13 @@ export default async function AboutPage() {
                 Open source. Community funded.
               </h2>
               <p className="text-xs sm:text-sm text-muted leading-relaxed max-w-lg">
-                CipherScan is fully open source and funded by the Zcash community.
+                WcashExplorer is fully open source and funded by the Wcash community.
                 Contributions, issues, and feedback are welcome.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               <a
-                href="https://github.com/Kenbak/cipherscan"
+                href={SCANNER_REPOSITORY_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2.5 border border-cipher-border rounded-lg font-mono text-xs text-muted hover:text-primary hover:border-cipher-cyan/40 transition-colors duration-150"
@@ -290,17 +291,6 @@ export default async function AboutPage() {
                   <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
                 </svg>
                 GitHub
-              </a>
-              <a
-                href="https://twitter.com/cipherscan_app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 border border-cipher-border rounded-lg font-mono text-xs text-muted hover:text-primary hover:border-cipher-cyan/40 transition-colors duration-150"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-                @cipherscan_app
               </a>
               <Link
                 href="/docs"

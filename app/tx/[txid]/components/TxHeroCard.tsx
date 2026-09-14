@@ -74,7 +74,7 @@ export function TxHeroCard({ data, classification, priceUsd }: TxHeroCardProps) 
               {data.blockHeight > 0 && (
                 <>
                   {' '}
-                  Included in canonical Zcash block{' '}
+                  Included in canonical Wcash block{' '}
                   <Link
                     href={`/block/${data.blockHeight}`}
                     className="text-primary hover:underline"

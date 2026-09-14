@@ -3,6 +3,7 @@
 import { useRef, useCallback, useState, type ReactNode } from 'react';
 import { toPng } from 'html-to-image';
 import { useTheme } from '@/contexts/ThemeContext';
+import { BRAND_NAME, BRAND_WORDMARK } from '@/lib/brand';
 
 export function ShareableCard({
   title,
@@ -10,7 +11,7 @@ export function ShareableCard({
   sourceHeight,
   isLive = true,
   shareText,
-  fileName = 'cipherscan.png',
+  fileName = 'wcashexplorer.png',
   watermark = true,
   footerNote,
   className = 'mt-4',
@@ -87,7 +88,7 @@ export function ShareableCard({
           aria-hidden="true"
         >
           <span className="-rotate-12 scale-[0.82] select-none whitespace-nowrap text-[2rem] font-bold font-mono tracking-[0.14em] text-black/[0.04] dark:text-white/[0.045] sm:scale-100 sm:text-5xl sm:tracking-[0.2em] lg:text-6xl">
-            CIPHERSCAN
+            {BRAND_WORDMARK}
           </span>
         </div>
       ) : null}
@@ -168,9 +169,9 @@ export function ShareableCard({
               <img src="/logo.png" alt="" width={20} height={20} className="h-5 w-5 shrink-0 object-contain" />
               <div className="flex flex-col items-center sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-2 sm:gap-y-0">
                 <span className="text-[11px] font-bold font-mono text-cipher-cyan-bright tracking-tight">
-                  CIPHERSCAN
+                  {BRAND_WORDMARK}
                 </span>
-                <span className="text-[10px] font-mono text-muted/55">cipherscan.app</span>
+                <span className="text-[10px] font-mono text-muted/55">{BRAND_NAME}</span>
               </div>
             </div>
           </div>

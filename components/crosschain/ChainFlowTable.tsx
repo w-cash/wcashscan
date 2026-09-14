@@ -48,7 +48,7 @@ const CHAIN_ICON_MAP: Record<string, string> = {
 
 const CHAIN_DISPLAY_NAMES: Record<string, string> = {
   btc: 'Bitcoin', eth: 'Ethereum', sol: 'Solana', near: 'NEAR',
-  doge: 'Dogecoin', xrp: 'Ripple', zec: 'Zcash', base: 'Base',
+  doge: 'Dogecoin', xrp: 'Ripple', zec: 'Wcash', base: 'Base',
   arb: 'Arbitrum', pol: 'Polygon', avax: 'Avalanche', trx: 'Tron',
   tron: 'Tron', apt: 'Aptos', sui: 'Sui', ton: 'TON',
   bnb: 'BNB Chain', bsc: 'BNB Chain', op: 'Optimism', ltc: 'Litecoin',

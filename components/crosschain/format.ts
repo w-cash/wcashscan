@@ -15,15 +15,15 @@ export function formatUSD(value: number): string {
 export function formatZec(value: number): string {
   const abs = Math.abs(value);
   const prefix = value < 0 ? '−' : '';
-  if (abs >= 1_000_000) return `${prefix}${(abs / 1_000_000).toFixed(2)}M ZEC`;
-  if (abs >= 10_000) return `${prefix}${(abs / 1_000).toFixed(1)}K ZEC`;
-  if (abs >= 100) return `${prefix}${abs.toFixed(2)} ZEC`;
-  if (abs >= 1) return `${prefix}${abs.toFixed(4)} ZEC`;
-  return `${prefix}${abs.toFixed(6)} ZEC`;
+  if (abs >= 1_000_000) return `${prefix}${(abs / 1_000_000).toFixed(2)}M WCASH`;
+  if (abs >= 10_000) return `${prefix}${(abs / 1_000).toFixed(1)}K WCASH`;
+  if (abs >= 100) return `${prefix}${abs.toFixed(2)} WCASH`;
+  if (abs >= 1) return `${prefix}${abs.toFixed(4)} WCASH`;
+  return `${prefix}${abs.toFixed(6)} WCASH`;
 }
 
 /**
- * Unit-aware value formatter. Converts USD to ZEC when unit=zec.
+ * Unit-aware value formatter. Converts USD to WCASH when unit=zec.
  * Returns null if conversion is impossible (no price).
  */
 export function formatValue(

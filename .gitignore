@@ -19,6 +19,8 @@ server/signals/node_modules
 
 # misc
 .DS_Store
+.sites-runtime/
+.preview/
 
 # debug
 npm-debug.log*

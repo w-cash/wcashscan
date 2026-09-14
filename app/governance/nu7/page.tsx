@@ -39,9 +39,9 @@ export default async function NU7VotePage() {
         '@type': 'WebPage',
         '@id': `${pageUrl}#webpage`,
         url: pageUrl,
-        name: 'NU7 Coinholder Vote — Zcash Governance',
+        name: 'NU7 Coinholder Vote — Wcash Governance',
         description:
-          'Follow the Zcash NU7 coinholder vote: issuance smoothing, Sprout deprecation, 25-second blocks, and upgrade schedule.',
+          'Follow the Wcash NU7 coinholder vote: issuance smoothing, Sprout deprecation, 25-second blocks, and upgrade schedule.',
         isPartOf: { '@id': `${baseUrl}/#website` },
         breadcrumb: { '@id': `${pageUrl}#breadcrumb` },
       },

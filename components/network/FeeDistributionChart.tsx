@@ -9,6 +9,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { getChartColors } from '@/lib/chart-theme';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { ChartCard } from './ChartCard';
+import { CURRENCY } from '@/lib/config';
 
 const PERIODS = ['7d', '30d', '90d', '1y'] as const;
 type Period = typeof PERIODS[number];
@@ -81,7 +82,7 @@ export function FeeDistributionChart({ initialData }: { initialData?: FeeDistrib
       ) : (
         <div>
           <p className="text-xs text-muted mb-3 leading-relaxed">
-            Daily fee percentiles (in mZEC, 1 mZEC = 100,000 zatoshis). The band shows the
+            Daily fee percentiles (in m{CURRENCY}, 1 m{CURRENCY} = 100,000 base units). The band shows the
             10th–90th percentile range; the line is the median. Narrow bands mean consensus on fee levels.
           </p>
           <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height={300}>
@@ -105,7 +106,7 @@ export function FeeDistributionChart({ initialData }: { initialData?: FeeDistrib
                 stroke={colors.axis}
                 tick={{ fill: colors.axis, fontSize: 11 }}
                 tickFormatter={(v) => `${v.toFixed(2)}`}
-                label={{ value: 'mZEC', angle: -90, position: 'insideLeft', fill: colors.axis, style: { fontSize: 10 } }}
+                label={{ value: `m${CURRENCY}`, angle: -90, position: 'insideLeft', fill: colors.axis, style: { fontSize: 10 } }}
               />
               <Tooltip
                 contentStyle={{
@@ -122,7 +123,7 @@ export function FeeDistributionChart({ initialData }: { initialData?: FeeDistrib
                     p25: '25th percentile',
                     p10: '10th percentile',
                   };
-                  return [`${Number(value).toFixed(3)} mZEC`, labels[String(name)] || String(name)];
+                  return [`${Number(value).toFixed(3)} m${CURRENCY}`, labels[String(name)] || String(name)];
                 }}
               />
               <Legend

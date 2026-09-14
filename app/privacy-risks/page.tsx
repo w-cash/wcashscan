@@ -72,7 +72,7 @@ function PrivacyRisksLoading() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-primary">
-          Zcash Privacy Risk Analysis
+          Wcash Privacy Risk Analysis
         </h1>
         <p className="text-sm text-secondary mt-2">
           Transactions where amount, timing, and withdrawal structure can reveal address ownership.
@@ -276,7 +276,7 @@ function PrivacyRisksContent() {
       return transactions.slice(0, 3).map((tx) => ({
         id: `${tx.shieldTxid}-${tx.deshieldTxid}`,
         anchorId: `risk-${tx.shieldTxid.slice(0, 8)}-${tx.deshieldTxid.slice(0, 8)}`,
-        title: `${tx.shieldAmount.toFixed(4)} → ${tx.deshieldAmount.toFixed(4)} ZEC`,
+        title: `${tx.shieldAmount.toFixed(4)} → ${tx.deshieldAmount.toFixed(4)} WCASH`,
         subtitle: `${tx.timeDelta.replace(' after', ' later')} • score ${tx.score}`,
         tone: tx.warningLevel,
       }));
@@ -285,7 +285,7 @@ function PrivacyRisksContent() {
     return batchPatterns.slice(0, 3).map((pattern) => ({
       id: pattern.clusterHash || pattern.txids[0],
       anchorId: `batch-${pattern.txids[0]?.slice(0, 12)}`,
-      title: `${pattern.batchCount}× ${pattern.perTxAmountZec.toFixed(4)} ZEC`,
+      title: `${pattern.batchCount}× ${pattern.perTxAmountZec.toFixed(4)} WCASH`,
       subtitle: `${pattern.timeSpanHours < 24 ? `${pattern.timeSpanHours.toFixed(1)}h` : `${(pattern.timeSpanHours / 24).toFixed(1)}d`} burst • score ${pattern.score}`,
       tone: pattern.warningLevel,
     }));
@@ -295,7 +295,7 @@ function PrivacyRisksContent() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <PageHeader
         eyebrow="PRIVACY_ANALYSIS"
-        title="Zcash Privacy Risk Analysis"
+        title="Wcash Privacy Risk Analysis"
         subtitle="Transactions where amount, timing, and withdrawal structure can reveal address ownership."
         actions={
           <div className="flex items-center gap-2">
@@ -458,7 +458,7 @@ function PrivacyRisksContent() {
               <span className="text-[10px] text-muted font-mono mr-1">Popular:</span>
               {commonAmounts.slice(0, 6).map((amount, i) => (
                 <span key={i} className="text-[10px] font-mono text-cipher-purple bg-cipher-purple/10 border border-cipher-purple/20 px-2 py-0.5 rounded-full">
-                  {amount.amountZec.toFixed(2)} ZEC
+                  {amount.amountZec.toFixed(2)} WCASH
                 </span>
               ))}
             </div>
@@ -630,7 +630,7 @@ function PrivacyRisksContent() {
                 )}
                 {activeTab === 'batch' && batchStats && (
                   <div className="flex items-center justify-between pt-1 border-t border-cipher-border">
-                    <span className="text-xs text-secondary">ZEC Flagged</span>
+                    <span className="text-xs text-secondary">WCASH Flagged</span>
                     <span className="text-sm font-mono font-semibold text-primary tabular-nums">
                       {batchStats.totalZecFlagged?.toLocaleString() || batchPatterns.reduce((sum, p) => sum + p.totalAmountZec, 0).toLocaleString()}
                     </span>

@@ -190,7 +190,7 @@ export function PrivacyWidget({ initialStats = null, initialRiskStats = null }: 
         <Link href="/privacy" className="lg:border-r lg:border-cipher-border lg:px-5">
           <MetricCell
             label="Shielded Pool"
-            tooltip="Total ZEC currently in the shielded pool"
+            tooltip="Total WCASH currently in the shielded pool"
             value={`${poolSizeFormatted}M`}
             suffix={CURRENCY}
             color="muted"

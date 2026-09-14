@@ -66,14 +66,14 @@ export function BatchPatternCard({ pattern }: { pattern: BatchPattern }) {
             label: 'Anchor shield',
             amountZec: pattern.matchingShield.amountZec,
             blockTime: pattern.matchingShield.blockTime,
-            subtitle: `${pattern.matchingShield.amountZec.toLocaleString()} ZEC`,
+            subtitle: `${pattern.matchingShield.amountZec.toLocaleString()} WCASH`,
           }]
         : []),
       {
         id: `cluster:${pattern.clusterHash || pattern.txids[0]}`,
         type: 'cluster' as const,
         label: `${pattern.batchCount} withdrawals`,
-        subtitle: `${pattern.perTxAmountZec.toFixed(4)} ZEC each in ${pattern.timeSpanHours < 24 ? `${Math.round(pattern.timeSpanHours)}h` : `${Math.round(pattern.timeSpanHours / 24)}d`}`,
+        subtitle: `${pattern.perTxAmountZec.toFixed(4)} WCASH each in ${pattern.timeSpanHours < 24 ? `${Math.round(pattern.timeSpanHours)}h` : `${Math.round(pattern.timeSpanHours / 24)}d`}`,
       },
       ...(pattern.breakdown.addressAnalysis?.topAddresses || []).slice(0, 3).map((address) => ({
         id: `address:${address}`,
@@ -90,7 +90,7 @@ export function BatchPatternCard({ pattern }: { pattern: BatchPattern }) {
             target: `cluster:${pattern.clusterHash || pattern.txids[0]}`,
             type: 'BATCH_LINK',
             confidence: pattern.score,
-            label: `${pattern.totalAmountZec.toLocaleString()} ZEC`,
+            label: `${pattern.totalAmountZec.toLocaleString()} WCASH`,
           }] : []),
       ...((pattern.breakdown.addressAnalysis?.topAddresses || []).slice(0, 3).map((address, index) => ({
             id: `cluster-${address}`,
@@ -112,7 +112,7 @@ export function BatchPatternCard({ pattern }: { pattern: BatchPattern }) {
     pattern.txids.slice(0, 8).map((txid, index) => ({
       id: txid,
       title: index === 0 ? 'Burst Starts' : index === pattern.txids.length - 1 ? 'Burst Ends' : `Tx ${index + 1}`,
-      subtitle: `${pattern.perTxAmountZec.toFixed(4)} ZEC`,
+      subtitle: `${pattern.perTxAmountZec.toFixed(4)} WCASH`,
       timestamp: pattern.times[index],
       tone: 'deshield' as const,
     }))
@@ -158,14 +158,14 @@ export function BatchPatternCard({ pattern }: { pattern: BatchPattern }) {
           <span className="text-lg font-bold font-mono text-primary shrink-0">{pattern.batchCount}×</span>
           <div className="min-w-0">
             <span className="font-mono text-sm font-semibold text-primary">
-              {pattern.perTxAmountZec.toFixed(4)} ZEC
+              {pattern.perTxAmountZec.toFixed(4)} WCASH
             </span>
             <span className="text-xs text-muted ml-1.5">each</span>
           </div>
         </div>
         <div className="text-right shrink-0">
           <span className="font-mono text-sm font-semibold text-primary tabular-nums">
-            {pattern.totalAmountZec.toLocaleString()} ZEC
+            {pattern.totalAmountZec.toLocaleString()} WCASH
           </span>
           <span className="text-[10px] text-muted block">total</span>
         </div>
@@ -181,7 +181,7 @@ export function BatchPatternCard({ pattern }: { pattern: BatchPattern }) {
 
       <div className="mb-4 rounded-2xl border border-cipher-border bg-cipher-surface/20 p-4">
         <p className="text-base font-medium leading-relaxed text-primary text-balance">
-          A large shielded amount appears to have been unpacked into {pattern.batchCount} withdrawals of roughly {pattern.perTxAmountZec.toFixed(4)} ZEC.
+          A large shielded amount appears to have been unpacked into {pattern.batchCount} withdrawals of roughly {pattern.perTxAmountZec.toFixed(4)} WCASH.
         </p>
         <p className="mt-2 text-sm text-secondary">
           This is the classic “split the pattern into chunks” move. The model scores whether the chunk size, burst timing, and matching shield still make the sequence attributable.
@@ -193,7 +193,7 @@ export function BatchPatternCard({ pattern }: { pattern: BatchPattern }) {
           <div className="min-w-0">
             <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-cipher-green">Anchor Shield</p>
             <p className="mt-1 text-sm text-primary">
-              {pattern.matchingShield.amountZec.toLocaleString()} ZEC entered the pool before this burst.
+              {pattern.matchingShield.amountZec.toLocaleString()} WCASH entered the pool before this burst.
             </p>
             <p className="mt-1 text-xs text-secondary">
               That conservation match is one of the strongest reasons this pattern stays suspicious.

@@ -36,7 +36,7 @@ const columns: DataTableColumn<RecentBlock>[] = [
     align: 'right',
     skeletonWidth: 'w-20',
     cell: (b) => (
-      <span className="font-mono text-sm text-primary whitespace-nowrap">{b.minerReward.toFixed(4)} ZEC</span>
+      <span className="font-mono text-sm text-primary whitespace-nowrap">{b.minerReward.toFixed(4)} WCASH</span>
     ),
   },
   {

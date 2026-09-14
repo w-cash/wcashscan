@@ -5,28 +5,28 @@ export function generateMetadata(): Metadata {
   const network = getNetwork();
   if (network !== 'mainnet') {
     return {
-      title: 'Page Not Found | CipherScan',
+      title: 'Page Not Found | WcashExplorer',
       description: 'The NU7 vote tracker is only available on mainnet.',
       robots: { index: false, follow: false },
     };
   }
 
   return buildPageMetadata({
-    title: 'NU7 Coinholder Vote — Zcash Governance | CipherScan',
+    title: 'NU7 Coinholder Vote — Wcash Governance | WcashExplorer',
     description:
-      'Follow the Zcash NU7 coinholder vote: issuance smoothing, Sprout deprecation, 25-second blocks, and upgrade schedule. Live countdown, poll questions, and verified results on CipherScan.',
+      'Follow the Wcash NU7 coinholder vote: issuance smoothing, Sprout deprecation, 25-second blocks, and upgrade schedule. Live countdown, poll questions, and verified results on WcashExplorer.',
     keywords: [
-      'Zcash NU7',
-      'Zcash governance',
+      'Wcash NU7',
+      'Wcash governance',
       'NU7 vote',
       'coinholder vote',
-      'Zcash upgrade',
+      'Wcash upgrade',
       'NSM issuance',
       'Sprout deprecation',
       'ZIP 218',
     ],
     path: '/governance/nu7',
-    imageAlt: 'CipherScan NU7 coinholder vote tracker',
+    imageAlt: 'WcashExplorer NU7 coinholder vote tracker',
     networks: ['mainnet'],
   });
 }

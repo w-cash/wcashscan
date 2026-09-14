@@ -103,7 +103,7 @@ export function IronwoodBanner() {
       <span className="text-cipher-yellow font-medium">Ironwood is live</span>
       <span className="text-muted/60 mx-1.5">·</span>
       <span className="hidden sm:inline">
-        {state.ironwoodZec.toLocaleString(undefined, { maximumFractionDigits: 0 })} ZEC migrated
+        {state.ironwoodZec.toLocaleString(undefined, { maximumFractionDigits: 0 })} WCASH migrated
       </span>
       <span className="text-muted/60 mx-1.5 hidden sm:inline">·</span>
       {state.verifiedPct != null && (

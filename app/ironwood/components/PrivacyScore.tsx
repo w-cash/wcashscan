@@ -17,6 +17,7 @@ import {
   REFERENCE_DENOMS,
 } from './ComplianceSection';
 import { EmptyPanel, SegmentedControl } from './ui';
+import { getPublicUrl } from '@/lib/brand';
 
 const PRIVACY_RANGES: { id: PrivacyRange; label: string }[] = [
   { id: '24h', label: '24h' },
@@ -215,8 +216,8 @@ export function PrivacyScore({
   const hasFilteredData = filteredTxs.length > 0;
   const shareText =
     hasFilteredData && complianceStats
-      ? `ZIP-318 compliance: ${(complianceStats.green / complianceStats.total * 100).toFixed(1)}% fully compliant (${complianceStats.green}/${complianceStats.total} txs). ${headlineStats.txPct.toFixed(0)}% use standard denominations.\n\nhttps://cipherscan.app/ironwood`
-      : `Zcash migration privacy on CipherScan.\n\nhttps://cipherscan.app/ironwood`;
+      ? `ZIP-318 compliance: ${(complianceStats.green / complianceStats.total * 100).toFixed(1)}% fully compliant (${complianceStats.green}/${complianceStats.total} txs). ${headlineStats.txPct.toFixed(0)}% use standard denominations.\n\n${getPublicUrl('/ironwood')}`
+      : `Wcash migration privacy on WcashExplorer.\n\n${getPublicUrl('/ironwood')}`;
 
   return (
     <div
@@ -230,7 +231,7 @@ export function PrivacyScore({
         sourceHeight={tipHeight}
         isLive={activated}
         shareText={shareText}
-        fileName="cipherscan-privacy.png"
+        fileName="wcashexplorer-privacy.png"
       >
         <div className="mb-4">
           <p className="max-w-2xl text-xs leading-relaxed text-muted">

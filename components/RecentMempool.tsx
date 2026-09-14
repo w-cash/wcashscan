@@ -6,6 +6,7 @@ import { formatZecPrecise, formatBytesCompact } from '@/lib/format-numbers';
 import { getApiUrl } from '@/lib/api-config';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { HashLink, RedactedAmount, SkeletonTable, TxTypeBadge, resolveTxCategory } from '@/components/ui';
+import { CURRENCY } from '@/lib/config';
 
 interface MempoolTx {
   txid: string;
@@ -53,7 +54,7 @@ function classifyTxType(tx: any): 'shielded' | 'mixed' | 'transparent' {
 }
 
 /**
- * Amount CipherScan is allowed to show for a pending mempool row — same rule
+ * Amount WcashExplorer is allowed to show for a pending mempool row — same rule
  * as the confirmed shielded-activity table (see RecentShieldedTxs.tsx):
  * transparent value is always public, a shield/deshield's transparent-side
  * value balance is public, a fully-shielded tx's amount is not.
@@ -152,7 +153,7 @@ export const RecentMempool = memo(function RecentMempool({ footer }: { footer?: 
   }
 
   // Mempool txs have no block yet by definition — that's what "pending" means.
-  // Showing the total backlog size (vs. Zcash's block capacity) is a more
+  // Showing the total backlog size (vs. Wcash's block capacity) is a more
   // honest signal than a fabricated block number: a few KB clears in one
   // block, a multi-MB backlog will take several.
   const summary = stats && stats.total > 0
@@ -207,7 +208,7 @@ export const RecentMempool = memo(function RecentMempool({ footer }: { footer?: 
                 </td>
                 <td className="px-4 sm:px-5 h-12 border-b border-cipher-border text-right">
                   {knownAmount !== null ? (
-                    <span className="font-mono text-sm text-secondary whitespace-nowrap tabular-nums">{formatZecPrecise(knownAmount)} <span className="text-muted/50">ZEC</span></span>
+                    <span className="font-mono text-sm text-secondary whitespace-nowrap tabular-nums">{formatZecPrecise(knownAmount)} <span className="text-muted/50">{CURRENCY}</span></span>
                   ) : (
                     <RedactedAmount />
                   )}

@@ -8,12 +8,12 @@ export default function TurnstilePage() {
       <PageHeader
         eyebrow="TURNSTILE_TRACKER"
         title="Turnstile Tracker"
-        subtitle="Where does deshielded ZEC go? Track whether it stays on a transparent address, gets reshielded, moves to an exchange, or transfers elsewhere."
+        subtitle="Where does deshielded WCASH go? Track whether it stays on a transparent address, gets reshielded, moves to an exchange, or transfers elsewhere."
       />
 
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl border border-glass-6 bg-glass-3">
         <p className="text-xs text-secondary font-sans flex-1">
-          Turnstile tracking follows ZEC after it exits a shielded pool. High &quot;still held&quot; share
+          Turnstile tracking follows WCASH after it exits a shielded pool. High &quot;still held&quot; share
           suggests users aren&apos;t immediately selling or moving funds.
         </p>
         <div className="flex flex-wrap gap-2 shrink-0">
@@ -47,8 +47,8 @@ export default function TurnstilePage() {
           href="/"
           className="text-[10px] font-mono text-muted hover:text-primary transition-colors"
         >
-          <span className="text-cipher-cyan font-bold">CipherScan</span>
-          <span className="text-muted/60"> — Zcash Block Explorer</span>
+          <span className="text-cipher-cyan font-bold">WcashExplorer</span>
+          <span className="text-muted/60"> — Wcash Block Explorer</span>
         </Link>
       </div>
     </div>

@@ -506,9 +506,9 @@ export function UsageClockClient({
       </div>
 
       {/* Header */}
-      <h1 className="text-2xl sm:text-3xl font-bold text-primary">The Rhythm of Zcash</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-primary">The Rhythm of Wcash</h1>
       <p className="text-sm text-secondary mt-2 max-w-3xl leading-relaxed">
-        Zcash is built to hide <span className="text-primary font-semibold">where</span> you are. But the chain still has a pulse — every block is timestamped, so the network&apos;s daily rhythm is public even when its geography isn&apos;t. We read that rhythm against where the nodes actually run. The mismatch is the interesting part.
+        Wcash is built to hide <span className="text-primary font-semibold">where</span> you are. But the chain still has a pulse — every block is timestamped, so the network&apos;s daily rhythm is public even when its geography isn&apos;t. We read that rhythm against where the nodes actually run. The mismatch is the interesting part.
       </p>
 
       {/* Period selector + range */}

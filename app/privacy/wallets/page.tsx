@@ -8,7 +8,7 @@ export default function WalletsPage() {
         <div className="prose prose-invert max-w-none text-sm opacity-70">
           <h2>About This Analysis</h2>
           <p>
-            This page examines how Zcash wallet implementations differ in their on-chain behavior.
+            This page examines how Wcash wallet implementations differ in their on-chain behavior.
             Even within the shielded pool, wallets leave distinct fingerprints through fee strategies,
             expiry heights, nLockTime values, and action padding patterns. Understanding these signals
             helps users evaluate their own anonymity set size and choose wallets that maximize privacy.

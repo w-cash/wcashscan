@@ -23,10 +23,10 @@ export function AddressHeroCard({
       <Card>
         <CardBody>
           <div className="flex flex-col items-center text-center space-y-3 py-2">
-            {/* Balance with ZEC icon */}
+            {/* Balance with WCASH icon */}
             <div>
               <div className="flex items-center justify-center gap-3">
-                <img src="/tokens/zec.png" alt="ZEC" className="w-7 h-7 sm:w-10 sm:h-10 rounded-full" />
+                <img src="/tokens/zec.png" alt="WCASH" className="w-7 h-7 sm:w-10 sm:h-10 rounded-full" />
                 <span className="text-base sm:text-2xl font-bold font-mono text-primary">
                   {data.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })} {CURRENCY}
                 </span>
@@ -34,7 +34,7 @@ export function AddressHeroCard({
               {priceData ? (
                 <div className="text-sm text-muted font-mono mt-1">
                   ≈ ${(data.balance * priceData.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="ml-1.5 text-xs">(@ ${priceData.price.toFixed(2)}/ZEC)</span>
+                  <span className="ml-1.5 text-xs">(@ ${priceData.price.toFixed(2)}/WCASH)</span>
                 </div>
               ) : (
                 <div className="text-sm text-muted mt-1">Loading price...</div>

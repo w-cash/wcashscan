@@ -82,13 +82,13 @@ export function HalvingPanel({ halving }: { halving: HalvingInfo | null }) {
           <div className="flex justify-between items-center">
             <span className="text-[11px] text-muted font-mono">Current block subsidy</span>
             <span className="text-[11px] font-mono text-cipher-yellow font-bold">
-              {halving.currentSubsidy} ZEC
+              {halving.currentSubsidy} WCASH
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[11px] text-muted font-mono">Next block subsidy</span>
             <span className="text-[11px] font-mono text-cipher-yellow font-bold">
-              {halving.nextSubsidy != null ? `${halving.nextSubsidy} ZEC` : '—'}
+              {halving.nextSubsidy != null ? `${halving.nextSubsidy} WCASH` : '—'}
             </span>
           </div>
         </div>
@@ -102,11 +102,11 @@ function generateEmissionCurve(currentCirculating: number) {
   const genesisDate = new Date('2016-10-28');
   const maxSupply = 21_000_000;
 
-  // Zcash actual emission schedule (accounting for Blossom halving per-block reward):
-  // Era 1: blocks 0–1,046,399 (Oct 2016 – Nov 2020) — effectively 10 ZEC/block avg (slow start + pre-Blossom)
-  // Era 2: blocks 1,046,400–2,726,399 (Nov 2020 – ~Dec 2024) — 3.125 ZEC/block
-  // Era 3: blocks 2,726,400–4,406,399 (Dec 2024 – ~Nov 2028) — 1.5625 ZEC/block
-  // Era 4: blocks 4,406,400+ (~Nov 2028+) — 0.78125 ZEC/block
+  // Wcash actual emission schedule (accounting for Blossom halving per-block reward):
+  // Era 1: blocks 0–1,046,399 (Oct 2016 – Nov 2020) — effectively 10 WCASH/block avg (slow start + pre-Blossom)
+  // Era 2: blocks 1,046,400–2,726,399 (Nov 2020 – ~Dec 2024) — 3.125 WCASH/block
+  // Era 3: blocks 2,726,400–4,406,399 (Dec 2024 – ~Nov 2028) — 1.5625 WCASH/block
+  // Era 4: blocks 4,406,400+ (~Nov 2028+) — 0.78125 WCASH/block
   const eras = [
     { endBlock: 1_046_400, avgSubsidy: 10.0 },
     { endBlock: 2_726_400, avgSubsidy: 3.125 },
@@ -179,20 +179,20 @@ export function SupplyEmissionPanel({
           <div>
             <p className="text-[9px] text-muted font-mono uppercase mb-0.5">Circulating</p>
             <p className="text-sm font-bold font-mono text-cipher-yellow tabular-nums">
-              {(circulating / 1_000_000).toFixed(2)}M ZEC
+              {(circulating / 1_000_000).toFixed(2)}M WCASH
             </p>
             <p className="text-[9px] text-muted font-mono">{circulatingPct.toFixed(1)}%</p>
           </div>
           <div>
             <p className="text-[9px] text-muted font-mono uppercase mb-0.5">Remaining</p>
             <p className="text-sm font-bold font-mono text-secondary tabular-nums">
-              {(remaining / 1_000_000).toFixed(2)}M ZEC
+              {(remaining / 1_000_000).toFixed(2)}M WCASH
             </p>
           </div>
           <div>
             <p className="text-[9px] text-muted font-mono uppercase mb-0.5">Daily Emission</p>
             <p className="text-sm font-bold font-mono text-primary tabular-nums">
-              ~{dailyEmission != null ? `${Math.round(dailyEmission).toLocaleString()}` : '—'} ZEC
+              ~{dailyEmission != null ? `${Math.round(dailyEmission).toLocaleString()}` : '—'} WCASH
             </p>
           </div>
         </div>
@@ -232,7 +232,7 @@ export function SupplyEmissionPanel({
                 }}
                 itemStyle={{ color: colors.tooltipText }}
                 labelStyle={{ color: colors.tooltipText }}
-                formatter={(value) => [`${(Number(value) / 1_000_000).toFixed(2)}M ZEC`, 'Supply']}
+                formatter={(value) => [`${(Number(value) / 1_000_000).toFixed(2)}M WCASH`, 'Supply']}
               />
               <ReferenceLine y={maxSupply} stroke={colors.axis} strokeDasharray="3 3" strokeOpacity={0.5} />
               {nowPoint && (

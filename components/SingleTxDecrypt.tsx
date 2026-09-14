@@ -5,7 +5,7 @@ import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { isMainnet } from '@/lib/config';
+import { CURRENCY, isMainnet } from '@/lib/config';
 
 const VIEWING_KEY_PREFIX = isMainnet ? 'uview' : 'uviewtest';
 
@@ -282,7 +282,7 @@ export function SingleTxDecrypt({ prefillTxid }: { prefillTxid?: string | null }
                     <div className="mb-3 sm:mb-4">
                       <span className="text-xs sm:text-sm text-gray-400">Amount: </span>
                       <span className="text-lg sm:text-xl font-bold text-cipher-green-bright font-mono">
-                        +{amount.toString().replace(/\.?0+$/, '')} ZEC
+                        +{amount.toString().replace(/\.?0+$/, '')} {CURRENCY}
                       </span>
                     </div>
                   )}

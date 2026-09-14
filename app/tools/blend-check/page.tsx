@@ -227,7 +227,7 @@ export default function BlendCheckPage() {
                   autoFocus
                 />
                 <span className="absolute right-5 top-1/2 -translate-y-1/2 text-muted font-mono text-lg">
-                  ZEC
+                  WCASH
                 </span>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -301,7 +301,7 @@ export default function BlendCheckPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-primary">
-                      Try <span className="font-mono font-semibold text-cipher-cyan">{formatZec(bestNearby.amount)} ZEC</span> instead?
+                      Try <span className="font-mono font-semibold text-cipher-cyan">{formatZec(bestNearby.amount)} WCASH</span> instead?
                     </p>
                     <p className="text-xs text-muted mt-0.5">
                       {formatNumber(bestNearby.count)} others used this amount recently
@@ -331,9 +331,9 @@ export default function BlendCheckPage() {
                     </p>
                     <p className="text-xs text-muted mt-2">
                       {bestNearby ? (
-                        <>Try rounding to <button onClick={() => handleSuggestionClick(bestNearby.amount)} className="text-cipher-cyan font-mono hover:underline">{formatZec(bestNearby.amount)} ZEC</button> instead.</>
+                        <>Try rounding to <button onClick={() => handleSuggestionClick(bestNearby.amount)} className="text-cipher-cyan font-mono hover:underline">{formatZec(bestNearby.amount)} WCASH</button> instead.</>
                       ) : (
-                        <>Try a round number like <button onClick={() => handleSuggestionClick(1)} className="text-cipher-cyan font-mono hover:underline">1</button>, <button onClick={() => handleSuggestionClick(5)} className="text-cipher-cyan font-mono hover:underline">5</button>, or <button onClick={() => handleSuggestionClick(10)} className="text-cipher-cyan font-mono hover:underline">10 ZEC</button>.</>
+                        <>Try a round number like <button onClick={() => handleSuggestionClick(1)} className="text-cipher-cyan font-mono hover:underline">1</button>, <button onClick={() => handleSuggestionClick(5)} className="text-cipher-cyan font-mono hover:underline">5</button>, or <button onClick={() => handleSuggestionClick(10)} className="text-cipher-cyan font-mono hover:underline">10 WCASH</button>.</>
                       )}
                     </p>
                   </div>
@@ -398,7 +398,7 @@ export default function BlendCheckPage() {
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                       <span className="font-mono text-sm font-semibold text-primary">
-                                        {formatZec(piece.amount)} ZEC
+                                        {formatZec(piece.amount)} WCASH
                                       </span>
                                       {piece.isRemainder && (
                                         <Badge color="orange">leftover</Badge>
@@ -440,7 +440,7 @@ export default function BlendCheckPage() {
                             <button
                               onClick={() => {
                                 const text = plan.pieces
-                                  .map((p, i) => `${i + 1}. ${formatZec(p.amount)} ZEC${p.isRemainder ? ' (shield later)' : ''}`)
+                                  .map((p, i) => `${i + 1}. ${formatZec(p.amount)} WCASH${p.isRemainder ? ' (shield later)' : ''}`)
                                   .join('\n');
                                 navigator.clipboard.writeText(text);
                                 setCopied(true);
@@ -604,18 +604,18 @@ export default function BlendCheckPage() {
               {showWhy && (
                 <div className="mt-4 space-y-3 text-sm text-secondary leading-relaxed">
                   <p>
-                    When you shield ZEC, you move it from a public address into the private shielded pool. The <strong className="text-primary">amount</strong> you shield is visible on-chain, even though your future activity is hidden.
+                    When you shield WCASH, you move it from a public address into the private shielded pool. The <strong className="text-primary">amount</strong> you shield is visible on-chain, even though your future activity is hidden.
                   </p>
                   <p>
-                    If you shield an unusual amount like <span className="font-mono text-primary">7.31924 ZEC</span>, an observer can search the blockchain for that exact number. If someone later deshields <span className="font-mono text-primary">7.31924 ZEC</span>, it&apos;s a strong signal those two transactions are linked — breaking your privacy.
+                    If you shield an unusual amount like <span className="font-mono text-primary">7.31924 WCASH</span>, an observer can search the blockchain for that exact number. If someone later deshields <span className="font-mono text-primary">7.31924 WCASH</span>, it&apos;s a strong signal those two transactions are linked — breaking your privacy.
                   </p>
                   <p>
-                    By using <strong className="text-primary">common, round amounts</strong> (like 1, 5, or 10 ZEC), you become indistinguishable from thousands of other users who shielded the same amount.
+                    By using <strong className="text-primary">common, round amounts</strong> (like 1, 5, or 10 WCASH), you become indistinguishable from thousands of other users who shielded the same amount.
                   </p>
                   <div className="pt-3 border-t border-cipher-border space-y-2 text-xs text-muted font-mono">
                     <p className="flex gap-2">
                       <span className="text-cipher-cyan shrink-0">$</span>
-                      Use round numbers: 1, 2.5, 5, 10, 25, 50, 100 ZEC
+                      Use round numbers: 1, 2.5, 5, 10, 25, 50, 100 WCASH
                     </p>
                     <p className="flex gap-2">
                       <span className="text-cipher-cyan shrink-0">$</span>

@@ -33,8 +33,8 @@ export function parseHeightHashLines(input: string): { height: number; hash: str
 export function branchLabel(branch: string): string {
   const labels: Record<string, string> = {
     reference: 'Reference',
-    cipherscan: 'CipherScan',
-    ctaz: 'cTAZ',
+    cipherscan: 'WcashExplorer',
+    ctaz: 'cTWC',
     other: 'Other',
     unknown: 'Unknown',
   };
@@ -45,11 +45,11 @@ export function makeCommunityReport(data: ForkMonitorData): string {
   const cs = data.cipherscan;
   const ct = data.ctaz;
   const lines = [
-    `CipherScan fork monitor: ${data.status}`,
-    `CipherScan: h${cs.tip} ${cs.tip_hash || 'no-tip-hash'} peers=${cs.peers} finalized=${cs.finalized}`,
+    `WcashExplorer fork monitor: ${data.status}`,
+    `WcashExplorer: h${cs.tip} ${cs.tip_hash || 'no-tip-hash'} peers=${cs.peers} finalized=${cs.finalized}`,
   ];
   if (ct) {
-    lines.push(`cTAZ: h${ct.tip} ${ct.tip_hash || 'no-tip-hash'} peers=${ct.peers} finalized=${ct.finalized}`);
+    lines.push(`cTWC: h${ct.tip} ${ct.tip_hash || 'no-tip-hash'} peers=${ct.peers} finalized=${ct.finalized}`);
   }
   const matched = data.anchors.filter((a) => a.match === true).map((a) => `h${a.height}`).join(', ');
   const mismatched = data.anchors.filter((a) => a.match === false).map((a) => `h${a.height}`).join(', ');
@@ -63,7 +63,7 @@ export function statusMeta(data: ForkMonitorData) {
   if (data.status === 'aligned') {
     return {
       label: 'Chains aligned',
-      detail: 'Known anchor hashes match between CipherScan and cTAZ.',
+      detail: 'Known anchor hashes match between WcashExplorer and cTWC.',
       badge: 'green' as const,
       accent: 'border-l-cipher-cyan',
     };
@@ -79,8 +79,8 @@ export function statusMeta(data: ForkMonitorData) {
     };
   }
   return {
-    label: 'cTAZ unavailable',
-    detail: 'CipherScan anchors are live; cTAZ comparison is temporarily offline.',
+    label: 'cTWC unavailable',
+    detail: 'WcashExplorer anchors are live; cTWC comparison is temporarily offline.',
     badge: 'muted' as const,
     accent: 'border-l-cipher-border',
   };

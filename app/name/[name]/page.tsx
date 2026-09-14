@@ -21,7 +21,7 @@ const ZCASHNAMES_URL = 'https://www.zcashnames.com';
 
 const ZATS_PER_ZEC = 100_000_000;
 const formatZec = (zats: number): string =>
-  `${(zats / ZATS_PER_ZEC).toLocaleString(undefined, { maximumFractionDigits: 8 })} ZEC`;
+  `${(zats / ZATS_PER_ZEC).toLocaleString(undefined, { maximumFractionDigits: 8 })} WCASH`;
 
 const ACTION_COLOR: Record<EventAction, 'green' | 'cyan' | 'purple' | 'orange' | 'muted'> = {
   CLAIM: 'green',

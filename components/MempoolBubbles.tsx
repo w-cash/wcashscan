@@ -980,7 +980,7 @@ export const MempoolBubbles = forwardRef<MempoolBubblesHandle, MempoolBubblesPro
             style={{ opacity: cursorVisible ? 0.7 : 0.25 }}
           >
             <div className="text-[11px] text-white/50 tracking-widest uppercase mb-1">
-              CipherScan {typeof window !== 'undefined' && window.location.hostname.includes('testnet') ? 'Testnet' : 'Mainnet'}
+              WcashExplorer {typeof window !== 'undefined' && window.location.hostname.includes('testnet') ? 'Testnet' : 'Mainnet'}
             </div>
             {stats && (
               <div className="text-[10px] tracking-wider">

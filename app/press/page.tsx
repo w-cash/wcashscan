@@ -1,27 +1,30 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { buildPageMetadata } from '@/lib/seo';
+import { BRAND_NAME, SCANNER_REPOSITORY_URL } from '@/lib/brand';
 
 export const metadata = buildPageMetadata({
-  title: 'Press & Brand | CipherScan',
+  title: 'Press & Brand | WcashExplorer',
   description:
-    'Download CipherScan logos, brand colors, and media copy. Press resources for journalists and brand assets for partners.',
+    'Download WcashExplorer logos, brand colors, and media copy. Press resources for journalists and brand assets for partners.',
   path: '/press',
   networks: ['mainnet'],
 });
 
-const BOILERPLATE =
-  'CipherScan is a privacy-first Zcash blockchain explorer built by Atmosphere Labs. It makes shielded pool activity, supply verification, and network health visible without compromising user privacy — no viewing keys stored, no address tracking. Live at cipherscan.app.';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
-/** Core CipherScan brand colors — logo + wordmark */
+const BOILERPLATE =
+  `${BRAND_NAME} is a privacy-first Wcash blockchain explorer built by Atmosphere Labs. It makes shielded pool activity, supply verification, and network health visible without compromising user privacy — no viewing keys stored, no address tracking. Live at ${SITE_URL}.`;
+
+/** Core WcashExplorer brand colors — logo + wordmark */
 const COLORS = [
-  { name: 'Cipher Cyan', hex: '#00D4FF', role: 'Wordmark, links, primary accent' },
-  { name: 'Cipher Yellow', hex: '#F4B728', role: 'Logo square, ZEC emphasis' },
+  { name: 'Wcash Cyan', hex: '#00D4FF', role: 'Wordmark, links, primary accent' },
+  { name: 'Wcash Yellow', hex: '#F4B728', role: 'Logo square, WCASH emphasis' },
 ] as const;
 
 const DOWNLOADS = [
-  { label: 'Wordmark (SVG)', href: '/brand/cipherscan-wordmark.svg', note: 'Mark + CIPHERSCAN — transparent background' },
-  { label: 'Wordmark on dark (SVG)', href: '/brand/cipherscan-wordmark-dark-bg.svg', note: 'Mark + CIPHERSCAN on #08090F' },
+  { label: 'Wordmark (SVG)', href: '/brand/wcashexplorer-wordmark.svg', note: 'Mark + WCASHEXPLORER — transparent background' },
+  { label: 'Wordmark on dark (SVG)', href: '/brand/wcashexplorer-wordmark-dark-bg.svg', note: 'Mark + WCASHEXPLORER on #08090F' },
   { label: 'Logo mark only (PNG)', href: '/logo.png', note: 'Icon without text' },
   { label: 'App icon 512×512', href: '/icon-512.png', note: 'Square icon for app stores & social' },
   { label: 'App icon 192×192', href: '/icon-192.png', note: 'PWA / smaller contexts' },
@@ -32,8 +35,8 @@ const DOWNLOADS = [
 const CONTACTS = [
   {
     label: 'Website',
-    value: 'cipherscan.app',
-    href: 'https://cipherscan.app',
+    value: BRAND_NAME,
+    href: SITE_URL,
     external: true,
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -43,20 +46,9 @@ const CONTACTS = [
     ),
   },
   {
-    label: 'X / Twitter',
-    value: '@cipherscan_app',
-    href: 'https://twitter.com/cipherscan_app',
-    external: true,
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-        <path d="M9.2 7.1 13.1 2h-1.2l-3.3 4.4L6.4 2H2.5l4.1 5.9L2.5 14h1.2l3.5-4.7 2.2 4.7h3.9L9.2 7.1Zm-1.3 1.6-.4-.6-3.2-4.6h1.5l2.6 3.7.4.6 3.4 4.8H9.8l-2.9-4.1Z" fill="currentColor" />
-      </svg>
-    ),
-  },
-  {
     label: 'GitHub',
-    value: 'Kenbak/cipherscan',
-    href: 'https://github.com/Kenbak/cipherscan',
+    value: 'w-cash/wcashscan',
+    href: SCANNER_REPOSITORY_URL,
     external: true,
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -118,7 +110,7 @@ function WordmarkPreview({ variant }: { variant: 'dark' | 'light' }) {
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/logo.png" alt="" className="h-8 w-8 shrink-0 object-contain" width={32} height={32} />
-      <span className="text-lg font-bold font-mono tracking-wider text-cipher-cyan-bright">CIPHERSCAN</span>
+      <span className="text-lg font-bold font-mono tracking-wider text-cipher-cyan-bright">WCASHEXPLORER</span>
     </div>
   );
 }
@@ -134,7 +126,7 @@ function LogoPreview({ variant }: { variant: 'dark' | 'light' }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/logo.png"
-        alt={isDark ? 'CipherScan logo on dark background' : 'CipherScan logo on light background'}
+        alt={isDark ? 'WcashExplorer logo on dark background' : 'WcashExplorer logo on light background'}
         className="max-h-full max-w-full object-contain"
         width={72}
         height={72}
@@ -265,13 +257,13 @@ export default function PressPage() {
       </section>
 
       <section className="mb-10 rounded-2xl border border-cipher-border bg-cipher-surface p-5 sm:p-6">
-        <h2 className="text-sm font-bold text-primary mb-2">About CipherScan</h2>
+        <h2 className="text-sm font-bold text-primary mb-2">About WcashExplorer</h2>
         <p className="text-xs font-mono text-muted mb-3">Copy-paste for articles, listings, and partner pages.</p>
         <blockquote className="rounded-lg border border-cipher-border/25 bg-glass-3/30 px-4 py-3 text-sm leading-relaxed text-secondary">
           {BOILERPLATE}
         </blockquote>
         <p className="mt-3 text-[11px] text-muted">
-          Short tagline: <span className="text-secondary">Making Zcash accessible. For everyone.</span>
+          Short tagline: <span className="text-secondary">Making Wcash accessible. For everyone.</span>
         </p>
       </section>
 

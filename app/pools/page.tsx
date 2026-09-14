@@ -50,7 +50,7 @@ function TurnstileLinkCard() {
           Turnstile Tracker
         </p>
         <p className="mt-1 max-w-xl text-xs leading-relaxed text-secondary font-sans">
-          When ZEC leaves a shielded pool, where does it go — held transparent, reshielded, exchanged, or moved
+          When WCASH leaves a shielded pool, where does it go — held transparent, reshielded, exchanged, or moved
           elsewhere?
         </p>
       </div>
@@ -120,7 +120,7 @@ function RecentLargeFlows() {
               align: 'right',
               cell: (f) => (
                 <span className="font-mono text-xs tabular-nums text-primary">
-                  {(f.amountZec || 0).toFixed(2)} ZEC
+                  {(f.amountZec || 0).toFixed(2)} WCASH
                 </span>
               ),
             },
@@ -166,8 +166,8 @@ export default function PoolsPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <PageHeader
         eyebrow="POOL_ANALYTICS"
-        title="Zcash Shielded Pools"
-        subtitle="Track how ZEC moves between transparent and shielded pools. Where it goes, and whether it stays."
+        title="Wcash Shielded Pools"
+        subtitle="Track how WCASH moves between transparent and shielded pools. Where it goes, and whether it stays."
       />
 
       <PageSectionNav sections={SECTIONS} ariaLabel="Pool analytics sections" className="mb-10" />
@@ -191,11 +191,11 @@ export default function PoolsPage() {
       <section id="supply-definitions" className="scroll-mt-36 mb-14 text-sm text-secondary">
         <h2 className="mb-2 font-semibold text-primary">Supply definitions</h2>
         <p>
-          The map partitions the 21 million ZEC cap into public supply, shielded balances,
+          The map partitions the 21 million WCASH cap into public supply, shielded balances,
           and remaining issuance. Public supply groups transparent balances with other issued value;
           it is a visual grouping, not the transparent pool balance. Other issued is calculated from the same
           snapshot as chain supply minus transparent and shielded balances. It includes the deferred-development
-          lockbox, which contains already-issued ZEC, not unmined supply. Historical snapshots do not
+          lockbox, which contains already-issued WCASH, not unmined supply. Historical snapshots do not
           store a separate lockbox balance, so this remainder is not labelled entirely as lockbox.
           Unmined is the cap minus issued chain supply. Percentages use the 21M cap and may differ
           slightly from 100% after display rounding. The shielded-supply statistic instead uses issued supply.

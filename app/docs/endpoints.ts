@@ -284,7 +284,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     category: 'Transactions',
     method: 'POST',
     path: '/api/tx/broadcast',
-    description: 'Broadcast a signed raw transaction to the Zcash network.',
+    description: 'Broadcast a signed raw transaction to the Wcash network.',
     params: [
       { name: 'rawTx', type: 'string', description: 'Hex-encoded signed transaction', required: true }
     ],
@@ -369,7 +369,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     path: '/api/address/:address',
     description: 'Get balance, transaction count, and paginated transaction history for a transparent address.',
     params: [
-      { name: 'address', type: 'string', description: 'Zcash transparent address (t-address)', required: true },
+      { name: 'address', type: 'string', description: 'Wcash transparent address (t-address)', required: true },
       { name: 'page', type: 'number', description: 'Page number (default: 1)' },
       { name: 'limit', type: 'number', description: 'Transactions per page (1–100, default: 25)' }
     ],
@@ -393,7 +393,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
       ],
       pagination: { page: 1, totalPages: 2, total: 42, limit: 25 }
     },
-    note: 'Shielded addresses (z-addresses) cannot be queried due to privacy by design. Only transparent addresses (t-addresses) are supported. Balance is in zatoshis (1 ZEC = 100,000,000 zatoshis).'
+    note: 'Shielded addresses (z-addresses) cannot be queried due to privacy by design. Only transparent addresses (t-addresses) are supported. Balance is in zatoshis (1 WCASH = 100,000,000 zatoshis).'
   },
   {
     id: 'rich-list',
@@ -433,7 +433,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
         top100Pct: 62.5
       }
     },
-    note: 'Known addresses are labeled (exchanges, miners, custodians). Rich-list amounts are in ZEC. totalTransparent includes both address balances and direct addressless P2PK/bare-multisig UTXOs; direct outputs are included only in the denominator and are never assigned a synthetic rich-list address.'
+    note: 'Known addresses are labeled (exchanges, miners, custodians). Rich-list amounts are in WCASH. totalTransparent includes both address balances and direct addressless P2PK/bare-multisig UTXOs; direct outputs are included only in the denominator and are never assigned a synthetic rich-list address.'
   },
   {
     id: 'address-labels',
@@ -466,7 +466,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     category: 'Supply',
     method: 'GET',
     path: '/api/circulating-supply',
-    description: 'Get the current ZEC circulating supply. Returns plain text by default (for aggregator compatibility) or JSON with the format parameter.',
+    description: 'Get the current WCASH circulating supply. Returns plain text by default (for aggregator compatibility) or JSON with the format parameter.',
     params: [
       { name: 'format', type: 'string', description: 'Set to "json" for structured response. Omit for plain text number.' }
     ],
@@ -475,7 +475,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
       circulatingSupply: 16234567.89,
       circulatingSupplyZat: '1623456789000000',
       maxSupply: 21000000,
-      unit: 'ZEC'
+      unit: 'WCASH'
     },
     note: 'Without ?format=json, returns a plain text number (e.g., "16234567.89") for compatibility with CoinGecko, CoinMarketCap, and similar aggregators.'
   },
@@ -484,7 +484,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     category: 'Supply',
     method: 'GET',
     path: '/api/supply',
-    description: 'Get the current value locked in each Zcash pool (Transparent, Sprout, Sapling, Orchard).',
+    description: 'Get the current value locked in each Wcash pool (Transparent, Sprout, Sapling, Orchard).',
     params: [],
     example: `curl ${baseUrl}/api/supply`,
     response: [
@@ -493,7 +493,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
       { id: 'sapling', chainValue: 450000.75, chainValueZat: '45000075000000', monitored: true },
       { id: 'orchard', chainValue: 350000.30, chainValueZat: '35000030000000', monitored: true }
     ],
-    note: 'Compatible with the zcashexplorer.app value pools format. Values in ZEC and zatoshis.'
+    note: 'Compatible with the zcashexplorer.app value pools format. Values in WCASH and zatoshis.'
   },
   {
     id: 'supply-transparent-breakdown',
@@ -520,7 +520,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     category: 'Supply',
     method: 'GET',
     path: '/api/network/halving',
-    description: 'Get information about the next Zcash block reward halving, including countdown, current/next subsidy, and funding stream breakdown.',
+    description: 'Get information about the next Wcash block reward halving, including countdown, current/next subsidy, and funding stream breakdown.',
     params: [],
     example: `curl ${baseUrl}/api/network/halving`,
     response: {
@@ -707,7 +707,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     category: 'Network',
     method: 'GET',
     path: '/api/network/peers',
-    description: 'Get privacy-preserving aggregate information about peers currently connected to CipherScan.',
+    description: 'Get privacy-preserving aggregate information about peers currently connected to WcashExplorer.',
     params: [],
     example: `curl ${baseUrl}/api/network/peers`,
     response: {
@@ -728,7 +728,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     category: 'Network',
     method: 'GET',
     path: '/api/network/nodes',
-    description: 'Get coarse, aggregated geographic distribution of observed Zcash nodes. Individual IPs, ISPs, cities, and precise coordinates are never returned.',
+    description: 'Get coarse, aggregated geographic distribution of observed Wcash nodes. Individual IPs, ISPs, cities, and precise coordinates are never returned.',
     params: [],
     example: `curl ${baseUrl}/api/network/nodes`,
     response: {
@@ -791,7 +791,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     response: {
       success: true,
       fees: { low: 0.00001, standard: 0.0001, high: 0.001 },
-      unit: 'ZEC',
+      unit: 'WCASH',
       zip317: { marginalFee: 5000, graceActions: 2, p2pkhInputSize: 560, p2pkhOutputSize: 34 },
       note: 'ZIP-317 conventional fees. Most wallets use the standard fee.'
     }
@@ -821,7 +821,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     category: 'Network',
     method: 'GET',
     path: '/api/price',
-    description: 'Get the current ZEC/USD price and 24-hour change (sourced from CoinGecko).',
+    description: 'Get the current WCASH/USD price and 24-hour change (sourced from CoinGecko).',
     params: [],
     example: `curl ${baseUrl}/api/price`,
     response: {
@@ -835,7 +835,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     category: 'Network',
     method: 'GET',
     path: '/api/price/at',
-    description: 'Get the historical ZEC/USD price for a specific date. Falls back to the closest earlier date if exact date is unavailable.',
+    description: 'Get the historical WCASH/USD price for a specific date. Falls back to the closest earlier date if exact date is unavailable.',
     params: [
       { name: 'date', type: 'string', description: 'Date in YYYY-MM-DD format', required: true }
     ],
@@ -939,7 +939,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
             score: 0.8,
             max: 15,
             percent: 5.2,
-            detail: 'Deshielded ZEC reshielded (90d)',
+            detail: 'Deshielded WCASH reshielded (90d)',
           },
         },
         avgShieldedPerDay: 1387,
@@ -961,7 +961,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
       lastBlockScanned: 3425936,
     },
     note:
-      'Privacy Score v2 (0–100): Usage 33 (30d shielded tx share, non-coinbase) + Quality 33 (30d fully-shielded / shielded) + Depth 20 (supply in pools) + Hygiene 14 (90d turnstile reshield rate). Updated hourly. metrics.privacyScore uses the latest daily trend row. scoreBreakdown may be null until the job has run with v2. Pool sizes and trend poolSize are in ZEC. adoptionTrend compares shielded tx volume in the last 7d vs the prior 7d.',
+      'Privacy Score v2 (0–100): Usage 33 (30d shielded tx share, non-coinbase) + Quality 33 (30d fully-shielded / shielded) + Depth 20 (supply in pools) + Hygiene 14 (90d turnstile reshield rate). Updated hourly. metrics.privacyScore uses the latest daily trend row. scoreBreakdown may be null until the job has run with v2. Pool sizes and trend poolSize are in WCASH. adoptionTrend compares shielded tx volume in the last 7d vs the prior 7d.',
   },
   {
     id: 'anonymity-set',
@@ -969,7 +969,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     method: 'GET',
     path: '/api/analytics/anonymity-set',
     description:
-      'Cumulative shield and deshield transaction counts at each ZEC amount threshold — how large the anonymity crowd is at or above each size.',
+      'Cumulative shield and deshield transaction counts at each WCASH amount threshold — how large the anonymity crowd is at or above each size.',
     params: [
       {
         name: 'period',
@@ -1024,7 +1024,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
       ],
       updatedAt: '2026-07-26T15:00:00.000Z',
     },
-    note: 'Cached for 1 hour. Bucket labels are in ZEC. Volume fields are in zatoshis.',
+    note: 'Cached for 1 hour. Bucket labels are in WCASH. Volume fields are in zatoshis.',
   },
   {
     id: 'shielded-count',
@@ -1076,9 +1076,9 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     category: 'Privacy',
     method: 'GET',
     path: '/api/blend-check',
-    description: 'Check how common a ZEC amount is in shielded transactions. Higher blend scores mean better privacy — your transaction blends in with more others.',
+    description: 'Check how common a WCASH amount is in shielded transactions. Higher blend scores mean better privacy — your transaction blends in with more others.',
     params: [
-      { name: 'amount', type: 'number', description: 'ZEC amount to check (e.g., 1.0)', required: true }
+      { name: 'amount', type: 'number', description: 'WCASH amount to check (e.g., 1.0)', required: true }
     ],
     example: `curl '${baseUrl}/api/blend-check?amount=1.0'`,
     response: {
@@ -1106,7 +1106,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     path: '/api/blend-check/split',
     description: 'Get recommendations for splitting an amount into common denominations to improve privacy.',
     params: [
-      { name: 'amount', type: 'number', description: 'ZEC amount to split (e.g., 3.7)', required: true }
+      { name: 'amount', type: 'number', description: 'WCASH amount to split (e.g., 3.7)', required: true }
     ],
     example: `curl '${baseUrl}/api/blend-check/split?amount=3.7'`,
     response: {
@@ -1133,7 +1133,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     params: [
       { name: 'txid', type: 'string', description: 'Transaction ID of a shielding/deshielding tx', required: true },
       { name: 'limit', type: 'number', description: 'Max linked transactions to return (1–20, default: 5)' },
-      { name: 'tolerance', type: 'number', description: 'Amount tolerance in ZEC (default: 0.001)' }
+      { name: 'tolerance', type: 'number', description: 'Amount tolerance in WCASH (default: 0.001)' }
     ],
     example: `curl '${baseUrl}/api/tx/abc123.../linkability?limit=5'`,
     response: {
@@ -1184,7 +1184,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
           sourceChain: 'ethereum',
           sourceToken: 'ETH',
           sourceAmount: '0.5',
-          destToken: 'ZEC',
+          destToken: 'WCASH',
           destAmount: '45.2',
           zecAmount: '45.20000000',
           timestamp: 1699123456
@@ -1222,7 +1222,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
     params: [
       { name: 'page', type: 'number', description: 'Page number (default: 1)' },
       { name: 'limit', type: 'number', description: 'Results per page (default: 20)' },
-      { name: 'direction', type: 'string', description: '"entry" (into ZEC) or "exit" (out of ZEC)' },
+      { name: 'direction', type: 'string', description: '"entry" (into WCASH) or "exit" (out of WCASH)' },
       { name: 'chain', type: 'string', description: 'Filter by chain (e.g., "ethereum", "bitcoin")' }
     ],
     example: `curl '${baseUrl}/api/crosschain/history?direction=entry&chain=ethereum&limit=10'`,
@@ -1237,7 +1237,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
           sourceChain: 'ethereum',
           sourceToken: 'ETH',
           sourceAmount: '0.5',
-          destToken: 'ZEC',
+          destToken: 'WCASH',
           destAmount: '45.2',
           timestamp: 1699123456,
           zecAddress: 't1abc...'
@@ -1247,14 +1247,14 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
   },
 
   // ============================================================================
-  // NAMES (ZNS — Zcash Name Service)
+  // NAMES (ZNS — Wcash Name Service)
   // ============================================================================
   {
     id: 'name-resolve',
     category: 'Names (ZNS)',
     method: 'GET',
     path: '/api/name/:name',
-    description: 'Resolve a ZNS (Zcash Name Service) name to its registered address, along with marketplace listing if any.',
+    description: 'Resolve a ZNS (Wcash Name Service) name to its registered address, along with marketplace listing if any.',
     params: [
       { name: 'name', type: 'string', description: 'ZNS name to resolve (e.g., "satoshi")', required: true }
     ],
@@ -1274,7 +1274,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
         signature: 'eaBfFGlJ...'
       }
     },
-    note: 'This resolver is hosted on the CipherScan frontend origin, not the Express blockchain API. Returns 404 if the name is not registered. Listing is null if the name is not for sale. Price is in zatoshis (1 ZEC = 100,000,000 zatoshis).'
+    note: 'This resolver is hosted on the WcashExplorer frontend origin, not the Express blockchain API. Returns 404 if the name is not registered. Listing is null if the name is not for sale. Price is in zatoshis (1 WCASH = 100,000,000 zatoshis).'
   },
   {
     id: 'name-events',
@@ -1293,7 +1293,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
       ],
       total: 2
     },
-    note: 'This resolver is hosted on the CipherScan frontend origin, not the Express blockchain API. Actions: CLAIM, LIST, DELIST, UPDATE, BUY.'
+    note: 'This resolver is hosted on the WcashExplorer frontend origin, not the Express blockchain API. Actions: CLAIM, LIST, DELIST, UPDATE, BUY.'
   },
 
   // ============================================================================
@@ -1317,7 +1317,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
       total_supply_zec: 15312500.0,
       shielded_percentage: 30.56
     },
-    note: 'Supply values in ZEC (not zatoshis). Deltas represent net flow into the pool over the period (positive = more ZEC shielded, negative = more deshielded).'
+    note: 'Supply values in WCASH (not zatoshis). Deltas represent net flow into the pool over the period (positive = more WCASH shielded, negative = more deshielded).'
   },
   {
     id: 'pools-flows',
@@ -1340,14 +1340,14 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
         { date: '2026-06-05T15:00:00.000Z', shield: 201.8, deshield: 1250.4, shieldTx: 18, deshieldTx: 3, net: -1048.6 }
       ]
     },
-    note: 'Values in ZEC. Net = shield - deshield. Hourly mode returns ISO timestamps; daily mode returns date strings (YYYY-MM-DD). Hourly cached 2min, daily cached 5min.'
+    note: 'Values in WCASH. Net = shield - deshield. Hourly mode returns ISO timestamps; daily mode returns date strings (YYYY-MM-DD). Hourly cached 2min, daily cached 5min.'
   },
   {
     id: 'pools-turnstile',
     category: 'Pool Analytics',
     method: 'GET',
     path: '/api/pools/turnstile',
-    description: 'Turnstile analysis: tracks where deshielded ZEC goes after exiting a shielded pool (still held, reshielded, transferred, sent to exchange, sent to bridge).',
+    description: 'Turnstile analysis: tracks where deshielded WCASH goes after exiting a shielded pool (still held, reshielded, transferred, sent to exchange, sent to bridge).',
     params: [
       { name: 'since', type: 'string', description: 'Start date in YYYY-MM-DD format (default: 2020-01-01)', required: false }
     ],
@@ -1365,7 +1365,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
         { date: '2026-06-01', pool: 'orchard', deshielded_zat: 450000000000, held_zat: 120000000000, reshielded_zat: 50000000000, exchange_zat: 80000000000, bridge_zat: 30000000000, transferred_zat: 170000000000, tx_count: 45 }
       ]
     },
-    note: 'All amounts in zatoshis (1 ZEC = 100,000,000 zat). Categories are mutually exclusive. "Still held" means the deshielded output has not been spent yet. Updated daily at 04:00 UTC.'
+    note: 'All amounts in zatoshis (1 WCASH = 100,000,000 zat). Categories are mutually exclusive. "Still held" means the deshielded output has not been spent yet. Updated daily at 04:00 UTC.'
   },
   // ============================================================================
   // TRANSPARENT ADDRESS ANALYSIS (Quantum Exposure)
@@ -1406,7 +1406,7 @@ export const getEndpoints = (baseUrl: string): ApiEndpoint[] => [
         directAddressless: 'reported_by_summary'
       }
     },
-    note: 'Reusable balances are exposed either because that address spent ("spent") or because its public key was disclosed by a direct P2PK/bare-multisig script ("public_key_disclosed"). Synthetic identifiers never receive the direct output value. Balances are in zatoshis (1 ZEC = 100,000,000 zat). For bulk pulls, use cursor pagination with sort=address for O(1) per page regardless of depth. Cached 5min fresh / 30min stale.'
+    note: 'Reusable balances are exposed either because that address spent ("spent") or because its public key was disclosed by a direct P2PK/bare-multisig script ("public_key_disclosed"). Synthetic identifiers never receive the direct output value. Balances are in zatoshis (1 WCASH = 100,000,000 zat). For bulk pulls, use cursor pagination with sort=address for O(1) per page regardless of depth. Cached 5min fresh / 30min stale.'
   },
   {
     id: 'transparent-exposed-summary',

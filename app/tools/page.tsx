@@ -48,7 +48,7 @@ const tools = [
   {
     href: '/tools/broadcast',
     title: 'Broadcast Transaction',
-    desc: 'Submit a pre-signed raw transaction to the Zcash network via a live Zebra node.',
+    desc: 'Submit a pre-signed raw transaction to the Wcash network via a live Zebra node.',
     icon: Icons.Bolt,
     badge: 'API',
   },
@@ -61,8 +61,8 @@ const tools = [
   },
   {
     href: '/tools/unit-converter',
-    title: 'ZEC / Zatoshi Unit Converter',
-    desc: 'Convert between ZEC and zatoshis (1 ZEC = 100,000,000 zatoshis). Useful for devs and raw amounts.',
+    title: 'WCASH / Zatoshi Unit Converter',
+    desc: 'Convert between WCASH and zatoshis (1 WCASH = 100,000,000 zatoshis). Useful for devs and raw amounts.',
     icon: Icons.Calculator,
     badge: 'Client-side',
   },

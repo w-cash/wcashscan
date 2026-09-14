@@ -156,7 +156,7 @@ export function InflowFlow({
     <div
       className="mb-3 overflow-hidden rounded-xl border border-cipher-border/25 bg-glass-3/20"
       role="img"
-      aria-label="Sources of Ironwood ZEC inflows converging into the verified Ironwood pool"
+      aria-label="Sources of Ironwood WCASH inflows converging into the verified Ironwood pool"
     >
       <div className="relative flex min-h-0" style={{ height: vbH }}>
         <div
@@ -191,7 +191,7 @@ export function InflowFlow({
             aria-hidden="true"
           >
             <span className="-rotate-12 scale-[0.75] select-none whitespace-nowrap text-[1.5rem] font-bold font-mono tracking-[0.12em] text-black/[0.04] dark:text-white/[0.045] sm:scale-100 sm:text-5xl sm:tracking-[0.18em]">
-              CIPHERSCAN
+              WCASHEXPLORER
             </span>
           </div>
 

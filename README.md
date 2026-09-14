@@ -1,313 +1,91 @@
-<p align="center">
-  <img src="public/logo.png" alt="CipherScan Logo" width="120" />
-</p>
+# WcashExplorer
 
-<h1 align="center">CipherScan</h1>
+WcashExplorer is the Wcash adaptation of the [wcashscan](https://github.com/w-cash/wcashscan) blockchain explorer. It keeps the upstream Next.js/React interface and scanner logic while making the network, currency, API and compact-block connection configurable for Wcash.
 
-<p align="center">
-  <strong>⚡ The Privacy-First Zcash Blockchain Explorer</strong>
-</p>
+The old `wcashexplorer.com` implementation is not used.
 
-<p align="center">
-  <a href="https://cipherscan.app">Mainnet</a> •
-  <a href="https://testnet.cipherscan.app">Testnet</a> •
-  <a href="https://cipherscan.app/docs">API Docs</a> •
-  <a href="https://cipherscan.app/learn">Learn Zcash</a>
-</p>
+## What is included
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16" />
-  <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Rust-WASM-orange?logo=rust" alt="Rust WASM" />
-  <img src="https://img.shields.io/badge/License-AGPL%20v3%20+%20Commons%20Clause-blue" alt="License AGPL v3 + Commons Clause" />
-</p>
+- Explorer pages for blocks, transactions, addresses, mempool, mining, pools, privacy and network activity.
+- Client-side tools and WASM decoding inherited from wcashscan.
+- Express/WebSocket API integration with PostgreSQL and Redis support.
+- Compact-block/lightwalletd scanning with configurable endpoints.
+- Explicit testnet and mainnet configuration. Mainnet falls back to testnet data until a Wcash mainnet API is available.
+- Read-only local Wcash regtest and scanner verification scripts.
 
----
+The repository contains the application and API integration. A production data plane still needs a Wcash-compatible node, lightwalletd/indexer service, PostgreSQL database and Redis instance.
 
-## 📖 Table of Contents
+## Run the explorer UI
 
-- [About](#-about)
-- [Features](#-features)
-- [Live Demo](#-live-demo)
-- [Quick Start](#-quick-start)
-- [Tech Stack](#️-tech-stack)
-- [Public Infrastructure](#-public-infrastructure)
-- [API Documentation](#-api-documentation)
-- [Configuration](#️-configuration)
-- [Contributing](#-contributing)
-- [Support the Project](#-support-the-project)
-- [License](#-license)
+Use Node.js 22.14.x (see `.node-version`):
 
----
-
-## 🎯 About
-
-CipherScan is a blockchain explorer for Zcash that makes privacy technology accessible to everyone. No jargon, no confusion — just clear, simple explanations of what's happening on-chain.
-
-**Mission:** Make the Zcash blockchain accessible to everyone, not just developers.
-
----
-
-## ✨ Features
-
-### 🔍 Core Explorer
-| Feature | Description |
-|---------|-------------|
-| **Search** | Find addresses, transactions, and blocks instantly |
-| **Balances** | View transaction history and balances |
-| **Block Explorer** | Navigate blocks with full transaction details |
-| **Mempool Viewer** | Real-time pending transactions |
-| **Live Updates** | WebSocket for real-time block notifications |
-| **CSV/JSON Export** | Export address, block, and transaction data from the UI |
-| **Fork Watch** | Chain reorganizations and orphaned block comparison |
-
-### 🛡️ Privacy Tools
-| Feature | Description |
-|---------|-------------|
-| **Privacy Dashboard** | Real-time shielded adoption metrics |
-| **Pool Analytics** | Per-pool supply, shield/deshield flows, and deltas |
-| **Turnstile Tracker** | Where deshielded ZEC goes (held, exchange, bridge) |
-| **Decrypt Memos** | Client-side Orchard memo decryption (WASM) |
-| **Privacy Risks** | Round-trip transaction linkability detection |
-| **100% Private** | Viewing keys never leave your browser |
-
-### 🔗 Cross-Chain
-| Feature | Description |
-|---------|-------------|
-| **ZEC Flows** | Real-time cross-chain swaps via NEAR Intents |
-| **Inflows/Outflows** | Track ZEC moving to/from BTC, ETH, SOL + 15 chains |
-
-### 📚 Education & UX
-| Feature | Description |
-|---------|-------------|
-| **Learn Zcash** | Comprehensive guide to addresses, viewing keys, wallets |
-| **Address Labels** | Tag addresses with custom labels (localStorage) |
-| **Light/Dark Mode** | Theme toggle with system preference support |
-| **Mobile Responsive** | Full mobile support |
-
-### 🔧 Developer Tools
-| Feature | Description |
-|---------|-------------|
-| **API Documentation** | 43 endpoints — interactive REST docs at [`/docs`](https://cipherscan.app/docs) |
-| **Public Infrastructure** | Free Lightwalletd gRPC + REST API |
-| **Deployment Guide** | Operational docs in [`DEPLOYMENT.md`](DEPLOYMENT.md) |
-
----
-
-## 🌐 Live Demo
-
-| Network | URL |
-|---------|-----|
-| **Mainnet** | [cipherscan.app](https://cipherscan.app) |
-| **Testnet** | [testnet.cipherscan.app](https://testnet.cipherscan.app) |
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js 22.14.x (see `.node-version`)
-- npm or yarn
-- PostgreSQL (optional, for full indexer)
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/Kenbak/cipherscan.git
-cd cipherscan
-
-# Install dependencies
+```sh
 npm ci
-
-# Run development server
+NEXT_PUBLIC_NETWORK=testnet \
+NEXT_PUBLIC_TESTNET_API_URL=http://localhost:3001 \
 npm run dev
-
-# Open http://localhost:3000
 ```
 
-### Production Build
+Open [http://localhost:3000](http://localhost:3000).
 
-```bash
+For a production build:
+
+```sh
 npm run build
 npm start
 ```
 
-### Verify Before Push
+## Network configuration
 
-```bash
-# Fast lint, design-token, and TypeScript checks
-make verify-fast
+The browser-facing API origin is selected with environment variables:
 
-# The full local contract used by CI (all subprojects/toolchains)
-make verify-full
-
-# Optional responsive/light-dark browser audit
-npx playwright install chromium  # once per machine
-npm run visual:audit             # run while the app is serving on port 3000
+```env
+NEXT_PUBLIC_NETWORK=testnet
+NEXT_PUBLIC_TESTNET_API_URL=http://localhost:3001
+# Set this only when the Wcash mainnet API is live.
+NEXT_PUBLIC_MAINNET_API_URL=https://replace-with-wcash-mainnet-api.example
 ```
 
----
+When `NEXT_PUBLIC_MAINNET_API_URL` is unset, mainnet mode intentionally uses the configured testnet API and displays a preview notice. Bringing up mainnet later only requires replacing that URL and rebuilding.
 
-## 🏗️ Tech Stack
+Do not place RPC credentials, private keys, API tokens or other secrets in browser-exposed environment variables.
 
-| Layer | Technology |
-|-------|------------|
-| **Frontend** | Next.js 16, React 19, TypeScript |
-| **Styling** | Tailwind CSS |
-| **Database** | PostgreSQL |
-| **API Server** | Express.js + WebSocket |
-| **Cryptography** | Rust + WebAssembly |
-| **Zcash Node** | Zebra |
+## Verification
 
----
+```sh
+# Fast source checks
+npm run lint
+npx tsc --noEmit
 
-## 🔌 Public Infrastructure
+# Production build
+npm run build
 
-CipherScan provides **free public infrastructure** for Zcash developers:
+# Local route contract
+npm run verify:local
 
-### Mainnet
+# Read-only Wcash wolf regtest RPC check (default RPC port: 48232)
+npm run verify:regtest
 
-| Service | Endpoint |
-|---------|----------|
-| **Lightwalletd gRPC** | `lightwalletd.mainnet.cipherscan.app:443` |
-| **REST API** | `https://api.mainnet.cipherscan.app/api/*` |
-
-### Testnet
-
-| Service | Endpoint |
-|---------|----------|
-| **Lightwalletd gRPC** | `lightwalletd.testnet.cipherscan.app:443` |
-| **REST API** | `https://api.testnet.cipherscan.app/api/*` |
-
----
-
-## 📖 API Documentation
-
-Full interactive documentation available at [cipherscan.app/docs](https://cipherscan.app/docs)
-
-### Quick Examples
-
-```javascript
-// Fetch block data
-const block = await fetch('https://api.mainnet.cipherscan.app/api/block/2500000');
-const data = await block.json();
-
-// Fetch privacy stats
-const stats = await fetch('https://api.mainnet.cipherscan.app/api/privacy-stats');
-const privacy = await stats.json();
+# Exercise the wcashscan compact-block scanner against Wcash lightwalletd
+# (default gRPC port: 48234)
+npm run verify:regtest:scanner
 ```
 
-```python
-import requests
+The local regtest checks expect Wcash `wolf`/Zebrad-compatible services at:
 
-# Fetch mempool
-response = requests.get('https://api.mainnet.cipherscan.app/api/mempool')
-print(f"Pending transactions: {response.json()['count']}")
-```
+- RPC: `http://127.0.0.1:48232`
+- lightwalletd-compatible gRPC: `127.0.0.1:48234`
 
-**Rate limits:** Deployment-specific. Successful responses expose standard
-rate-limit headers; clients should honor those headers and `Retry-After` on
-HTTP 429 responses.
+Override them with `WCASH_REGTEST_RPC_URL` and `LIGHTWALLETD_ADDRESS` when needed.
 
----
+## API service
 
-## ⚙️ Configuration
+The API service lives in [`server/api`](server/api). Start it only after configuring its database, Redis, Wcash node and indexer dependencies. The frontend must point to that service with `NEXT_PUBLIC_TESTNET_API_URL`; it should not connect to node RPC directly from the browser.
 
-The frontend works out of the box with CipherScan's public API. Running
-against a custom node requires the Express API and indexer; configure those
-services using [DEPLOYMENT.md](DEPLOYMENT.md) rather than placing node RPC
-credentials in the browser-facing frontend environment.
+## Project status
 
----
+See [`WCASHEXPLORER-STATUS.md`](WCASHEXPLORER-STATUS.md) for the current architecture boundary, tested local-regtest behavior and remaining Wcash indexer work. [`CODEX-CONTEXT.md`](CODEX-CONTEXT.md) contains the broader project handoff, source locations and operational notes.
 
-## 📋 Roadmap
+## License
 
-See [GitHub Issues](https://github.com/Kenbak/cipherscan/issues) for upcoming features and improvements.
-
-**In progress:** Sapling memo decryption, Tor hidden service (.onion), batch transaction scanning.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Here's how you can help:
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
-
-### Development Guidelines
-
-- Follow the existing code style
-- Write meaningful commit messages
-- Add tests for new features when applicable
-- Update documentation as needed
-
----
-
-## ☕ Support the Project
-
-CipherScan is free, source-available, and community-driven. If you find it useful, consider supporting development:
-
-### Zcash Donation Address (Shielded)
-
-```
-u1fh3kwyl9hq9q907rx9j8mdy2r7gz4xh0y4yt63dxykk2856gr0238vxsegemyfu8s5a77ycq72tcnzkxa75ykjtcn6wp2w9rtuu3ssdzpe2fyghl8wlk3vh6f67304xe4lrxtvywtudy5t434zc07u6mh27ekufx7ssr55l8875z7f4k76c3tk23s3jzf8rxdlkequlta8lwsv09gxm
-```
-
-> 🛡️ This is a **Unified Address** — your donation is private and encrypted.
-
-Your support helps us:
-- Keep the infrastructure running 24/7
-- Add new features and improvements
-- Maintain free public APIs for developers
-
----
-
-## 🔐 Privacy Principles
-
-CipherScan is built with **privacy-first** principles:
-
-| Principle | Implementation |
-|-----------|----------------|
-| **No Tracking** | No Google Analytics or third-party trackers |
-| **No IP Logging** | Aligned with Zcash privacy values |
-| **No Cookies** | No unnecessary data collection |
-| **Client-Side Decryption** | Viewing keys never leave your browser |
-| **Source Available** | Verify our privacy claims yourself |
-
----
-
-## 📄 License
-
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)** with the **Commons Clause** restriction — see the [LICENSE](LICENSE) file for details.
-
-**What this means:**
-- ✅ You can view, fork, and modify the code
-- ✅ You must share your modifications under the same license
-- ❌ You cannot sell this software or offer it as a paid service
-
----
-
-## 🙏 Acknowledgments
-
-- [Zcash Foundation](https://zfnd.org/) — Zebra node
-- [Electric Coin Company](https://electriccoin.co/) — librustzcash
-- [NEAR Protocol](https://near.org/) — Cross-chain intents
-- [Zingo Labs](https://github.com/zingolabs) — zingolib inspiration
-
----
-
-<p align="center">
-  <strong>Built with ⚡ for the Zcash community</strong>
-</p>
-
-<p align="center">
-  <a href="https://github.com/Kenbak/cipherscan">GitHub</a> •
-  <a href="https://discord.gg/zcash">Discord</a> •
-  <a href="https://forum.zcashcommunity.com/">Forum</a>
-</p>
+See [`LICENSE`](LICENSE).

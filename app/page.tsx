@@ -10,7 +10,8 @@ import { CrosslinkChainGraph } from '@/components/CrosslinkChainGraph.lazy';
 import { StakingDayBanner } from '@/components/StakingDayBanner';
 import { PulseWidget } from '@/components/PulseWidget';
 import { getApiUrl } from '@/lib/api-config';
-import { isCrosslink, isTestnet } from '@/lib/config';
+import { CURRENCY, isCrosslink, isTestnet } from '@/lib/config';
+import { BRAND_NAME } from '@/lib/brand';
 import { fetchWithDeadline } from '@/lib/server-fetch';
 import { retainLastGoodOrBuildFallback } from '@/lib/isr-fallback';
 
@@ -107,25 +108,25 @@ export default async function Home() {
         {/* Tagline - SEO friendly */}
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-primary mb-3 sm:mb-4 animate-fade-in inline-flex items-center justify-center gap-3 tracking-tight text-balance">
           <Image
-            src="/zec-logo.png"
-            alt="Zcash"
+            src="/apple-touch-icon.png"
+            alt="Wcash"
             width={32}
             height={32}
             priority
             className="w-7 h-7 sm:w-8 sm:h-8"
           />
           {crosslinkMode
-            ? 'CipherScan: Zcash Crosslink Explorer'
+            ? `${BRAND_NAME}: Wcash Crosslink Explorer`
             : isTestnet
-              ? 'CipherScan: Zcash Testnet Explorer (TAZ)'
-              : 'CipherScan: Zcash Block Explorer'}
+              ? `${BRAND_NAME}: Wcash Testnet Explorer (${CURRENCY})`
+              : `${BRAND_NAME}: Wcash Block Explorer`}
         </h1>
         <p className="text-sm sm:text-base text-muted/60 mb-7 sm:mb-8 max-w-xl mx-auto text-center leading-relaxed">
           {crosslinkMode
-            ? 'Explore the Zcash Crosslink hybrid PoW/PoS feature net. Track finality, staking windows, validators, and blocks in real time.'
+            ? 'Explore the Wcash Crosslink hybrid PoW/PoS feature net. Track finality, staking windows, validators, and blocks in real time.'
             : isTestnet
-              ? 'Search TAZ blocks, transactions, and addresses on the Zcash testnet. Monitor pending transactions and network activity before using mainnet.'
-              : 'Explore blocks, transactions, and addresses on the Zcash blockchain. Track shielded pool activity, privacy scores, and network health — all in real time.'}
+              ? `Search ${CURRENCY} blocks, transactions, and addresses on the Wcash testnet. Monitor pending transactions and network activity before using mainnet.`
+              : 'Explore blocks, transactions, and addresses on the Wcash blockchain. Track shielded pool activity, privacy scores, and network health — all in real time.'}
         </p>
 
         {/* Search Section */}
@@ -185,12 +186,12 @@ export default async function Home() {
         <RelativeTimeProvider initialNow={Date.now()}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 mt-10 sm:mt-12 lg:mt-16">
             <HomeFeedCard
-              storageKey="cipherscan-home-card-left"
+              storageKey="wcashexplorer-home-card-left"
               defaultType="blocks"
               initialBlocks={initialBlocks}
             />
             <HomeFeedCard
-              storageKey="cipherscan-home-card-right"
+              storageKey="wcashexplorer-home-card-right"
               defaultType="shielded"
               initialShieldedTxs={initialShieldedTxs}
             />

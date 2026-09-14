@@ -1,7 +1,9 @@
-export const ISR_BUILD_FALLBACK_ENV = 'CIPHERSCAN_ALLOW_BUILD_UPSTREAM_FALLBACK';
+export const ISR_BUILD_FALLBACK_ENV = 'WCASHEXPLORER_ALLOW_BUILD_UPSTREAM_FALLBACK';
+const LEGACY_ISR_BUILD_FALLBACK_ENV = 'CIPHERSCAN_ALLOW_BUILD_UPSTREAM_FALLBACK';
 
 export function isIsrBuildFallbackEnabled(): boolean {
-  return process.env[ISR_BUILD_FALLBACK_ENV] === '1';
+  return process.env[ISR_BUILD_FALLBACK_ENV] === '1'
+    || process.env[LEGACY_ISR_BUILD_FALLBACK_ENV] === '1';
 }
 
 /**

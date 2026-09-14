@@ -15,7 +15,7 @@ export default function PrivacyPage() {
           </h2>
           <div className="space-y-3 text-sm text-muted leading-relaxed">
             <p>
-              Zcash privacy depends on how the network is used — not just pool size. The score blends
+              Wcash privacy depends on how the network is used — not just pool size. The score blends
               recent shielded transaction share, fully-shielded usage, supply held in pools, and how often
               deshielded {CURRENCY} is reshielded (turnstile hygiene).
             </p>
@@ -28,7 +28,7 @@ export default function PrivacyPage() {
               <Link href="/turnstile" className="text-cipher-cyan hover:underline">
                 Turnstile
               </Link>
-              . All metrics come from CipherScan&apos;s index — no third-party analytics.
+              . All metrics come from WcashExplorer&apos;s index — no third-party analytics.
             </p>
           </div>
         </div>

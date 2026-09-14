@@ -69,25 +69,25 @@ function getTransactionStatus(meta: TxMeta | null): TransactionStatus {
 
 function getStatusDescription(status: TransactionStatus, meta: TxMeta | null): string {
   if (status === 'Confirmed' && meta) {
-    return `Included in canonical Zcash block #${formatNumber(meta.blockHeight)} with ${formatNumber(meta.confirmations)} confirmation${meta.confirmations === 1 ? '' : 's'}.`;
+    return `Included in canonical Wcash block #${formatNumber(meta.blockHeight)} with ${formatNumber(meta.confirmations)} confirmation${meta.confirmations === 1 ? '' : 's'}.`;
   }
 
   if (status === 'Pending') {
-    return 'Waiting in the Zcash mempool with 0 confirmations. This page updates after the transaction is mined.';
+    return 'Waiting in the Wcash mempool with 0 confirmations. This page updates after the transaction is mined.';
   }
 
   if (status === 'Reorganized' && meta) {
     return `Previously recorded in block #${formatNumber(meta.blockHeight)}, but that block is no longer on the canonical chain.`;
   }
 
-  return 'CipherScan cannot currently verify this transaction state. The transaction may be unindexed, absent, or temporarily unavailable from the data service.';
+  return 'WcashExplorer cannot currently verify this transaction state. The transaction may be unindexed, absent, or temporarily unavailable from the data service.';
 }
 
 function getNetworkName(): string {
   const network = getNetwork();
-  if (network === 'mainnet') return 'Zcash mainnet';
-  if (network === 'testnet') return 'Zcash testnet (TAZ)';
-  return 'Zcash Crosslink testnet';
+  if (network === 'mainnet') return 'Wcash mainnet';
+  if (network === 'testnet') return 'Wcash testnet (TWC)';
+  return 'Wcash Crosslink testnet';
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -97,8 +97,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!/^[a-fA-F0-9]{64}$/.test(txid)) {
     return buildPageMetadata({
-      title: 'Invalid Zcash Transaction | CipherScan',
-      description: 'This transaction identifier is not a valid 64-character Zcash transaction hash.',
+      title: 'Invalid Wcash Transaction | WcashExplorer',
+      description: 'This transaction identifier is not a valid 64-character Wcash transaction hash.',
       path,
       index: false,
       canonical: false,
@@ -109,8 +109,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (resolution.state === 'unavailable') {
     const fallback = buildPageMetadata({
-      title: `Zcash Transaction ${truncateHash(normalizedTxid)} Status Unknown | CipherScan`,
-      description: `CipherScan cannot currently verify the status of Zcash transaction ${truncateHash(normalizedTxid)} because a required data service is temporarily unavailable.`,
+      title: `Wcash Transaction ${truncateHash(normalizedTxid)} Status Unknown | WcashExplorer`,
+      description: `WcashExplorer cannot currently verify the status of Wcash transaction ${truncateHash(normalizedTxid)} because a required data service is temporarily unavailable.`,
       path,
       index: false,
       canonical: true,
@@ -124,8 +124,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (resolution.state === 'absent') {
     return buildPageMetadata({
-      title: `Zcash Transaction ${truncateHash(normalizedTxid)} Not Found | CipherScan`,
-      description: `CipherScan could not find Zcash transaction ${truncateHash(normalizedTxid)} in the confirmed index or mempool.`,
+      title: `Wcash Transaction ${truncateHash(normalizedTxid)} Not Found | WcashExplorer`,
+      description: `WcashExplorer could not find Wcash transaction ${truncateHash(normalizedTxid)} in the confirmed index or mempool.`,
       path,
       index: false,
       canonical: false,
@@ -139,26 +139,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const isPending = status === 'Pending';
   const isConfirmed = status === 'Confirmed';
   const title = isPending
-    ? `Pending Zcash Transaction ${truncateHash(tx.txid)} | CipherScan`
+    ? `Pending Wcash Transaction ${truncateHash(tx.txid)} | WcashExplorer`
     : isConfirmed
-      ? `Zcash Transaction ${truncateHash(tx.txid)} | CipherScan`
+      ? `Wcash Transaction ${truncateHash(tx.txid)} | WcashExplorer`
       : status === 'Reorganized'
-        ? `Reorganized Zcash Transaction ${truncateHash(tx.txid)} | CipherScan`
-        : `Zcash Transaction ${truncateHash(tx.txid)} Status Unknown | CipherScan`;
+        ? `Reorganized Wcash Transaction ${truncateHash(tx.txid)} | WcashExplorer`
+        : `Wcash Transaction ${truncateHash(tx.txid)} Status Unknown | WcashExplorer`;
   const description = isPending
-    ? `${txType} Zcash transaction currently pending in the mempool with 0 confirmations. This page updates when the transaction is mined.`
+    ? `${txType} Wcash transaction currently pending in the mempool with 0 confirmations. This page updates when the transaction is mined.`
     : isConfirmed
-      ? `${txType} Zcash transaction in block #${formatNumber(tx.blockHeight)} with ${formatNumber(tx.confirmations)} confirmation${tx.confirmations !== 1 ? 's' : ''}. ${tx.saplingSpendCount + tx.saplingOutputCount + tx.orchardActions > 0 ? 'Includes shielded components.' : 'Transparent transaction.'}`
+      ? `${txType} Wcash transaction in block #${formatNumber(tx.blockHeight)} with ${formatNumber(tx.confirmations)} confirmation${tx.confirmations !== 1 ? 's' : ''}. ${tx.saplingSpendCount + tx.saplingOutputCount + tx.orchardActions > 0 ? 'Includes shielded components.' : 'Transparent transaction.'}`
       : status === 'Reorganized'
-        ? `This Zcash transaction is no longer verified in its recorded block after a chain reorganization. CipherScan will update this page if it returns to the mempool or confirms again.`
-        : `CipherScan has a record for this Zcash transaction but cannot currently verify its canonical-chain status.`;
+        ? `This Wcash transaction is no longer verified in its recorded block after a chain reorganization. WcashExplorer will update this page if it returns to the mempool or confirms again.`
+        : `WcashExplorer has a record for this Wcash transaction but cannot currently verify its canonical-chain status.`;
 
   return buildPageMetadata({
     title,
     description,
     path,
     index: isPending || isConfirmed,
-    imageAlt: `${status} Zcash transaction ${truncateHash(tx.txid)}`,
+    imageAlt: `${status} Wcash transaction ${truncateHash(tx.txid)}`,
   });
 }
 
@@ -245,20 +245,20 @@ export default async function TxLayout({ params, children }: Props) {
     '@type': 'WebPage',
     '@id': `${canonicalUrl}#webpage`,
     url: canonicalUrl,
-    name: `Zcash transaction ${normalizedTxid}`,
+    name: `Wcash transaction ${normalizedTxid}`,
     description: statusDescription,
     isPartOf: { '@id': `${baseUrl}/#website` },
     mainEntity: {
       '@type': 'Dataset',
       '@id': `${canonicalUrl}#transaction`,
-      name: `Zcash transaction ${normalizedTxid}`,
+      name: `Wcash transaction ${normalizedTxid}`,
       url: canonicalUrl,
       description: statusDescription,
-      creator: { '@id': 'https://cipherscan.app/#organization' },
+      creator: { '@id': `${baseUrl}/#organization` },
       isPartOf: { '@id': `${baseUrl}/#website` },
       identifier: {
         '@type': 'PropertyValue',
-        propertyID: 'Zcash transaction ID',
+        propertyID: 'Wcash transaction ID',
         value: normalizedTxid,
       },
       variableMeasured,
@@ -280,7 +280,7 @@ export default async function TxLayout({ params, children }: Props) {
         <p className="text-xs font-mono text-muted tracking-wider">&gt; TX_LOOKUP</p>
         <h1 id="transaction-heading" className="mt-2">
           <span className="block text-lg sm:text-xl font-semibold tracking-tight text-primary">
-            Zcash Transaction
+            Wcash Transaction
           </span>
           <span className="mt-2 flex items-center gap-2 min-w-0">
             <span className="text-sm sm:text-base font-mono font-normal text-primary break-all">

@@ -49,7 +49,7 @@ export function ShieldingDistributionChart() {
   const colors = getChartColors(theme);
   const [period, setPeriod] = useState<Period>('30d');
   const [mode, setMode] = useState<ViewMode>('count');
-  const yLabel = mode === 'count' ? 'Transactions' : 'ZEC volume';
+  const yLabel = mode === 'count' ? 'Transactions' : 'WCASH volume';
 
   const { data: res, loading } = useApiQuery<{ buckets: Bucket[] }>(
     '/api/analytics/shielding-distribution',
@@ -58,7 +58,7 @@ export function ShieldingDistributionChart() {
   const data = res?.buckets ?? [];
 
   const chartData = data.map((b) => ({
-    label: `${b.label} ZEC`,
+    label: `${b.label} WCASH`,
     shield: mode === 'count' ? b.shieldCount : b.shieldVolumeZat / 1e8,
     deshield: mode === 'count' ? b.deshieldCount : b.deshieldVolumeZat / 1e8,
   }));
@@ -100,7 +100,7 @@ export function ShieldingDistributionChart() {
           <p className="mb-3 text-xs leading-relaxed text-muted">
             {mode === 'count'
               ? `Transaction count by amount range (${period === 'all' ? 'all time' : `last ${period}`}). Larger buckets mean more potential cover traffic.`
-              : `ZEC volume by amount range (${period === 'all' ? 'all time' : `last ${period}`}). Shows where value concentrates across shielded flows.`}
+              : `WCASH volume by amount range (${period === 'all' ? 'all time' : `last ${period}`}). Shows where value concentrates across shielded flows.`}
           </p>
           <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height={CHART_HEIGHT}>
             <BarChart data={chartData} margin={PRIVACY_BAR_CHART_MARGIN}>
@@ -127,7 +127,7 @@ export function ShieldingDistributionChart() {
                 formatter={(value, name) => [
                   mode === 'count'
                     ? `${Number(value).toLocaleString()} txs`
-                    : `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })} ZEC`,
+                    : `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })} WCASH`,
                   String(name) === 'shield' ? 'Shield (in)' : 'Deshield (out)',
                 ]}
               />

@@ -9,6 +9,7 @@ import { DonateButton } from '@/components/DonateButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useTheme } from '@/contexts/ThemeContext';
 import { NETWORK_LABEL, NETWORK_COLOR, isMainnet, isCrosslink, MAINNET_URL, TESTNET_URL, CROSSLINK_URL } from '@/lib/config';
+import { BRAND_NAME, BRAND_WORDMARK } from '@/lib/brand';
 
 interface MenuItem {
   href: string;
@@ -100,8 +101,8 @@ export function NavBar() {
     : [
         { href: '/privacy', label: 'Privacy Score', desc: 'Network privacy health' },
         { href: '/pools', label: 'Shielded Pools', desc: 'Supply & shield/deshield flows' },
-        { href: '/turnstile', label: 'Turnstile', desc: 'Where deshielded ZEC goes' },
-        { href: '/ironwood', label: 'Zcash Ironwood', desc: 'NU6.3 upgrade & migration tracker' },
+        { href: '/turnstile', label: 'Turnstile', desc: 'Where deshielded WCASH goes' },
+        { href: '/ironwood', label: 'Wcash Ironwood', desc: 'NU6.3 upgrade & migration tracker' },
         { href: '/valuation', label: 'Valuation', desc: 'MVRV, realized price & on-chain metrics' },
         { href: '/pulse', label: 'Network Pulse', desc: 'Auto-detected on-chain anomalies' },
         { href: '/privacy-risks', label: 'Risk Scanner', desc: 'Detect risky patterns' },
@@ -120,9 +121,9 @@ export function NavBar() {
 
   const resourcesItems: MenuItem[] = [
     { href: '/docs', label: 'API Docs', desc: 'Developer reference' },
-    { href: '/learn', label: 'Learn Zcash', desc: 'Beginner guide' },
+    { href: '/learn', label: 'Learn Wcash', desc: 'Beginner guide' },
     ...(isCrosslink ? [{ href: '/learn/crosslink', label: 'Learn Crosslink', desc: 'PoW+PoS finality & staking' }] : []),
-    { href: '/newsletter', label: 'Newsletter', desc: 'Weekly Zcash intelligence' },
+    { href: '/newsletter', label: 'Newsletter', desc: 'Weekly Wcash intelligence' },
     { href: '/about', label: 'About', desc: 'Our story & mission' },
   ];
 
@@ -157,7 +158,7 @@ export function NavBar() {
             <Link href="/" className="flex items-center space-x-2 group flex-shrink-0">
               <Image
                 src="/logo.png"
-                alt="CipherScan Logo"
+                alt={`${BRAND_NAME} Logo`}
                 width={24}
                 height={24}
                 quality={100}
@@ -166,7 +167,7 @@ export function NavBar() {
               />
               <div>
                 <span className="text-base sm:text-lg font-bold font-mono text-cipher-cyan-bright">
-                  CIPHERSCAN
+                  {BRAND_WORDMARK}
                 </span>
                 <p className={`text-[10px] sm:text-[11px] font-mono ${NETWORK_COLOR} leading-tight`}>[ {NETWORK_LABEL} ]</p>
               </div>
@@ -216,17 +217,17 @@ export function NavBar() {
 
             {/* Right: utilities */}
             <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* Buy ZEC — mainnet only, desktop */}
+              {/* Buy WCASH — mainnet only, desktop */}
               {isMainnet && (
                 <a
                   href="https://cipherswap.app/"
                   target="_blank"
                   rel="noopener"
-                  title="Buy ZEC on CipherSwap"
+                  title="Buy WCASH on the configured exchange"
                   className="hidden md:flex items-center gap-1 text-xs font-mono font-bold text-cipher-yellow hover:opacity-80 transition-opacity duration-150 px-2 py-1"
                 >
                   <span className="text-cipher-yellow/50">&gt;</span>
-                  Buy ZEC
+                  Buy WCASH
                 </a>
               )}
 
@@ -317,7 +318,7 @@ export function NavBar() {
           <div className="absolute inset-y-0 right-0 w-full max-w-sm flex flex-col mobile-drawer shadow-2xl animate-slide-in-right">
             {/* Header */}
             <div className="flex items-center justify-between h-16 px-4 border-b navbar-border flex-shrink-0">
-              <span className="text-sm font-bold font-mono text-cipher-cyan-bright">CIPHERSCAN</span>
+              <span className="text-sm font-bold font-mono text-cipher-cyan-bright">WCASHEXPLORER</span>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2 rounded-md text-muted hover:text-primary transition"
@@ -367,7 +368,7 @@ export function NavBar() {
               ))}
 
 
-              {/* Buy ZEC — mainnet only */}
+              {/* Buy WCASH — mainnet only */}
               {isMainnet && (
                 <div className="px-3 pt-3">
                   <a
@@ -378,7 +379,7 @@ export function NavBar() {
                     className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-lg font-mono text-sm font-bold text-cipher-yellow border border-cipher-yellow/30 hover:bg-cipher-yellow/10 transition"
                   >
                     <span className="text-cipher-yellow/50">&gt;</span>
-                    Buy ZEC
+                    Buy WCASH
                   </a>
                 </div>
               )}

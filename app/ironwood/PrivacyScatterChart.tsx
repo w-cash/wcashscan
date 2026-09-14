@@ -369,7 +369,7 @@ export function PrivacyScatterChart({
               dx: '-0.3em',
               dy: '0.32em',
             })}
-            label="Amount (ZEC)"
+            label="Amount (WCASH)"
             labelProps={{
               fill: colors.axis,
               fontSize: 10,
@@ -446,9 +446,9 @@ function ScatterTooltip({
   return (
     <div className="rounded-lg border border-glass-8 bg-cipher-surface-solid px-3 py-2 text-xs font-mono pointer-events-none">
       <div className="mb-1 text-muted">Block #{point.x.toLocaleString()}</div>
-      <div className="font-bold text-primary">{point.y.toFixed(8)} ZEC</div>
+      <div className="font-bold text-primary">{point.y.toFixed(8)} WCASH</div>
       {isDenom && point.matched != null && (
-        <div className="mt-1 text-muted">Matches {point.matched} ZEC denomination</div>
+        <div className="mt-1 text-muted">Matches {point.matched} WCASH denomination</div>
       )}
       <div className="mt-1 font-semibold" style={{ color: gradeColor }}>
         {gradeLabel} ({checks}/3)

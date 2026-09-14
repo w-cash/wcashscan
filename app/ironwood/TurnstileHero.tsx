@@ -13,6 +13,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { toPng } from 'html-to-image';
 import { fmtValue, type CurrencyMode } from '@/hooks/useCurrencyToggle';
+import { BRAND_NAME, getPublicUrl } from '@/lib/brand';
 
 const TurnstileScene = dynamic(() => import('./TurnstileScene'), { ssr: false });
 
@@ -282,7 +283,7 @@ export function TurnstileHero(props: TurnstileHeroProps) {
     return (await fetch(dataUrl)).blob();
   }, []);
 
-  const shareText = `${sceneState.migratedPct.toFixed(1)}% of Orchard ZEC has migrated to Ironwood. Watch the migration live on CipherScan.\n\nhttps://cipherscan.app/ironwood`;
+  const shareText = `${sceneState.migratedPct.toFixed(1)}% of Orchard WCASH has migrated to Ironwood. Watch the migration live on WcashExplorer.\n\n${getPublicUrl('/ironwood')}`;
 
   const handleCopy = useCallback(async () => {
     setCopyStatus('capturing');
@@ -302,7 +303,7 @@ export function TurnstileHero(props: TurnstileHeroProps) {
     try {
       const blob = await captureCard();
       if (!blob) return;
-      const file = new File([blob], 'cipherscan-migration.png', { type: 'image/png' });
+      const file = new File([blob], 'wcashexplorer-migration.png', { type: 'image/png' });
       const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
       if (isMobile && navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({ text: shareText, files: [file] });
@@ -336,7 +337,7 @@ export function TurnstileHero(props: TurnstileHeroProps) {
           aria-hidden="true"
         >
           <span className="-rotate-12 scale-[0.82] select-none whitespace-nowrap text-[2rem] font-bold font-mono tracking-[0.14em] text-white/[0.03] sm:scale-100 sm:text-5xl sm:tracking-[0.2em] lg:text-6xl">
-            CIPHERSCAN
+            WCASHEXPLORER
           </span>
         </div>
 
@@ -557,9 +558,9 @@ export function TurnstileHero(props: TurnstileHeroProps) {
               <img src="/logo.png" alt="" width={20} height={20} className="h-5 w-5 shrink-0 object-contain" />
               <div className="flex flex-col items-center sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-2 sm:gap-y-0">
                 <span className="text-[11px] font-bold font-mono text-cipher-cyan-bright tracking-tight">
-                  CIPHERSCAN
+                  WCASHEXPLORER
                 </span>
-                <span className="text-[10px] font-mono text-muted/55">cipherscan.app</span>
+                <span className="text-[10px] font-mono text-muted/55">{BRAND_NAME}</span>
               </div>
             </div>
           </div>

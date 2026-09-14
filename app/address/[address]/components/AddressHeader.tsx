@@ -54,7 +54,7 @@ export function AddressHeader({
           filename={`address-${address.slice(0, 12)}`}
           type="both"
           label="Export"
-          csvHeaders={['TXID', 'Block', 'Timestamp', 'Type', 'Amount (ZEC)']}
+          csvHeaders={['TXID', 'Block', 'Timestamp', 'Type', 'Amount (WCASH)']}
           csvMapper={(tx: Transaction) => [
             tx.txid,
             String(tx.blockHeight || ''),

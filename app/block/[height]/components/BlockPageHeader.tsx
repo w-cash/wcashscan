@@ -58,7 +58,7 @@ export function BlockPageHeader({
       <h1
         className={`mt-1 text-xl sm:text-2xl md:text-3xl font-bold font-mono ${data.isOrphaned ? 'text-cipher-orange' : 'text-primary'}`}
       >
-        {data.isOrphaned ? 'Orphaned Zcash Block' : 'Zcash Block'} #{data.height.toLocaleString()}
+        {data.isOrphaned ? 'Orphaned Wcash Block' : 'Wcash Block'} #{data.height.toLocaleString()}
       </h1>
 
       {/* Facts (left) + controls (right), one row directly above the facts
@@ -114,7 +114,7 @@ export function BlockPageHeader({
               filename={`block-${data.height}`}
               type="both"
               label="Export"
-              csvHeaders={['TXID', 'Type', 'Inputs', 'Outputs', 'Amount (ZEC)']}
+              csvHeaders={['TXID', 'Type', 'Inputs', 'Outputs', 'Amount (WCASH)']}
               csvMapper={(tx: any) => [
                 tx.txid,
                 tx.vin?.[0]?.coinbase ? 'Coinbase' : tx.hasShieldedActivity ? 'Shielded' : 'Regular',

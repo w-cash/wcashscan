@@ -141,21 +141,21 @@ export function TxHeroFlow({
 
     // Mixed-direction batches are rare; when they occur, show each side's
     // other-chain tokens directly rather than trying to net them into one
-    // ZEC figure that would misrepresent the batch.
+    // WCASH figure that would misrepresent the batch.
     if (entries.length > 0 && exits.length > 0) {
       return <FlowChain sources={capped(entries)} destinations={capped(exits)} />;
     }
 
     if (entries.length > 0) {
-      // The center amount and the ZEC token node would otherwise both show
+      // The center amount and the WCASH token node would otherwise both show
       // the identical figure — one is enough. Center carries it since it's
-      // the more prominent slot; the token node just identifies "this is ZEC".
+      // the more prominent slot; the token node just identifies "this is WCASH".
       const totalZec = entries.reduce((sum, b) => sum + (b.zecAmount || 0), 0);
       return (
         <FlowChain
           sources={capped(entries)}
           amount={<ZecAmount value={totalZec} priceUsd={priceUsd} />}
-          destinations={[{ kind: 'token', token: 'ZEC', chain: 'zec' }]}
+          destinations={[{ kind: 'token', token: 'WCASH', chain: 'zec' }]}
         />
       );
     }
@@ -163,7 +163,7 @@ export function TxHeroFlow({
     const totalZec = exits.reduce((sum, b) => sum + (b.zecAmount || 0), 0);
     return (
       <FlowChain
-        sources={[{ kind: 'token', token: 'ZEC', chain: 'zec' }]}
+        sources={[{ kind: 'token', token: 'WCASH', chain: 'zec' }]}
         amount={<ZecAmount value={totalZec} priceUsd={priceUsd} />}
         destinations={capped(exits)}
       />

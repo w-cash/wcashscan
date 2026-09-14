@@ -22,6 +22,8 @@ import type {
   VelocityBucket,
 } from './types';
 import { EmptyPanel, SegmentedControl } from './ui';
+import { getPublicUrl } from '@/lib/brand';
+import { CURRENCY } from '@/lib/config';
 
 const zec = zatToZec;
 
@@ -111,10 +113,10 @@ export function MigrationActivity({
 
   const shareText =
     view === 'cohorts' && activeCohorts > 0
-      ? `${totalVolumeZec.toLocaleString(undefined, { maximumFractionDigits: 0 })} ZEC migrated across ${activeCohorts} Orchard→Ironwood cohorts. Avg anonymity set: ${avgCohort.toFixed(1)} txs.\n\nhttps://cipherscan.app/ironwood`
+      ? `${totalVolumeZec.toLocaleString(undefined, { maximumFractionDigits: 0 })} WCASH migrated across ${activeCohorts} Orchard→Ironwood cohorts. Avg anonymity set: ${avgCohort.toFixed(1)} txs.\n\n${getPublicUrl('/ironwood')}`
       : view !== 'cohorts' && timeTotalTxs > 0
-        ? `${timeTotalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })} ZEC migrated Orchard→Ironwood. Peak ${periodLabel}: ${(timePeak?.volume ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} ZEC.\n\nhttps://cipherscan.app/ironwood`
-        : `Zcash Orchard → Ironwood migration activity on CipherScan.\n\nhttps://cipherscan.app/ironwood`;
+        ? `${timeTotalVolume.toLocaleString(undefined, { maximumFractionDigits: 0 })} WCASH migrated Orchard→Ironwood. Peak ${periodLabel}: ${(timePeak?.volume ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} WCASH.\n\n${getPublicUrl('/ironwood')}`
+        : `Wcash Orchard → Ironwood migration activity on WcashExplorer.\n\n${getPublicUrl('/ironwood')}`;
 
   const subtitle = view === 'cohorts'
     ? (
@@ -126,7 +128,7 @@ export function MigrationActivity({
         </span>
       </>
     )
-    : <>ZEC migrated from Orchard to Ironwood per {periodLabel} (UTC).{timeAvg > 0 ? <> Avg: <span className="font-mono text-primary">{fmtValue(Math.round(timeAvg * 1e8), currencyMode, zecPrice)}/{periodLabel}</span>.</> : null}</>;
+    : <>WCASH migrated from Orchard to Ironwood per {periodLabel} (UTC).{timeAvg > 0 ? <> Avg: <span className="font-mono text-primary">{fmtValue(Math.round(timeAvg * 1e8), currencyMode, zecPrice)}/{periodLabel}</span>.</> : null}</>;
 
   const statsRowClass = 'mb-4 flex flex-col gap-2 text-[11px] font-mono leading-snug text-muted sm:mb-3 sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-1 sm:text-[10px]';
 
@@ -139,15 +141,15 @@ export function MigrationActivity({
         sourceHeight={tipHeight}
         isLive={activated}
         shareText={shareText}
-        fileName="cipherscan-migration-activity.png"
+        fileName="wcashexplorer-migration-activity.png"
       >
         <p className="mb-5 max-w-2xl text-xs leading-[1.65] text-muted sm:mb-4 sm:leading-relaxed">{subtitle}</p>
 
         {/* Stats row */}
         {view === 'cohorts' && activeCohorts > 0 ? (
           <div className={statsRowClass}>
-            <span>Total migrated <span className="text-cipher-yellow-bright">{totalVolumeZec.toLocaleString(undefined, { maximumFractionDigits: 0 })} ZEC</span></span>
-            <span>Peak cohort <span className="text-primary">{cohortPeak.toLocaleString(undefined, { maximumFractionDigits: 0 })} ZEC</span></span>
+            <span>Total migrated <span className="text-cipher-yellow-bright">{totalVolumeZec.toLocaleString(undefined, { maximumFractionDigits: 0 })} WCASH</span></span>
+            <span>Peak cohort <span className="text-primary">{cohortPeak.toLocaleString(undefined, { maximumFractionDigits: 0 })} WCASH</span></span>
             <span>Active cohorts <span className="text-primary">{activeCohorts}</span>{avgCohort > 0 ? <span className="text-muted/70 sm:hidden"> · avg {avgCohort.toFixed(1)} txs</span> : null}</span>
           </div>
         ) : view !== 'cohorts' && timeTotalTxs > 0 ? (
@@ -179,7 +181,7 @@ export function MigrationActivity({
                   width={44}
                   domain={[0, yMax]}
                   tickFormatter={(v) => Number(v).toLocaleString()}
-                  label={{ value: 'Volume (ZEC)', angle: -90, position: 'insideLeft', dx: -6, style: { textAnchor: 'middle', fontSize: 10, fill: colors.axis, fontFamily: 'var(--font-mono)' } }}
+                  label={{ value: 'Volume (WCASH)', angle: -90, position: 'insideLeft', dx: -6, style: { textAnchor: 'middle', fontSize: 10, fill: colors.axis, fontFamily: 'var(--font-mono)' } }}
                 />
                 <Tooltip
                   cursor={{ fill: colors.barCursor }}
@@ -189,7 +191,7 @@ export function MigrationActivity({
                   labelFormatter={(v) => `Boundary @ height ${Number(v).toLocaleString()}`}
                   formatter={(val: unknown, name: unknown) =>
                     name === 'volume'
-                      ? [`${Number(val).toLocaleString(undefined, { maximumFractionDigits: 2 })} ZEC`, 'Volume']
+                      ? [`${Number(val).toLocaleString(undefined, { maximumFractionDigits: 2 })} WCASH`, 'Volume']
                       : [Number(val), 'Txs (anonymity set)']
                   }
                 />
@@ -219,7 +221,7 @@ export function MigrationActivity({
                   width={50}
                   domain={[0, yMax]}
                   tickFormatter={(v) => Number(v).toLocaleString()}
-                  label={{ value: currencyMode === 'zec' ? 'Volume (ZEC)' : 'Volume (USD)', angle: -90, position: 'insideLeft', dx: -6, style: { textAnchor: 'middle', fontSize: 10, fill: colors.axis, fontFamily: 'var(--font-mono)' } }}
+                  label={{ value: currencyMode === 'zec' ? `Volume (${CURRENCY})` : 'Volume (USD)', angle: -90, position: 'insideLeft', dx: -6, style: { textAnchor: 'middle', fontSize: 10, fill: colors.axis, fontFamily: 'var(--font-mono)' } }}
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: colors.tooltipBg, border: `1px solid ${colors.tooltipBorder}`, borderRadius: '8px', fontSize: 12 }}
@@ -227,7 +229,7 @@ export function MigrationActivity({
                   labelStyle={{ color: 'var(--color-text-muted, #8b8b9e)', fontFamily: 'var(--font-mono)', fontSize: 10 }}
                   formatter={(val: unknown, name: unknown) =>
                     name === 'volume'
-                      ? [`${Number(val).toLocaleString(undefined, { maximumFractionDigits: 2 })} ZEC`, `Volume / ${periodLabel}`]
+                      ? [`${Number(val).toLocaleString(undefined, { maximumFractionDigits: 2 })} WCASH`, `Volume / ${periodLabel}`]
                       : [Number(val), 'Transactions']
                   }
                 />

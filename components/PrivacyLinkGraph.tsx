@@ -126,7 +126,7 @@ function GraphCardNode({ data }: NodeProps) {
       </p>
       {node.amountZec !== undefined && (
         <p className="mt-1 text-[11px] font-mono text-primary/70">
-          {node.amountZec.toFixed(4)} ZEC
+          {node.amountZec.toFixed(4)} WCASH
         </p>
       )}
       {node.subtitle && (

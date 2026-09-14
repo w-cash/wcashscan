@@ -9,6 +9,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { ShieldFlowBadge, ShieldFlowLegend } from '@/components/ShieldFlowBadge';
 import { resolveShieldFlowType } from '@/components/icons/shield-flow';
 import { HashLink, RedactedAmount } from '@/components/ui';
+import { CURRENCY } from '@/lib/config';
 
 interface ShieldedTx {
   txid: string;
@@ -52,7 +53,7 @@ function migrationAmount(tx: ShieldedTx): number | null {
 }
 
 /**
- * Amount CipherScan is allowed to show for a shielded-activity row.
+ * Amount WcashExplorer is allowed to show for a shielded-activity row.
  *
  * For a `partial` (shield/deshield) tx, the transparent-side value balance is
  * public on-chain data — it has to be, or the transparent value pool couldn't
@@ -202,7 +203,7 @@ export const RecentShieldedTxs = memo(function RecentShieldedTxs({
                   </td>
                   <td className="px-4 sm:px-5 h-12 border-b border-cipher-border text-right">
                     {knownAmount !== null ? (
-                      <span className="font-mono text-sm text-secondary whitespace-nowrap tabular-nums">{formatZecPrecise(knownAmount)} <span className="text-muted/50">ZEC</span></span>
+                      <span className="font-mono text-sm text-secondary whitespace-nowrap tabular-nums">{formatZecPrecise(knownAmount)} <span className="text-muted/50">{CURRENCY}</span></span>
                     ) : (
                       <RedactedAmount />
                     )}

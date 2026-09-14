@@ -5,7 +5,9 @@ import { createPortal } from 'react-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { useTheme } from '@/contexts/ThemeContext';
 
-const DONATION_ADDRESS = 'u1fh3kwyl9hq9q907rx9j8mdy2r7gz4xh0y4yt63dxykk2856gr0238vxsegemyfu8s5a77ycq72tcnzkxa75ykjtcn6wp2w9rtuu3ssdzpe2fyghl8wlk3vh6f67304xe4lrxtvywtudy5t434zc07u6mh27ekufx7ssr55l8875z7f4k76c3tk23s3jzf8rxdlkequlta8lwsv09gxm';
+// Never ship a network-specific donation address in the scanner bundle. Set
+// NEXT_PUBLIC_DONATION_ADDRESS only after a Wcash receiving address is ready.
+const DONATION_ADDRESS = process.env.NEXT_PUBLIC_DONATION_ADDRESS || '';
 
 const truncateAddress = (addr: string) =>
   `${addr.slice(0, 16)}...${addr.slice(-16)}`;
@@ -36,6 +38,7 @@ export function DonateButton({ compact = false, variant = 'default' }: DonateBut
   }, [showModal]);
 
   const copyAddress = async () => {
+    if (!DONATION_ADDRESS) return;
     try {
       await navigator.clipboard.writeText(DONATION_ADDRESS);
       setCopied(true);
@@ -79,10 +82,10 @@ export function DonateButton({ compact = false, variant = 'default' }: DonateBut
           <div className="flex justify-between items-start mb-5">
             <div>
               <p className="text-[10px] font-mono text-muted tracking-widest uppercase mb-1">
-                {'>'} SUPPORT_CIPHERSCAN
+                {'>'} SUPPORT_WCASHEXPLORER
               </p>
               <h2 className="text-lg font-semibold tracking-tight text-primary">
-                Support CipherScan
+                Support WcashExplorer
               </h2>
               <p className="text-sm text-secondary mt-1">
                 Help keep this explorer free, open-source &amp; ad-free
@@ -101,10 +104,10 @@ export function DonateButton({ compact = false, variant = 'default' }: DonateBut
           {/* QR Code with logo overlay — theme-aware */}
           <div className="flex justify-center mb-5">
             <div className="relative p-4 rounded-lg modal-inner-card">
-              {themeMounted && (
+              {themeMounted && DONATION_ADDRESS ? (
                 <>
                   <QRCodeSVG
-                    value={`zcash:${DONATION_ADDRESS}`}
+                    value={`wcash:${DONATION_ADDRESS}`}
                     size={qrSize}
                     level="H"
                     marginSize={1}
@@ -133,6 +136,10 @@ export function DonateButton({ compact = false, variant = 'default' }: DonateBut
                     }}
                   />
                 </>
+              ) : (
+                <p className="w-[180px] h-[180px] flex items-center justify-center text-center text-xs text-muted font-mono">
+                  Donation address not configured
+                </p>
               )}
             </div>
           </div>
@@ -140,7 +147,8 @@ export function DonateButton({ compact = false, variant = 'default' }: DonateBut
           {/* Address + copy */}
           <button
             onClick={copyAddress}
-            className="modal-inner-card rounded-lg px-4 py-3 mb-4 w-full text-left cursor-pointer hover:ring-1 hover:ring-cipher-cyan/30 transition"
+            disabled={!DONATION_ADDRESS}
+            className="modal-inner-card rounded-lg px-4 py-3 mb-4 w-full text-left cursor-pointer hover:ring-1 hover:ring-cipher-cyan/30 transition disabled:cursor-not-allowed disabled:opacity-60"
           >
             <p className="text-[10px] font-mono text-muted tracking-wider uppercase mb-1.5 flex items-center justify-between">
               <span>Shielded · Unified Address</span>
@@ -164,7 +172,7 @@ export function DonateButton({ compact = false, variant = 'default' }: DonateBut
               </span>
             </p>
             <code className="text-[10px] font-mono text-secondary break-all leading-relaxed">
-              {DONATION_ADDRESS}
+              {DONATION_ADDRESS || 'Configure NEXT_PUBLIC_DONATION_ADDRESS for Wcash donations.'}
             </code>
           </button>
 
@@ -190,8 +198,8 @@ export function DonateButton({ compact = false, variant = 'default' }: DonateBut
         <button
           onClick={() => setShowModal(true)}
           className={`donate-btn inline-flex items-center justify-center ${compact ? 'p-1.5' : 'space-x-2 px-3 sm:px-4 py-2'} transition rounded-lg ${compact ? '' : 'font-mono text-xs sm:text-sm'}`}
-          title={compact ? 'Support CipherScan' : undefined}
-          aria-label={compact ? 'Support CipherScan' : undefined}
+          title={compact ? 'Support WcashExplorer' : undefined}
+          aria-label={compact ? 'Support WcashExplorer' : undefined}
         >
           <svg
             className={compact ? 'w-4 h-4' : 'w-4 h-4 flex-shrink-0'}

@@ -257,7 +257,7 @@ export default function BootstrapPage() {
                   <StepHeader n={2} title="Back up your wallet seed" />
                   <p className="text-xs text-muted mb-2">
                     This is the one file that MUST be preserved across the reset. The snapshot
-                    does not contain your seed — if you lose it, you lose your mined cTAZ.
+                    does not contain your seed — if you lose it, you lose your mined cTWC.
                   </p>
                   <CopyBlock>{`# macOS GUI users:
 cp ~/Library/Caches/zebra/${info.cache_dir_name}/secret.seed ~/crosslink-seed.backup
@@ -324,7 +324,7 @@ mv ~/crosslink-seed.backup ~/.cache/zebra/${info.cache_dir_name}/secret.seed`}</
                   unreachable, no new snapshot is written.
                 </p>
                 <p>
-                  You are still trusting CipherScan to host an honest snapshot. For maximum
+                  You are still trusting WcashExplorer to host an honest snapshot. For maximum
                   assurance: after restoring, compare your finalized block hash against a second
                   source (e.g.{' '}
                   <a
@@ -335,12 +335,12 @@ mv ~/crosslink-seed.backup ~/.cache/zebra/${info.cache_dir_name}/secret.seed`}</
                   >
                     ctaz.frontiercompute.cash
                   </a>
-                  ) before staking any significant cTAZ.
+                  ) before staking any significant cTWC.
                 </p>
                 <p>
                   Source code for the snapshotter:{' '}
                   <code className="text-muted">server/scripts/zebra-public-snapshot.sh</code>{' '}
-                  in the cipherscan repo.
+                  in the WcashExplorer scanner repository.
                 </p>
               </div>
             </CardBody>

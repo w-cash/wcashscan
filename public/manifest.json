@@ -1,7 +1,7 @@
 {
-  "name": "CipherScan - Zcash Blockchain Explorer",
-  "short_name": "CipherScan",
-  "description": "Explore the Zcash blockchain with clarity. Privacy meets transparency.",
+  "name": "WcashExplorer - Wcash Blockchain Explorer",
+  "short_name": "WcashExplorer",
+  "description": "Explore the Wcash blockchain with clarity. Privacy meets transparency.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0A0E27",

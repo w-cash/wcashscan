@@ -423,7 +423,7 @@ export default function UnclesPage() {
           Fork Watch
         </h1>
         <p className="text-xs text-muted mt-2 max-w-2xl">
-          Monitor chain forks, orphaned blocks, and competing tips on the Zcash network.
+          Monitor chain forks, orphaned blocks, and competing tips on the Wcash network.
           When miners produce blocks at the same height, the network resolves to a single chain — losing blocks become orphans.
         </p>
       </div>

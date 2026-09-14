@@ -3,11 +3,11 @@
 import { useState } from 'react';
 
 export const REFERENCE_DENOMS = [
-  { value: 0.01, label: '0.01 ZEC' },
-  { value: 0.1, label: '0.1 ZEC' },
-  { value: 1, label: '1 ZEC' },
-  { value: 10, label: '10 ZEC' },
-  { value: 100, label: '100 ZEC' },
+  { value: 0.01, label: '0.01 WCASH' },
+  { value: 0.1, label: '0.1 WCASH' },
+  { value: 1, label: '1 WCASH' },
+  { value: 10, label: '10 WCASH' },
+  { value: 100, label: '100 WCASH' },
 ];
 
 export const DENOM_BUCKETS = [
@@ -311,7 +311,7 @@ export function DenomMixChart({
       </div>
       <p className="mt-3 text-center text-[10px] font-mono text-muted max-sm:px-1">
         {isVolume
-          ? `${totalDenomVolume.toLocaleString(undefined, { maximumFractionDigits: 1 })} ZEC across ${totalDenomCount.toLocaleString()} txs`
+          ? `${totalDenomVolume.toLocaleString(undefined, { maximumFractionDigits: 1 })} WCASH across ${totalDenomCount.toLocaleString()} txs`
           : `${totalDenomCount.toLocaleString()} txs using standard denominations`}
       </p>
     </div>

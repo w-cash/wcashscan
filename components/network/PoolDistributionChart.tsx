@@ -20,6 +20,7 @@ import { useApiQuery } from '@/hooks/useApiQuery';
 import { ShareableCard } from '@/components/ShareableCard';
 import { formatChartDate, tooltipDate } from '@/lib/chart-dates';
 import { privacyAxisLabel } from '@/components/privacy/privacy-chart-axis';
+import { getPublicUrl } from '@/lib/brand';
 
 type Period = '30d' | '90d' | '1y' | 'all';
 type View = 'rate' | 'composition' | 'pools';
@@ -40,7 +41,7 @@ const VIEW_META: Record<View, { label: string; shortLabel: string; description: 
     label: 'Public / private',
     shortLabel: 'Public / private',
     description:
-      'Shielded vs transparent supply in ZEC. Unmined supply is excluded — only issued pools on chain.',
+      'Shielded vs transparent supply in WCASH. Unmined supply is excluded — only issued pools on chain.',
   },
   pools: {
     label: 'Per pool',
@@ -122,11 +123,11 @@ function RateTooltip({
           <span className="text-muted"> shielded</span>
         </p>
       ) : null}
-      <p className="tabular-nums text-secondary">{formatZecCompact(shielded)} ZEC shielded</p>
-      <p className="tabular-nums text-muted">{formatZecCompact(transparent)} ZEC transparent</p>
+      <p className="tabular-nums text-secondary">{formatZecCompact(shielded)} WCASH shielded</p>
+      <p className="tabular-nums text-muted">{formatZecCompact(transparent)} WCASH transparent</p>
       {total > 0 ? (
         <p className="mt-1 border-t border-glass-6 pt-1 tabular-nums text-muted">
-          {formatZecCompact(total)} ZEC tracked
+          {formatZecCompact(total)} WCASH tracked
         </p>
       ) : null}
     </div>
@@ -160,7 +161,7 @@ function CompositionTooltip({
         <p key={String(entry.name)} className="tabular-nums text-secondary">
           <span style={{ color: entry.color }}>{entry.name}</span>
           {': '}
-          {formatZecCompact(Number(entry.value ?? 0))} ZEC
+          {formatZecCompact(Number(entry.value ?? 0))} WCASH
         </p>
       ))}
     </div>
@@ -196,7 +197,7 @@ function PoolsTooltip({
           <p key={String(entry.name)} className="tabular-nums text-secondary">
             <span style={{ color: entry.color }}>{entry.name}</span>
             {': '}
-            {formatZecCompact(Number(entry.value ?? 0))} ZEC
+            {formatZecCompact(Number(entry.value ?? 0))} WCASH
           </p>
         ))}
     </div>
@@ -264,7 +265,7 @@ export function PoolDistributionChart({ initialData }: { initialData?: PoolHisto
 
   const meta = VIEW_META[view];
   const axisFill = colors.axis;
-  const shareText = `Zcash supply history (${meta.shortLabel}, ${period.toUpperCase()}) on CipherScan.\n\nhttps://cipherscan.app/pools#supply`;
+  const shareText = `Wcash supply history (${meta.shortLabel}, ${period.toUpperCase()}) on WcashExplorer.\n\n${getPublicUrl('/pools#supply')}`;
 
   const controls = (
     <div className="mb-4 flex flex-wrap items-center justify-end gap-2" data-html2canvas-ignore="true">
@@ -308,7 +309,7 @@ export function PoolDistributionChart({ initialData }: { initialData?: PoolHisto
       No supply history for this range.
     </div>
   ) : view === 'pools' && canShowPools ? (
-    <SupplyChartFrame yLabel="ZEC in pools">
+    <SupplyChartFrame yLabel="WCASH in pools">
       <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height={CHART_HEIGHT}>
         <AreaChart data={chartData} margin={CHART_MARGIN}>
           <CartesianGrid strokeDasharray="2 6" stroke={colors.grid} opacity={0.5} />
@@ -350,7 +351,7 @@ export function PoolDistributionChart({ initialData }: { initialData?: PoolHisto
     </ResponsiveContainer>
     </SupplyChartFrame>
   ) : view === 'composition' ? (
-    <SupplyChartFrame yLabel="Chain supply (ZEC)">
+    <SupplyChartFrame yLabel="Chain supply (WCASH)">
       <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height={CHART_HEIGHT}>
         <AreaChart data={chartData} margin={CHART_MARGIN}>
           <CartesianGrid strokeDasharray="2 6" stroke={colors.grid} opacity={0.5} />
@@ -417,7 +418,7 @@ export function PoolDistributionChart({ initialData }: { initialData?: PoolHisto
       sourceHeight={0}
       isLive
       shareText={shareText}
-      fileName="cipherscan-supply-history.png"
+      fileName="wcashexplorer-supply-history.png"
       watermark={true}
       className=""
       footerNote={`${meta.shortLabel} · ${period.toUpperCase()}`}

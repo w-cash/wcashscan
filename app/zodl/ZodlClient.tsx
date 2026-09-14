@@ -126,7 +126,7 @@ export function ZodlClient({
       {/* Header */}
       <h1 className="text-2xl sm:text-3xl font-bold text-primary">Miner ZODL Leaderboard</h1>
       <p className="text-sm text-secondary mt-2 max-w-3xl leading-relaxed">
-        Every block mints new ZEC for whoever mined it. We follow the <span className="text-primary font-semibold">first move</span> those rewards make: still <span className="text-primary font-semibold">held</span>, swept into the <span style={{ color: SEG.shielded.color }} className="font-semibold">shielded pool</span>, or sent straight to an <span style={{ color: SEG.offramp.color }} className="font-semibold">exchange or bridge</span>. Shielding isn&apos;t selling — and as it turns out, most miners shield rather than dump.
+        Every block mints new WCASH for whoever mined it. We follow the <span className="text-primary font-semibold">first move</span> those rewards make: still <span className="text-primary font-semibold">held</span>, swept into the <span style={{ color: SEG.shielded.color }} className="font-semibold">shielded pool</span>, or sent straight to an <span style={{ color: SEG.offramp.color }} className="font-semibold">exchange or bridge</span>. Shielding isn&apos;t selling — and as it turns out, most miners shield rather than dump.
       </p>
 
       {/* Controls */}
@@ -164,7 +164,7 @@ export function ZodlClient({
       {summary && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           {[
-            { label: 'Rewards mined', value: `${fmtZec(summary.totalEarnedZat)} ZEC`, color: 'text-primary' },
+            { label: 'Rewards mined', value: `${fmtZec(summary.totalEarnedZat)} WCASH`, color: 'text-primary' },
             { label: 'Held (unspent)', value: `${(summary.networkHoldRatio * 100).toFixed(1)}%`, color: 'text-cipher-yellow-bright' },
             { label: 'Shielded', value: `${(summary.networkShieldedRatio * 100).toFixed(1)}%`, color: '' , style: { color: SEG.shielded.color } },
             { label: 'To exchange / bridge', value: `${(summary.networkOfframpRatio * 100).toFixed(1)}%`, color: '', style: { color: SEG.offramp.color } },
@@ -209,7 +209,7 @@ export function ZodlClient({
                   <div className={`w-6 text-sm font-mono font-bold ${i < 3 ? 'text-cipher-yellow-bright' : 'text-muted'}`}>{i + 1}</div>
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-primary truncate">{p.pool}</div>
-                    <div className="text-[10px] text-muted font-mono">{fmtZec(p.earnedZat)} ZEC · {p.blocks.toLocaleString()} blocks</div>
+                    <div className="text-[10px] text-muted font-mono">{fmtZec(p.earnedZat)} WCASH · {p.blocks.toLocaleString()} blocks</div>
                   </div>
                 </div>
 
@@ -220,7 +220,7 @@ export function ZodlClient({
                       <div
                         key={s.label}
                         style={{ width: `${s.pct}%`, backgroundColor: s.color }}
-                        title={`${s.label}: ${s.pct.toFixed(1)}% · ${fmtZec(s.zat)} ZEC`}
+                        title={`${s.label}: ${s.pct.toFixed(1)}% · ${fmtZec(s.zat)} WCASH`}
                       />
                     ) : null)}
                   </div>

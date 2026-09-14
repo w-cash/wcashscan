@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getApiUrl } from '@/lib/api-config';
 import { zatToZec } from '@/lib/format-numbers';
+import { CURRENCY } from '@/lib/config';
 
 export type CurrencyMode = 'zec' | 'usd';
 
@@ -52,8 +53,8 @@ export function useCurrencyToggle() {
 }
 
 /**
- * Format a zatoshi value as ZEC or USD depending on mode.
- * Returns a compact string like "18,590 ZEC" or "$9,042,340".
+ * Format a base-unit value as the configured Wcash currency or USD.
+ * Returns a compact string like "18,590 WCASH" or "$9,042,340".
  */
 export function fmtValue(
   zat: number,
@@ -74,6 +75,6 @@ export function fmtValue(
     }
     return `$${usd.toFixed(2)}`;
   }
-  if (Math.abs(zec) >= 1000) return `${Math.round(zec).toLocaleString()} ZEC`;
-  return `${zec.toLocaleString(undefined, { maximumFractionDigits: 2 })} ZEC`;
+  if (Math.abs(zec) >= 1000) return `${Math.round(zec).toLocaleString()} ${CURRENCY}`;
+  return `${zec.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${CURRENCY}`;
 }

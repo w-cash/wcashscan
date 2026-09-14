@@ -85,7 +85,7 @@ function generateSummary(tx: ParsedTransaction, txType: TxType): string {
   if (txType === 'COINBASE') {
     const totalOut = tx.vout.reduce((sum, o) => sum + o.value, 0);
     parts.push(`Coinbase transaction with ${tx.vout.length} output${tx.vout.length !== 1 ? 's' : ''}`);
-    if (totalOut > 0) parts.push(`totaling ${totalOut.toFixed(4)} ZEC`);
+    if (totalOut > 0) parts.push(`totaling ${totalOut.toFixed(4)} WCASH`);
     return parts.join(' ');
   }
 
@@ -113,7 +113,7 @@ function generateSummary(tx: ParsedTransaction, txType: TxType): string {
   // TRANSPARENT
   const totalOut = tx.vout.reduce((sum, o) => sum + o.value, 0);
   parts.push(`Transparent transaction: ${tx.vin.length} input${tx.vin.length !== 1 ? 's' : ''}, ${tx.vout.length} output${tx.vout.length !== 1 ? 's' : ''}`);
-  if (totalOut > 0) parts.push(`totaling ${totalOut.toFixed(4)} ZEC`);
+  if (totalOut > 0) parts.push(`totaling ${totalOut.toFixed(4)} WCASH`);
   return parts.join(' ');
 }
 
@@ -610,7 +610,7 @@ export default function DecodeClient() {
                         <div className="text-2xl font-bold font-mono text-primary">
                           {totalTransparentOutput.toFixed(8)}
                         </div>
-                        <div className="text-sm text-muted font-mono">ZEC</div>
+                        <div className="text-sm text-muted font-mono">WCASH</div>
                         {(result.nOutputsSapling > 0 || result.orchardActions > 0) && (
                           <Badge color="purple" className="mt-2">
                             + {result.nOutputsSapling + result.orchardActions} shielded (hidden)
@@ -637,7 +637,7 @@ export default function DecodeClient() {
                             <TxTypeBadge category="transparent" />
                           </div>
                           <span className="text-sm font-mono text-primary font-semibold">
-                            {vout.value.toFixed(8)} ZEC
+                            {vout.value.toFixed(8)} WCASH
                           </span>
                         </div>
                         {vout.scriptPubKey.address && (
@@ -730,7 +730,7 @@ export default function DecodeClient() {
                             <TxTypeBadge category="sapling" icon={<Icons.Currency />} label="SAPLING VALUE BALANCE" />
                           </div>
                           <span className="text-lg font-bold font-mono text-primary">
-                            {result.valueBalanceSapling.toFixed(8)} ZEC
+                            {result.valueBalanceSapling.toFixed(8)} WCASH
                           </span>
                         </div>
                       </div>
@@ -762,7 +762,7 @@ export default function DecodeClient() {
                             <TxTypeBadge category="orchard" icon={<Icons.Currency />} label="ORCHARD VALUE BALANCE" />
                           </div>
                           <span className="text-lg font-bold font-mono text-primary">
-                            {result.valueBalanceOrchard.toFixed(8)} ZEC
+                            {result.valueBalanceOrchard.toFixed(8)} WCASH
                           </span>
                         </div>
                       </div>
@@ -821,7 +821,7 @@ export default function DecodeClient() {
             <div className="flex-1">
               <h3 className="font-semibold text-primary mb-2">What is a raw transaction?</h3>
               <p className="text-sm text-secondary leading-relaxed mb-3">
-                A raw transaction is a hex-encoded representation of a Zcash transaction containing all
+                A raw transaction is a hex-encoded representation of a Wcash transaction containing all
                 inputs, outputs, and signatures. You can obtain one from a wallet, the{' '}
                 <code className="text-xs font-mono text-cipher-cyan">getrawtransaction</code>{' '}
                 RPC call, or by constructing one programmatically.

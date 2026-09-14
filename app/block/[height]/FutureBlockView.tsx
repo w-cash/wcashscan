@@ -87,11 +87,11 @@ export function FutureBlockView({
             </h1>
             {upgrade ? (
               <p className="text-secondary mb-6">
-                <span className="text-cipher-yellow-bright font-semibold">{upgrade.name}</span> has reached on the Zcash network.
+                <span className="text-cipher-yellow-bright font-semibold">{upgrade.name}</span> has reached on the Wcash network.
               </p>
             ) : (
               <p className="text-secondary mb-6">
-                This block is now part of the Zcash blockchain.
+                This block is now part of the Wcash blockchain.
               </p>
             )}
             <div className="flex flex-wrap items-center justify-center gap-3">
@@ -123,7 +123,7 @@ export function FutureBlockView({
         <span className="text-[10px] font-mono text-muted tracking-wider">&gt; FUTURE_BLOCK</span>
         <div className="flex flex-wrap items-center gap-3 mt-1">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold font-mono text-primary">
-            Zcash Block #{targetHeight.toLocaleString()}
+            Wcash Block #{targetHeight.toLocaleString()}
           </h1>
           {upgrade ? (
             <Badge color="amber">{upgrade.badge || 'NETWORK UPGRADE'}</Badge>
@@ -132,7 +132,7 @@ export function FutureBlockView({
           )}
         </div>
         <p className="mt-3 text-xs sm:text-sm text-secondary">
-          This block has not been mined yet. Below is an estimate based on Zcash&apos;s
+          This block has not been mined yet. Below is an estimate based on Wcash&apos;s
           75-second target block interval.
         </p>
       </div>

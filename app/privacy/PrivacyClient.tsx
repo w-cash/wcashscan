@@ -35,7 +35,7 @@ const RELATED = [
   {
     href: '/turnstile',
     title: 'Turnstile Tracker',
-    description: 'Where deshielded ZEC goes after it hits a transparent address.',
+    description: 'Where deshielded WCASH goes after it hits a transparent address.',
   },
   {
     href: '/tools/blend-check',
@@ -53,7 +53,7 @@ const SCORE_TOOLTIPS: Record<(typeof SCORE_KEYS)[number], string> = {
     'Among shielded transactions in the last 30 days, the share that are fully shielded (z→z) with no transparent inputs or outputs. Up to 33 points.',
   depth: 'Percentage of total chain supply held in shielded pools. Up to 20 points.',
   hygiene:
-    'Of ZEC that left shielded pools over the last 90 days, how much was reshielded instead of staying transparent. Up to 14 points.',
+    'Of WCASH that left shielded pools over the last 90 days, how much was reshielded instead of staying transparent. Up to 14 points.',
 };
 
 function scoreInputLabel(key: (typeof SCORE_KEYS)[number], percent: number) {
@@ -204,7 +204,7 @@ export default function PrivacyClient() {
             {usagePercent != null ? (
               <span className="inline-flex items-center gap-1 text-secondary tabular-nums">
                 {usagePercent.toFixed(1)}% shielded tx share · 30d
-                <Tooltip content="Share of non-coinbase transactions that touch shielded pools (Sapling, Orchard, or Ironwood) in the last 30 days. Transaction count — not ZEC volume or pool supply." />
+                <Tooltip content="Share of non-coinbase transactions that touch shielded pools (Sapling, Orchard, or Ironwood) in the last 30 days. Transaction count — not WCASH volume or pool supply." />
               </span>
             ) : null}
             <span className="text-muted" title={updatedTitle}>

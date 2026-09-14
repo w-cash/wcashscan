@@ -17,7 +17,7 @@ export function Resources() {
           ZIP-318 (Migration Spec)
         </a>
         <Link href="/privacy-risks" className="text-cipher-cyan hover:underline">
-          CipherScan Privacy Scanner
+          WcashExplorer Privacy Scanner
         </Link>
       </div>
     </div>

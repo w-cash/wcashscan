@@ -312,8 +312,8 @@ export async function renderTransactionsPage(
         '@id': `${collectionUrl}#collection`,
         url: collectionUrl,
         name: request.page > 1
-          ? `Zcash ${isShielded ? 'shielded ' : ''}transaction archive page ${request.page}`
-          : `Latest Zcash ${isShielded ? 'shielded ' : ''}transactions`,
+          ? `Wcash ${isShielded ? 'shielded ' : ''}transaction archive page ${request.page}`
+          : `Latest Wcash ${isShielded ? 'shielded ' : ''}transactions`,
         isPartOf: { '@id': `${getBaseUrl()}/#website` },
         mainEntity: {
           '@type': 'ItemList',
@@ -321,7 +321,7 @@ export async function renderTransactionsPage(
             '@type': 'ListItem',
             position: index + 1,
             url: `${getBaseUrl()}/tx/${item.txid.toLowerCase()}`,
-            name: `Zcash ${isShielded ? 'shielded ' : ''}transaction ${item.txid.toLowerCase()}`,
+            name: `Wcash ${isShielded ? 'shielded ' : ''}transaction ${item.txid.toLowerCase()}`,
           })),
         },
       }
@@ -356,11 +356,11 @@ export async function renderTransactionsPage(
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         <div className="border-t border-cipher-border pt-8 max-w-3xl">
           <h2 className="text-sm font-bold font-mono text-secondary mb-3 uppercase tracking-wider">
-            About Zcash Transactions
+            About Wcash Transactions
           </h2>
           <div className="space-y-3 text-sm text-muted leading-relaxed">
             <p>
-              Zcash supports two kinds of value transfer: transparent transactions, which work
+              Wcash supports two kinds of value transfer: transparent transactions, which work
               like Bitcoin and expose addresses and amounts on-chain, and shielded
               transactions, which use zero-knowledge proofs (Sapling, Orchard, and Ironwood) to keep
               sender, receiver, and amount private. Many transactions mix both — shielding

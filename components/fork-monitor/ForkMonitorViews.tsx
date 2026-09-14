@@ -140,12 +140,12 @@ export function StatusHero({ data }: { data: ForkMonitorData }) {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatTile
-          label="CipherScan tip"
+          label="WcashExplorer tip"
           value={`h${data.cipherscan.tip.toLocaleString()}`}
           sub={truncHash(data.cipherscan.tip_hash, 10)}
         />
         <StatTile
-          label="cTAZ tip"
+          label="cTWC tip"
           value={data.ctaz ? `h${data.ctaz.tip.toLocaleString()}` : '—'}
           sub={data.ctaz ? truncHash(data.ctaz.tip_hash, 10) : 'unavailable'}
         />
@@ -162,8 +162,8 @@ export function StatusHero({ data }: { data: ForkMonitorData }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-        <ReferenceNodePanel title="CipherScan" node={data.cipherscan} />
-        <ReferenceNodePanel title="cTAZ reference" node={data.ctaz} />
+        <ReferenceNodePanel title="WcashExplorer" node={data.cipherscan} />
+        <ReferenceNodePanel title="cTWC reference" node={data.ctaz} />
       </div>
     </>
   );
@@ -291,7 +291,7 @@ export function ForkTimeline({ data }: { data: ForkMonitorData }) {
                         <code className="text-secondary break-all">{anchor.cipherscan_hash || '—'}</code>
                       </div>
                       <div className="flex gap-2">
-                        <span className="text-muted w-10 shrink-0">cTAZ</span>
+                        <span className="text-muted w-10 shrink-0">cTWC</span>
                         <code className="text-secondary break-all">{anchor.ctaz_hash || '—'}</code>
                       </div>
                     </div>
@@ -341,7 +341,7 @@ export function GuidancePanel({ data }: { data: ForkMonitorData }) {
     actions.push('Known anchors match. If your node differs, restart and reconnect before wiping cache.');
   }
   if (data.cipherscan.peers < 5) {
-    actions.push('CipherScan peer count is low. Peers measure connectivity, not fork correctness.');
+    actions.push('WcashExplorer peer count is low. Peers measure connectivity, not fork correctness.');
   }
   actions.push('If your node is mining every block, pause mining until peers and anchor hashes align.');
 
@@ -379,7 +379,7 @@ const anchorColumns: DataTableColumn<Anchor>[] = [
   },
   {
     id: 'cipherscan',
-    header: 'CipherScan',
+    header: 'WcashExplorer',
     cell: (a) => (
       <span className="inline-flex items-center gap-1.5 font-mono text-xs text-secondary">
         <code>{truncHash(a.cipherscan_hash, 10)}</code>
@@ -389,7 +389,7 @@ const anchorColumns: DataTableColumn<Anchor>[] = [
   },
   {
     id: 'ctaz',
-    header: 'cTAZ',
+    header: 'cTWC',
     cell: (a) => (
       <span className="inline-flex items-center gap-1.5 font-mono text-xs text-secondary">
         <code>{truncHash(a.ctaz_hash, 10)}</code>
@@ -484,7 +484,7 @@ export function CheckerPanel({
                     <code className="text-secondary break-all">{r.cipherscan_hash || 'not synced'}</code>
                   </div>
                   <div>
-                    <span className="text-muted">cTAZ </span>
+                    <span className="text-muted">cTWC </span>
                     <code className="text-secondary break-all">{r.ctaz_hash || 'unavailable'}</code>
                   </div>
                 </div>

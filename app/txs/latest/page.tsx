@@ -11,11 +11,11 @@ export async function generateMetadata(): Promise<Metadata> {
     && request.pageParamConsistent;
 
   return buildPageMetadata({
-    title: 'Latest Zcash Transactions | CipherScan',
-    description: 'Browse the latest Zcash transactions including shielded, transparent, and coinbase transactions. Real-time transaction explorer.',
+    title: 'Latest Wcash Transactions | WcashExplorer',
+    description: 'Browse the latest Wcash transactions including shielded, transparent, and coinbase transactions. Real-time transaction explorer.',
     path: isStableArchive ? getArchiveCanonicalPath(request) : '/txs',
     index: isStableArchive && request.page === 1,
-    keywords: ['zcash transactions', 'zcash transaction explorer', 'ZEC transactions', 'zcash shielded transactions', 'zcash tx'],
+    keywords: ['zcash transactions', 'zcash transaction explorer', 'WCASH transactions', 'zcash shielded transactions', 'zcash tx'],
   });
 }
 

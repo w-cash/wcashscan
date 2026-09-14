@@ -8,9 +8,11 @@ import { Footer } from "@/components/Footer";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { ChainSyncBanner } from "@/components/ChainSyncBanner";
 import { NU7VoteBanner } from "@/components/NU7VoteBanner";
+import { MainnetPreviewBanner } from "@/components/MainnetPreviewBanner";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { buildPageMetadata, getBaseUrl, getNetwork } from "@/lib/seo";
+import { BRAND_NAME, SCANNER_REPOSITORY_URL } from "@/lib/brand";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -30,23 +32,23 @@ const baseUrl = getBaseUrl();
 
 const siteCopy = network === 'mainnet'
   ? {
-      title: 'CipherScan: Zcash Block Explorer & Privacy Analytics',
-      description: 'CipherScan is a Zcash block explorer for searching blocks, transactions, and addresses, with live shielded pool, privacy, and network analytics.',
-      keywords: ['zcash block explorer', 'zcash explorer', 'ZEC explorer', 'zcash blockchain explorer', 'zcash transactions', 'zcash shielded pool', 'privacy', 'ZEC', 'CipherScan', 'zcash rich list', 'zcash network'],
-      imageAlt: 'CipherScan - Zcash Block Explorer',
+      title: `${BRAND_NAME}: Wcash Block Explorer & Privacy Analytics`,
+      description: `${BRAND_NAME} is the Wcash block explorer for searching blocks, transactions, and addresses, with live shielded pool, privacy, and network analytics.`,
+      keywords: ['wcash block explorer', 'wcash explorer', 'WCASH explorer', 'wcash blockchain explorer', 'wcash transactions', 'wcash shielded pool', 'privacy', BRAND_NAME],
+      imageAlt: `${BRAND_NAME} - Wcash Block Explorer`,
     }
   : network === 'testnet'
     ? {
-        title: 'CipherScan Testnet - Zcash Testnet Explorer for TAZ',
-        description: 'Explore the Zcash testnet with CipherScan. Search TAZ blocks, transactions, and addresses, monitor pending transactions, and inspect testnet network activity.',
-        keywords: ['zcash testnet', 'TAZ', 'TAZ explorer', 'zcash testnet explorer', 'zcash testnet transactions', 'CipherScan testnet'],
-        imageAlt: 'CipherScan - Zcash Testnet Explorer for TAZ',
+        title: `${BRAND_NAME} Testnet - Wcash Testnet Explorer`,
+        description: `Explore the Wcash testnet with ${BRAND_NAME}. Search blocks, transactions, and addresses, monitor pending transactions, and inspect testnet network activity.`,
+        keywords: ['wcash testnet', 'TWC', 'wcash testnet explorer', 'wcash testnet transactions', `${BRAND_NAME} testnet`],
+        imageAlt: `${BRAND_NAME} - Wcash Testnet Explorer`,
       }
     : {
-        title: 'CipherScan Crosslink - Zcash Crosslink Explorer',
-        description: 'Explore the Zcash Crosslink feature network, including blocks, finality, staking, and validators.',
-        keywords: ['zcash crosslink', 'crosslink explorer', 'zcash finality', 'cTAZ'],
-        imageAlt: 'CipherScan - Zcash Crosslink Explorer',
+        title: `${BRAND_NAME} Crosslink - Wcash Crosslink Explorer`,
+        description: 'Explore the Wcash Crosslink feature network, including blocks, finality, staking, and validators.',
+        keywords: ['wcash crosslink', 'crosslink explorer', 'wcash finality', 'TWC'],
+        imageAlt: `${BRAND_NAME} - Wcash Crosslink Explorer`,
       };
 
 const rootPageMetadata = buildPageMetadata({
@@ -59,7 +61,7 @@ export const metadata: Metadata = {
   ...rootPageMetadata,
   authors: [{ name: "Kenbak" }],
   creator: "Kenbak",
-  publisher: "CipherScan",
+  publisher: BRAND_NAME,
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
@@ -76,14 +78,13 @@ export const metadata: Metadata = {
 };
 
 // Site-wide JSON-LD structured data.
-// WebSite.name + alternateName teach Google the site-name entity for the
-// "cipherscan" brand query; Organization with sameAs links the domain to
-// our social/code profiles for entity disambiguation.
+// WebSite.name + alternateName identify the WcashExplorer product, while the
+// repository link keeps the source provenance explicit.
 const websiteAlternateNames = network === 'mainnet'
-  ? ['CipherScan Zcash Explorer', 'cipherscan.app']
+  ? [`${BRAND_NAME} Wcash Explorer`, 'Wcash Explorer']
   : network === 'testnet'
-    ? ['CipherScan Testnet', 'Zcash Testnet Explorer', 'TAZ Explorer']
-    : ['CipherScan Crosslink', 'Zcash Crosslink Explorer'];
+    ? [`${BRAND_NAME} Testnet`, 'Wcash Testnet Explorer', 'TWC Explorer']
+    : [`${BRAND_NAME} Crosslink`, 'Wcash Crosslink Explorer'];
 
 const siteJsonLd = {
   '@context': 'https://schema.org',
@@ -91,22 +92,19 @@ const siteJsonLd = {
     {
       '@type': 'WebSite',
       '@id': `${baseUrl}/#website`,
-      name: 'CipherScan',
+      name: BRAND_NAME,
       alternateName: websiteAlternateNames,
       description: siteCopy.description,
       url: `${baseUrl}/`,
-      publisher: { '@id': 'https://cipherscan.app/#organization' },
+      publisher: { '@id': `${baseUrl}/#organization` },
     },
     {
       '@type': 'Organization',
-      '@id': 'https://cipherscan.app/#organization',
-      name: 'CipherScan',
-      url: 'https://cipherscan.app',
-      logo: 'https://cipherscan.app/apple-touch-icon.png',
-      sameAs: [
-        'https://twitter.com/cipherscan_app',
-        'https://github.com/Kenbak/cipherscan',
-      ],
+      '@id': `${baseUrl}/#organization`,
+      name: BRAND_NAME,
+      url: baseUrl,
+      logo: `${baseUrl}/apple-touch-icon.png`,
+      sameAs: [SCANNER_REPOSITORY_URL],
     },
   ],
 };
@@ -126,6 +124,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
       </a>
       <MaintenanceBanner />
       <ChainSyncBanner />
+      <MainnetPreviewBanner />
       <NavBar />
       <StatsBar />
       <NU7VoteBanner />

@@ -134,7 +134,7 @@ export default function BroadcastClient() {
           &larr; All Tools
         </Link>
         <h1 className="text-2xl md:text-3xl font-bold text-primary">Broadcast Transaction</h1>
-        <p className="text-sm text-secondary mt-1">Submit a signed raw transaction to the Zcash network</p>
+        <p className="text-sm text-secondary mt-1">Submit a signed raw transaction to the Wcash network</p>
       </div>
 
       {/* Warning */}
@@ -211,7 +211,7 @@ export default function BroadcastClient() {
                     icon={Icons.Check}
                     label="Status"
                     value={<Badge color="green" icon={<Icons.Bolt />}>BROADCAST</Badge>}
-                    tooltip="Transaction has been submitted to the Zcash network"
+                    tooltip="Transaction has been submitted to the Wcash network"
                   />
 
                   {/* TXID row with hash display */}
@@ -348,7 +348,7 @@ export default function BroadcastClient() {
             <div className="flex-1">
               <h3 className="font-semibold text-primary mb-2">How to create a signed transaction</h3>
               <p className="text-sm text-secondary leading-relaxed mb-3">
-                Use a Zcash library (<code className="text-xs font-mono text-cipher-cyan">zcash_primitives</code>,{' '}
+                Use a Wcash library (<code className="text-xs font-mono text-cipher-cyan">zcash_primitives</code>,{' '}
                 <code className="text-xs font-mono text-cipher-cyan">librustzcash</code>) or{' '}
                 <code className="text-xs font-mono text-cipher-cyan">zcash-cli</code> to construct and sign
                 a transaction offline. The resulting hex can be pasted here.

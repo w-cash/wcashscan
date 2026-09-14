@@ -11,7 +11,7 @@ function formatZatoshi(value: bigint | null): string {
   return value.toLocaleString('en-US', { useGrouping: true });
 }
 
-/** Format ZEC for display; never use scientific notation (e.g. 0.00000001 not 1e-8). */
+/** Format WCASH for display; never use scientific notation (e.g. 0.00000001 not 1e-8). */
 function formatZec(value: number | null): string {
   if (value === null || Number.isNaN(value)) return '';
   if (value === 0) return '0';
@@ -140,9 +140,9 @@ export default function UnitConverterClient() {
         >
           ← All Tools
         </Link>
-        <h1 className="text-2xl md:text-3xl font-bold text-primary">ZEC ↔ Zatoshi</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-primary">WCASH ↔ Zatoshi</h1>
         <p className="text-sm text-secondary mt-1">
-          1 ZEC = 100,000,000 zatoshis (10<sup>8</sup>). Convert between ZEC and the smallest protocol unit.
+          1 WCASH = 100,000,000 zatoshis (10<sup>8</sup>). Convert between WCASH and the smallest protocol unit.
         </p>
       </div>
 
@@ -153,7 +153,7 @@ export default function UnitConverterClient() {
           <Card>
             <CardBody className="space-y-6">
               <label htmlFor="zec" className="block text-xs font-mono text-muted uppercase tracking-wider mb-2">
-                ZEC
+                WCASH
               </label>
               <div className="flex gap-2">
                 <input
@@ -164,14 +164,14 @@ export default function UnitConverterClient() {
                   value={zecInput}
                   onChange={handleZecChange}
                   className="input-field flex-1 font-mono text-lg min-w-0"
-                  aria-label="ZEC amount"
+                  aria-label="WCASH amount"
                 />
                 <button
                   type="button"
                   onClick={() => copyToClipboard(zecForCopy, setCopiedZec)}
                   disabled={!zecForCopy}
                   className="p-2 rounded-md text-muted hover:text-primary hover:bg-cipher-hover transition-colors disabled:opacity-40 disabled:pointer-events-none self-center shrink-0"
-                  aria-label="Copy ZEC value"
+                  aria-label="Copy WCASH value"
                 >
                   <CopyIcon copied={copiedZec} />
                 </button>
@@ -212,7 +212,7 @@ export default function UnitConverterClient() {
             <CardBody>
               <h2 className="text-sm font-bold text-primary mb-2 font-mono">Why zatoshis?</h2>
               <p className="text-sm text-secondary leading-relaxed">
-                Zatoshi is the smallest unit of ZEC (1 zatoshi = 10<sup>-8</sup> ZEC). Wallets and protocols
+                Zatoshi is the smallest unit of WCASH (1 zatoshi = 10<sup>-8</sup> WCASH). Wallets and protocols
                 often work in zatoshis to avoid floating-point issues. Transaction amounts in the blockchain
                 and in raw transaction hex are expressed in zatoshis.
               </p>
@@ -227,12 +227,12 @@ export default function UnitConverterClient() {
               <h2 className="text-sm font-bold text-primary mb-1 font-mono">Reference values</h2>
               <p className="text-xs text-muted mb-4">Copy for use in scripts or APIs.</p>
               <div className="space-y-0">
-                <CopyableRow label="1 ZEC" valueDisplay="100,000,000 zatoshi" valueToCopy="100000000" />
-                <CopyableRow label="1 zatoshi" valueDisplay="0.00000001 ZEC" valueToCopy="0.00000001" />
-                <CopyableRow label="0.0001 ZEC" valueDisplay="10,000 zatoshi" valueToCopy="0.0001" />
-                <CopyableRow label="ZIP-317 fee" valueDisplay="10,000 zatoshi = 0.0001 ZEC" valueToCopy="10000" />
-                <CopyableRow label="100,000 zatoshi" valueDisplay="0.001 ZEC" valueToCopy="100000" />
-                <CopyableRow label="1,000,000 zatoshi" valueDisplay="0.01 ZEC" valueToCopy="1000000" />
+                <CopyableRow label="1 WCASH" valueDisplay="100,000,000 zatoshi" valueToCopy="100000000" />
+                <CopyableRow label="1 zatoshi" valueDisplay="0.00000001 WCASH" valueToCopy="0.00000001" />
+                <CopyableRow label="0.0001 WCASH" valueDisplay="10,000 zatoshi" valueToCopy="0.0001" />
+                <CopyableRow label="ZIP-317 fee" valueDisplay="10,000 zatoshi = 0.0001 WCASH" valueToCopy="10000" />
+                <CopyableRow label="100,000 zatoshi" valueDisplay="0.001 WCASH" valueToCopy="100000" />
+                <CopyableRow label="1,000,000 zatoshi" valueDisplay="0.01 WCASH" valueToCopy="1000000" />
               </div>
             </CardBody>
           </Card>

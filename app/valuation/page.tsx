@@ -137,7 +137,7 @@ export default function ValuationPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <PageHeader
         eyebrow="ON_CHAIN_VALUATION"
-        title="Zcash Valuation Metrics"
+        title="Wcash Valuation Metrics"
         subtitle="Realized price, MVRV ratio, SOPR, and NUPL — derived from transparent UTXO data and shielded flow approximations."
       />
 
@@ -256,7 +256,7 @@ export default function ValuationPage() {
                   />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    labelFormatter={d => new Date(d).toLocaleDateString()}
+                    labelFormatter={d => new Date(String(d)).toLocaleDateString()}
                     formatter={(v, name) => [
                       `$${Number(v)?.toFixed(2)}`,
                       name === 'priceUsd' ? 'Market Price' : 'Realized Price',
@@ -320,7 +320,7 @@ export default function ValuationPage() {
                   />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    labelFormatter={d => new Date(d).toLocaleDateString()}
+                    labelFormatter={d => new Date(String(d)).toLocaleDateString()}
                     formatter={(v) => [Number(v)?.toFixed(3), 'MVRV']}
                   />
                   <ReferenceLine y={1} stroke={colors.referenceLine} strokeDasharray="4 4" label={{ value: 'Fair Value (1.0)', fill: colors.axis, fontSize: 10 }} />
@@ -370,7 +370,7 @@ export default function ValuationPage() {
                   />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    labelFormatter={d => new Date(d).toLocaleDateString()}
+                    labelFormatter={d => new Date(String(d)).toLocaleDateString()}
                     formatter={(v) => [Number(v)?.toFixed(4), 'SOPR']}
                   />
                   <ReferenceLine y={1} stroke={colors.referenceLine} strokeDasharray="4 4" label={{ value: 'Break-even (1.0)', fill: colors.axis, fontSize: 10 }} />
@@ -421,7 +421,7 @@ export default function ValuationPage() {
                   />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    labelFormatter={d => new Date(d).toLocaleDateString()}
+                    labelFormatter={d => new Date(String(d)).toLocaleDateString()}
                     formatter={(v) => [`${(Number(v) * 100).toFixed(1)}%`, 'NUPL']}
                   />
                   <ReferenceLine y={0} stroke={colors.referenceLine} strokeDasharray="4 4" label={{ value: 'Break-even', fill: colors.axis, fontSize: 10 }} />
@@ -473,7 +473,7 @@ export default function ValuationPage() {
                   />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    labelFormatter={d => new Date(d).toLocaleDateString()}
+                    labelFormatter={d => new Date(String(d)).toLocaleDateString()}
                     formatter={(v, name) => {
                       const labels: Record<string, string> = {
                         lt1m: '< 1 month',
@@ -483,7 +483,7 @@ export default function ValuationPage() {
                         b1_2y: '1–2 years',
                         gt2y: '2+ years',
                       };
-                      return [`${Number(v).toLocaleString()} ZEC`, labels[String(name)] || String(name)];
+                      return [`${Number(v).toLocaleString()} WCASH`, labels[String(name)] || String(name)];
                     }}
                   />
                   <Legend
@@ -512,7 +512,7 @@ export default function ValuationPage() {
           </CardBody>
         </Card>
         <p className="text-xs text-cipher-text-muted mt-3">
-          Distribution of unspent transparent ZEC by age of the UTXO.
+          Distribution of unspent transparent WCASH by age of the UTXO.
           Growing older bands indicate long-term holding; growing younger bands indicate fresh activity.
           Transparent pool only — shielded note ages are not publicly visible.
         </p>
@@ -555,7 +555,7 @@ export default function ValuationPage() {
                   />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    labelFormatter={d => new Date(d).toLocaleDateString()}
+                    labelFormatter={d => new Date(String(d)).toLocaleDateString()}
                     formatter={(v, name) => {
                       if (name === 'cdd') return [Number(v).toLocaleString(), 'Coin Days Destroyed'];
                       return [`${Number(v).toFixed(1)} days`, 'Avg Dormancy'];
@@ -609,7 +609,7 @@ export default function ValuationPage() {
               <div>
                 <p className="font-medium text-cipher-text-primary">Realized Price &amp; Realized Cap</p>
                 <p>
-                  Each transparent UTXO is valued at the ZEC price on the day it was created
+                  Each transparent UTXO is valued at the WCASH price on the day it was created
                   (i.e., last moved on-chain). This is the standard methodology used by
                   CoinMetrics, Glassnode, and all major on-chain analytics platforms — a
                   transparent move resets the cost basis because it represents a new economic
@@ -622,11 +622,11 @@ export default function ValuationPage() {
                   approach, which scales a single average price to all shielded supply.
                 </p>
                 <p className="mt-2 text-cipher-text-muted">
-                  Note: Other Zcash explorers may use alternative approaches (e.g., tracing
+                  Note: Other Wcash explorers may use alternative approaches (e.g., tracing
                   transparent UTXOs back to their original mining or deshielding event and not
                   repricing on subsequent transparent moves). This produces a lower realized cap
                   figure. Neither method is incorrect — they reflect different definitions of
-                  &quot;cost basis.&quot; CipherScan follows the industry-standard UTXO creation
+                  &quot;cost basis.&quot; WcashExplorer follows the industry-standard UTXO creation
                   date method for cross-chain comparability.
                 </p>
               </div>
@@ -658,13 +658,13 @@ export default function ValuationPage() {
                 <p>
                   Transparent UTXOs are bucketed by age (&lt;1m, 1–3m, 3–6m, 6–12m, 1–2y, 2y+)
                   based on the time since the output was created. Each bucket shows the total
-                  ZEC held in UTXOs of that age, stacked to show the full transparent supply.
+                  WCASH held in UTXOs of that age, stacked to show the full transparent supply.
                 </p>
               </div>
               <div>
                 <p className="font-medium text-cipher-text-primary">Coin Days Destroyed (CDD)</p>
                 <p>
-                  For each transparent UTXO spent on a given day, CDD = (ZEC value) × (days
+                  For each transparent UTXO spent on a given day, CDD = (WCASH value) × (days
                   since creation). High CDD indicates old coins moving, which historically
                   correlates with distribution phases by long-term holders.
                 </p>
@@ -678,7 +678,7 @@ export default function ValuationPage() {
                 </p>
                 <p className="text-xs text-cipher-text-muted mt-2">
                   Transparent realized cap methodology: UTXO creation date pricing (CoinMetrics
-                  standard). ~27.5M unspent UTXOs holding ~12.4M ZEC are priced individually.
+                  standard). ~27.5M unspent UTXOs holding ~12.4M WCASH are priced individually.
                 </p>
               </div>
             </div>

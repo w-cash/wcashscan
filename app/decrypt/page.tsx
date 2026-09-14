@@ -1,9 +1,10 @@
 import DecryptPageClient from '@/components/DecryptPageClient';
-import { buildPageMetadata } from '@/lib/seo';
+import { buildPageMetadata, getBaseUrl } from '@/lib/seo';
+import { BRAND_NAME } from '@/lib/brand';
 
 export const metadata = buildPageMetadata({
-  title: 'Decrypt Zcash Transaction Memos | CipherScan',
-  description: 'Decrypt Orchard and Ironwood transaction memos in your browser using a Zcash viewing key. Your key never leaves your device.',
+  title: 'Decrypt Wcash Transaction Memos | WcashExplorer',
+  description: 'Decrypt Orchard and Ironwood transaction memos in your browser using a Wcash viewing key. Your key never leaves your device.',
   keywords: [
     'zcash decrypt memo',
     'zcash memo tool',
@@ -16,23 +17,24 @@ export const metadata = buildPageMetadata({
     'ironwood transaction decrypt',
     'zcash shielded message',
     'zcash memo reader',
-    'ZEC decrypt',
+    'WCASH decrypt',
     'zcash privacy tool',
     'zcash transaction viewer',
     'UFVK decrypt',
   ],
   path: '/decrypt',
-  imageAlt: 'CipherScan - Zcash Decrypt Memo Tool',
+  imageAlt: 'WcashExplorer - Wcash Decrypt Memo Tool',
   networks: ['mainnet'],
 });
 
 // JSON-LD structured data for the decrypt tool
+const baseUrl = getBaseUrl();
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
-  name: 'Zcash Decrypt Memo Tool',
-  description: 'Free online tool to decrypt Zcash shielded transaction memos using a Unified Full Viewing Key (UFVK). Supports Orchard and Ironwood transactions. 100% client-side decryption using WebAssembly.',
-  url: 'https://cipherscan.app/decrypt',
+  name: `${BRAND_NAME} Wcash Decrypt Memo Tool`,
+  description: 'Free online tool to decrypt Wcash shielded transaction memos using a Unified Full Viewing Key (UFVK). Supports Orchard and Ironwood transactions. 100% client-side decryption using WebAssembly.',
+  url: `${baseUrl}/decrypt`,
   applicationCategory: 'UtilityApplication',
   operatingSystem: 'Web Browser',
   offers: {
@@ -42,11 +44,11 @@ const jsonLd = {
   },
   creator: {
     '@type': 'Organization',
-    name: 'CipherScan',
-    url: 'https://cipherscan.app',
+    name: BRAND_NAME,
+    url: baseUrl,
   },
   featureList: [
-    'Decrypt Zcash shielded transaction memos',
+    'Decrypt Wcash shielded transaction memos',
     'Support for Orchard and Ironwood transactions',
     'Client-side decryption using WebAssembly',
     'Encrypted inbox scanner',
@@ -56,15 +58,15 @@ const jsonLd = {
 
 const faqs = [
   {
-    question: 'How do I decrypt a Zcash memo?',
-    answer: 'Enter the transaction ID and your Unified Full Viewing Key (UFVK) in the tool above. CipherScan decrypts the memo entirely in your browser using WebAssembly — your viewing key is never sent to any server.',
+    question: 'How do I decrypt a Wcash memo?',
+    answer: 'Enter the transaction ID and your Unified Full Viewing Key (UFVK) in the tool above. WcashExplorer decrypts the memo entirely in your browser using WebAssembly — your viewing key is never sent to any server.',
   },
   {
     question: 'Is it safe to use my viewing key here?',
     answer: 'Yes. A viewing key only allows reading transactions; it cannot spend funds. All decryption happens client-side, so the key itself never leaves your device.',
   },
   {
-    question: 'What is a Zcash encrypted memo?',
+    question: 'What is a Wcash encrypted memo?',
     answer: 'A 512-byte message attached to a shielded (Sapling, Orchard, or Ironwood) transaction. Only the recipient, or anyone with the viewing key, can read it. Memos can contain text, payment references, or arbitrary data.',
   },
   {
@@ -138,9 +140,9 @@ export default function DecryptPage() {
           {/* Additional SEO context — kept short; the facts above already cover the details */}
           <section className="mt-8 mb-8">
             <p className="text-xs text-muted leading-relaxed max-w-2xl">
-              Zcash is one of the only cryptocurrencies with encrypted memos on shielded transactions —
+              Wcash is one of the only cryptocurrencies with encrypted memos on shielded transactions —
               free-text or structured data protected by the same zero-knowledge cryptography that hides amounts
-              and addresses. CipherScan&apos;s decrypt tool is free and open-source, decoding Orchard and Ironwood
+              and addresses. WcashExplorer&apos;s decrypt tool is free and open-source, decoding Orchard and Ironwood
               memos entirely in WebAssembly with no server round-trip and no node or CLI required.
             </p>
           </section>

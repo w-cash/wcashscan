@@ -39,7 +39,7 @@ export function EmptyAddressView({ address, copiedText, onCopy }: EmptyAddressVi
             </p>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-cipher-surface rounded-lg text-xs text-muted font-mono border border-glass-4">
               <span className="w-1.5 h-1.5 rounded-full bg-cipher-cyan" />
-              Balance: 0 ZEC
+              Balance: 0 WCASH
             </div>
           </div>
         </CardBody>

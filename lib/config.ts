@@ -1,18 +1,18 @@
-import { getConfiguredNetwork } from '@/lib/network';
+import { getConfiguredNetwork, getCurrencyForNetwork, getNetworkLabel, type AppNetwork } from '@/lib/network';
 
 // Auto-detect network based on domain or env variable
-function detectNetwork(): 'mainnet' | 'testnet' | 'crosslink' {
+function detectNetwork(): AppNetwork {
   // First check explicit env variable
   const configured = getConfiguredNetwork();
   if (configured === 'mainnet' || configured === 'testnet') return configured;
-  if (configured === 'crosslink-testnet') return 'crosslink';
+  if (configured === 'crosslink-testnet') return 'crosslink-testnet';
 
   // Auto-detect from domain (client-side only)
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    if (hostname.includes('crosslink')) return 'crosslink';
+    if (hostname.includes('crosslink')) return 'crosslink-testnet';
     if (hostname.includes('testnet.')) return 'testnet';
-    if (hostname === 'cipherscan.app' || hostname === 'www.cipherscan.app') return 'mainnet';
+    if (hostname.startsWith('mainnet.')) return 'mainnet';
   }
 
   // Default to testnet for local dev
@@ -24,27 +24,30 @@ export const NETWORK = detectNetwork();
 
 export const isMainnet = NETWORK === 'mainnet';
 export const isTestnet = NETWORK === 'testnet';
-export const isCrosslink = NETWORK === 'crosslink';
+export const isCrosslink = NETWORK === 'crosslink-testnet';
 
 // Currency display
-export const CURRENCY = isCrosslink ? 'CTAZ' : isMainnet ? 'ZEC' : 'TAZ';
+export const CURRENCY = getCurrencyForNetwork(NETWORK);
 
 // Network display
-export const NETWORK_LABEL = isCrosslink ? 'CROSSLINK' : isMainnet ? 'MAINNET' : 'TESTNET';
+export const NETWORK_LABEL = getNetworkLabel(NETWORK);
 
 // RPC config (server-side only)
 export const RPC_CONFIG = {
-  url: process.env.ZCASH_RPC_URL || (isMainnet ? 'http://localhost:8232' : 'http://localhost:18232'),
-  cookie: process.env.ZCASH_RPC_COOKIE || '',
+  url: process.env.WCASH_RPC_URL || process.env.ZCASH_RPC_URL || (isMainnet ? 'http://localhost:8232' : 'http://localhost:18232'),
+  cookie: process.env.WCASH_RPC_COOKIE || process.env.ZCASH_RPC_COOKIE || '',
 };
 
 // Network colors
 export const NETWORK_COLOR = isCrosslink ? 'text-cipher-purple' : isMainnet ? 'text-cipher-yellow' : 'text-gray-400';
 
 // Domain URLs
-export const MAINNET_URL = 'https://cipherscan.app';
-export const TESTNET_URL = 'https://testnet.cipherscan.app';
-export const CROSSLINK_URL = 'https://crosslink.cipherscan.app';
+// Network links are deliberately environment-driven. Until a Wcash mainnet
+// host exists, both modes may point at the same local/testnet deployment.
+const DEFAULT_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+export const MAINNET_URL = process.env.NEXT_PUBLIC_MAINNET_URL || DEFAULT_SITE_URL;
+export const TESTNET_URL = process.env.NEXT_PUBLIC_TESTNET_URL || DEFAULT_SITE_URL;
+export const CROSSLINK_URL = process.env.NEXT_PUBLIC_CROSSLINK_URL || TESTNET_URL;
 
 // Crosslink staking constants (from zebra-consensus)
 export const STAKING_DAY_PERIOD = 150;
@@ -65,7 +68,7 @@ export const NETWORK_UPGRADES: Record<number, NetworkUpgrade> = {
   3428143: {
     name: 'Ironwood (NU6.3)',
     zip: 'ZIP-258',
-    description: 'Activates the Ironwood shielded pool with enhanced cryptographic foundations. ZEC holders can migrate from Orchard to Ironwood via ZIP-318 turnstile transactions.',
+    description: 'Activates the Ironwood shielded pool with enhanced cryptographic foundations. WCASH holders can migrate from Orchard to Ironwood via ZIP-318 turnstile transactions.',
     link: '/ironwood',
   },
   3459350: {
@@ -79,7 +82,7 @@ export const NETWORK_UPGRADES: Record<number, NetworkUpgrade> = {
   4134000: {
     name: 'Ironwood (NU6.3)',
     zip: 'ZIP-258',
-    description: 'Activates the Ironwood shielded pool with enhanced cryptographic foundations. ZEC holders can migrate from Orchard to Ironwood via ZIP-318 turnstile transactions.',
+    description: 'Activates the Ironwood shielded pool with enhanced cryptographic foundations. WCASH holders can migrate from Orchard to Ironwood via ZIP-318 turnstile transactions.',
     link: '/ironwood',
   },
 };

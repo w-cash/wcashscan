@@ -6,6 +6,7 @@ import { getApiUrl } from '@/lib/api-config';
 import { fmtValue, type CurrencyMode } from '@/hooks/useCurrencyToggle';
 import { zatToZec } from '@/lib/format-numbers';
 import type { ChartColors, TierTx } from './types';
+import { getPublicUrl } from '@/lib/brand';
 
 export const TIER_BOUNDARIES_ZAT = [1e8, 10e8, 100e8, 1000e8, 5000e8, 10000e8];
 export const TIER_LABELS = ['Under 1', '1–10', '10–100', '100–1K', '1K–5K', '5K–10K', '10K+'];
@@ -92,8 +93,8 @@ export function MigrationTiers({
         title="Who's migrating?"
         sourceHeight={tipHeight}
         isLive={activated}
-        shareText={`Ironwood migration by size: ${tierData.map(t => `${t.label} ZEC: ${t.count} txs (${t.volumePct.toFixed(0)}% vol)`).join(' · ')}\n\nhttps://cipherscan.app/ironwood`}
-        fileName="cipherscan-migration-tiers.png"
+        shareText={`Ironwood migration by size: ${tierData.map(t => `${t.label} WCASH: ${t.count} txs (${t.volumePct.toFixed(0)}% vol)`).join(' · ')}\n\n${getPublicUrl('/ironwood')}`}
+        fileName="wcashexplorer-migration-tiers.png"
       >
         <p className="text-xs text-muted mb-5">
           Orchard → Ironwood migration volume by transaction size. Drag the scrubber to see how the distribution evolved.

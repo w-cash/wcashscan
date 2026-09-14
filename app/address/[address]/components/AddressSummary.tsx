@@ -61,14 +61,14 @@ export function AddressSummary({ data, totalTxCount }: AddressSummaryProps) {
       {funding && funding.isCoinbase && (
         <>
           {' '}
-          It first received {fmtZec(funding.amountZec)} ZEC as a mining reward on{' '}
+          It first received {fmtZec(funding.amountZec)} WCASH as a mining reward on{' '}
           {formatHumanDate(funding.blockTime)}.
         </>
       )}
       {funding && !funding.isCoinbase && (
         <>
           {' '}
-          It first received {fmtZec(funding.amountZec)} ZEC from {funderNode} on{' '}
+          It first received {fmtZec(funding.amountZec)} WCASH from {funderNode} on{' '}
           {formatHumanDate(funding.blockTime)}.
         </>
       )}

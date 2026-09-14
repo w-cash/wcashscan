@@ -80,7 +80,7 @@ const DEFAULT_STATS: StatId[] = ['block', 'mempool', 'hashrate', 'shieldedPool',
 // 6 items lands around ~950px including gaps/separators: comfortable margin
 // even as block heights/prices grow more digits over time.
 const MAX_STATS = 6;
-const STORAGE_KEY = 'cipherscan-stats-bar-selection';
+const STORAGE_KEY = 'wcashexplorer-stats-bar-selection';
 
 function isValidStatId(value: unknown): value is StatId {
   return typeof value === 'string' && (STAT_ORDER as string[]).includes(value);

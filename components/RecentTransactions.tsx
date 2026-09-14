@@ -10,6 +10,7 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { ShieldFlowBadge } from '@/components/ShieldFlowBadge';
 import { resolveShieldFlowType } from '@/components/icons/shield-flow';
 import { HashLink, IconTooltip, RedactedAmount } from '@/components/ui';
+import { CURRENCY } from '@/lib/config';
 
 
 const TransparentIcon = () => (
@@ -194,7 +195,7 @@ export const RecentTransactions = memo(function RecentTransactions({
                   </td>
                   <td className="px-4 sm:px-5 h-12 border-b border-cipher-border text-right">
                     {amount !== null ? (
-                      <span className="font-mono text-sm text-secondary whitespace-nowrap tabular-nums">{formatZecPrecise(amount)} <span className="text-muted/50">ZEC</span></span>
+                      <span className="font-mono text-sm text-secondary whitespace-nowrap tabular-nums">{formatZecPrecise(amount)} <span className="text-muted/50">{CURRENCY}</span></span>
                     ) : (
                       <RedactedAmount />
                     )}

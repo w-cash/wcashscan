@@ -6,6 +6,7 @@ import { getChartColors } from '@/lib/chart-theme';
 import { formatZecCompact, zatToZec } from '@/lib/format-numbers';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { ShareableCard } from '@/components/ShareableCard';
+import { getPublicUrl } from '@/lib/brand';
 import { SupplyTreemap } from './SupplyTreemap';
 import { SupplyTimelineScrubber } from './SupplyTimelineScrubber';
 import {
@@ -131,7 +132,7 @@ function SupplyLegendStat({
       </div>
       <p className="mt-2 text-xl font-bold tabular-nums tracking-tight text-primary sm:text-2xl">
         {formatZecCompact(zec)}
-        <span className="ml-1.5 text-sm font-normal text-muted">ZEC</span>
+        <span className="ml-1.5 text-sm font-normal text-muted">WCASH</span>
       </p>
       <p className="mt-1 text-sm font-mono tabular-nums text-secondary">{capPct.toFixed(1)}% of 21M</p>
       {footnote ? <p className="mt-1 text-[10px] font-mono text-muted">{footnote}</p> : null}
@@ -363,15 +364,15 @@ export function PoolOverviewHero({ data }: { data: PoolOverviewData }) {
     </p>;
   }
 
-  const shareText = `${shieldedPctOfMined.toFixed(1)}% of issued ZEC is shielded (${formatZecCompact(shieldedZec)}). See the supply map on CipherScan.\n\nhttps://cipherscan.app/pools`;
+  const shareText = `${shieldedPctOfMined.toFixed(1)}% of issued WCASH is shielded (${formatZecCompact(shieldedZec)}). See the supply map on WcashExplorer.\n\n${getPublicUrl('/pools')}`;
 
   return (
     <ShareableCard
-      title="Where every ZEC lives"
+      title="Where every WCASH lives"
       sourceHeight={0}
       isLive={false}
       shareText={shareText}
-      fileName="cipherscan-pools.png"
+      fileName="wcashexplorer-pools.png"
       watermark={false}
       className=""
       footerNote={
@@ -381,7 +382,7 @@ export function PoolOverviewHero({ data }: { data: PoolOverviewData }) {
       }
     >
       <p className="mb-4 max-w-2xl text-xs leading-relaxed text-secondary font-sans">
-        Public supply, shielded supply, and unmined ZEC — mapped against the 21M cap. Hover{' '}
+        Public supply, shielded supply, and unmined WCASH — mapped against the 21M cap. Hover{' '}
         <span className="text-cipher-yellow">shielded</span> for the pool split · click to pin · hover a pool to
         isolate.
       </p>
@@ -403,7 +404,7 @@ export function PoolOverviewHero({ data }: { data: PoolOverviewData }) {
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-mono text-secondary" aria-label="Supply map legend">
         {topLevel.filter((segment) => segment.zat > 0).map((segment) => (
           <span key={segment.key}>
-            {segment.label}: {formatZecCompact(zatToZec(segment.zat))} ZEC
+            {segment.label}: {formatZecCompact(zatToZec(segment.zat))} WCASH
             {' · '}{(segment.zat / MAX_SUPPLY_ZAT * 100).toFixed(1)}%
           </span>
         ))}

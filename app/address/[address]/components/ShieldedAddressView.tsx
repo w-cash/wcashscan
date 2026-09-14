@@ -120,7 +120,7 @@ export function ShieldedAddressView({
           {/* Redacted data visualization */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             {[
-              { label: 'BALANCE', redacted: '████████ ZEC' },
+              { label: 'BALANCE', redacted: '████████ WCASH' },
               { label: 'TX_COUNT', redacted: '████' },
               { label: 'LAST_ACTIVE', redacted: '████-██-██' },
               { label: 'MEMO_FIELD', redacted: '██████████████' },

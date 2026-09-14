@@ -143,8 +143,8 @@ export default function MempoolClient() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <PageHeader
           eyebrow="MEMPOOL_VIEWER"
-          title="Zcash Mempool — Pending Transactions"
-          subtitle="Transactions waiting to be mined into the next Zcash block, streamed in real time. Shielded, transparent, and mixed transactions are labeled as they enter the queue."
+          title="Wcash Mempool — Pending Transactions"
+          subtitle="Transactions waiting to be mined into the next Wcash block, streamed in real time. Shielded, transparent, and mixed transactions are labeled as they enter the queue."
         />
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-10 w-10 border-2 border-cipher-cyan border-t-transparent" />
@@ -174,8 +174,8 @@ export default function MempoolClient() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <PageHeader
         eyebrow="MEMPOOL_VIEWER"
-        title="Zcash Mempool — Pending Transactions"
-        subtitle="Transactions waiting to be mined into the next Zcash block, streamed in real time. Shielded, transparent, and mixed transactions are labeled as they enter the queue."
+        title="Wcash Mempool — Pending Transactions"
+        subtitle="Transactions waiting to be mined into the next Wcash block, streamed in real time. Shielded, transparent, and mixed transactions are labeled as they enter the queue."
       />
 
       {/* Stats Row */}
@@ -323,7 +323,7 @@ export default function MempoolClient() {
                               </span>
                             ) : totalOut > 0 ? (
                               <span className="font-mono text-xs text-primary">
-                                {totalOut.toFixed(4)}<span className="text-muted ml-1">ZEC</span>
+                                {totalOut.toFixed(4)}<span className="text-muted ml-1">WCASH</span>
                               </span>
                             ) : (
                               <span className="text-muted">—</span>

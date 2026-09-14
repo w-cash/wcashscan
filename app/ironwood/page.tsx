@@ -3,9 +3,9 @@ import { getApiUrl, getBaseUrl, getNetwork } from '@/lib/seo';
 import { fetchWithDeadline } from '@/lib/server-fetch';
 import { notFound } from 'next/navigation';
 
-const PAGE_NAME = 'Zcash Ironwood Upgrade & Migration Tracker';
+const PAGE_NAME = 'Wcash Ironwood Upgrade & Migration Tracker';
 const PAGE_DESCRIPTION =
-  'Track the Zcash Ironwood (NU6.3) activation, Orchard migration, Ironwood shielded supply, and observable turnstile activity on CipherScan.';
+  'Track the Wcash Ironwood (NU6.3) activation, Orchard migration, Ironwood shielded supply, and observable turnstile activity on WcashExplorer.';
 
 async function fetchJson(
   apiBase: string,
@@ -47,10 +47,10 @@ export default async function MigrationPage() {
     '@type': 'Dataset',
     '@id': `${pageUrl}#dataset`,
     url: pageUrl,
-    name: 'Zcash Ironwood Upgrade and Migration Data',
+    name: 'Wcash Ironwood Upgrade and Migration Data',
     description:
-      'Live Zcash Ironwood activation and Orchard-to-Ironwood migration data, including pool balances, supply verification, migration velocity, cohort anonymity, and privacy analysis.',
-    creator: { '@id': 'https://cipherscan.app/#organization' },
+      'Live Wcash Ironwood activation and Orchard-to-Ironwood migration data, including pool balances, supply verification, migration velocity, cohort anonymity, and privacy analysis.',
+    creator: { '@id': `${baseUrl}/#organization` },
     isPartOf: { '@id': `${baseUrl}/#website` },
     mainEntityOfPage: { '@id': `${pageUrl}#webpage` },
   };

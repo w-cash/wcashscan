@@ -49,18 +49,18 @@ function getAddressSummary(address: string, meta: AddressMeta | null): string {
   const typeLabel = getAddressTypeLabel(address, meta?.type || detectedType);
 
   if (!meta) {
-    return `${typeLabel} Zcash address lookup. Public activity details are temporarily unavailable.`;
+    return `${typeLabel} Wcash address lookup. Public activity details are temporarily unavailable.`;
   }
 
   if (meta.isShielded) {
-    return `${typeLabel} Zcash address. Its balance and transaction history are private.`;
+    return `${typeLabel} Wcash address. Its balance and transaction history are private.`;
   }
 
   const transactionSummary = meta.txCount === 0
     ? 'no indexed transactions'
     : `${formatNumber(meta.txCount)} indexed transaction${meta.txCount === 1 ? '' : 's'}`;
 
-  return `${typeLabel} Zcash address with a public balance of ${meta.balance.toFixed(4)} ZEC and ${transactionSummary}.`;
+  return `${typeLabel} Wcash address with a public balance of ${meta.balance.toFixed(4)} WCASH and ${transactionSummary}.`;
 }
 
 function serializeJsonLd(value: unknown): string {
@@ -82,8 +82,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (resolution.state === 'unavailable') {
     const fallback = buildPageMetadata({
-      title: `Zcash Address ${shortAddr} | CipherScan`,
-      description: `CipherScan cannot currently verify public activity for Zcash address ${shortAddr} because the address index is temporarily unavailable.`,
+      title: `Wcash Address ${shortAddr} | WcashExplorer`,
+      description: `WcashExplorer cannot currently verify public activity for Wcash address ${shortAddr} because the address index is temporarily unavailable.`,
       path,
       index: false,
     });
@@ -97,18 +97,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const meta = resolution.meta;
 
   const typeLabel = getAddressTypeLabel(address, meta.type);
-  const title = `Zcash Address ${shortAddr} | CipherScan`;
+  const title = `Wcash Address ${shortAddr} | WcashExplorer`;
 
-  const descParts = [`${typeLabel} Zcash address.`];
+  const descParts = [`${typeLabel} Wcash address.`];
   if (!meta.isShielded) {
-    descParts.push(`Balance: ${meta.balance.toFixed(4)} ZEC.`);
+    descParts.push(`Balance: ${meta.balance.toFixed(4)} WCASH.`);
     if (meta.txCount > 0) {
       descParts.push(`${formatNumber(meta.txCount)} transaction${meta.txCount !== 1 ? 's' : ''}.`);
     }
   } else {
     descParts.push('Balance and transaction history are encrypted with zero-knowledge proofs.');
   }
-  descParts.push('View on CipherScan.');
+  descParts.push('View on WcashExplorer.');
 
   const description = descParts.join(' ');
 
@@ -119,7 +119,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     path,
     index: hasPublicActivity,
-    imageAlt: `${typeLabel} Zcash address ${shortAddr}`,
+    imageAlt: `${typeLabel} Wcash address ${shortAddr}`,
   });
 }
 
@@ -149,13 +149,13 @@ export default async function AddressLayout({
     '@type': 'WebPage',
     '@id': `${canonical}#webpage`,
     url: canonical,
-    name: `${typeLabel} Zcash address ${address}`,
+    name: `${typeLabel} Wcash address ${address}`,
     description: summary,
     isPartOf: { '@id': `${getBaseUrl()}/#website` },
     mainEntity: {
       '@type': 'Thing',
       '@id': `${canonical}#address`,
-      name: `${typeLabel} Zcash address`,
+      name: `${typeLabel} Wcash address`,
       identifier: address,
       description: summary,
       url: canonical,
@@ -167,7 +167,7 @@ export default async function AddressLayout({
       <header className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-12">
         <span className="text-[10px] font-mono text-muted tracking-wider">&gt; ZCASH_ADDRESS</span>
         <h1 className="mt-2 text-primary break-all">
-          <span className="block text-lg sm:text-xl font-semibold">Zcash Address</span>
+          <span className="block text-lg sm:text-xl font-semibold">Wcash Address</span>
           <span className="block mt-2 text-sm sm:text-base font-mono font-normal">{address}</span>
         </h1>
         <p className="mt-2 text-sm text-secondary">{summary}</p>

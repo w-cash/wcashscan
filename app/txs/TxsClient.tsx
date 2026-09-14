@@ -146,7 +146,7 @@ const txColumns: DataTableColumn<Transaction>[] = [
     cell: (tx) => {
       const amount = knownAmountZec(tx);
       if (amount === null) return <RedactedAmount className="!text-xs" />;
-      return <span className="font-mono text-xs text-primary font-semibold tabular-nums whitespace-nowrap">{formatZecPrecise(amount)} <span className="text-muted font-normal">ZEC</span></span>;
+      return <span className="font-mono text-xs text-primary font-semibold tabular-nums whitespace-nowrap">{formatZecPrecise(amount)} <span className="text-muted font-normal">WCASH</span></span>;
     },
   },
   {
@@ -210,7 +210,7 @@ const shieldedColumns: DataTableColumn<ShieldedFlow>[] = [
     cell: (flow) => (
       <span className="font-mono text-xs text-primary">
         {flow.amountZec != null
-          ? <span className="font-semibold tabular-nums whitespace-nowrap">{flow.amountZec.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} <span className="text-muted font-normal">ZEC</span></span>
+          ? <span className="font-semibold tabular-nums whitespace-nowrap">{flow.amountZec.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} <span className="text-muted font-normal">WCASH</span></span>
           : <RedactedAmount className="!text-xs" />
         }
       </span>
@@ -654,9 +654,9 @@ const POOL_FILTERS: { id: PoolFilter; label: string }[] = [
 
 const AMOUNT_PRESETS = [
   { value: 0, label: 'Any' },
-  { value: 10, label: '> 10 ZEC' },
-  { value: 100, label: '> 100 ZEC' },
-  { value: 1000, label: '> 1K ZEC' },
+  { value: 10, label: '> 10 WCASH' },
+  { value: 100, label: '> 100 WCASH' },
+  { value: 1000, label: '> 1K WCASH' },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -742,8 +742,8 @@ export default function TxsClient({
         const poolVal = data.shieldedPool?.currentSize;
         poolSize = poolVal != null
           ? Number(poolVal) >= 1_000_000
-            ? `${(Number(poolVal) / 1_000_000).toFixed(2)}M ZEC`
-            : `${Math.round(Number(poolVal)).toLocaleString()} ZEC`
+            ? `${(Number(poolVal) / 1_000_000).toFixed(2)}M WCASH`
+            : `${Math.round(Number(poolVal)).toLocaleString()} WCASH`
           : null;
         setShieldedSummary({ shieldedPct: pct, avgPerDay, poolSize });
       }
@@ -796,8 +796,8 @@ export default function TxsClient({
   ];
 
   const pageTitle = activePage > 1
-    ? `Zcash Transactions - Page ${activePage}`
-    : 'Latest Zcash Transactions';
+    ? `Wcash Transactions - Page ${activePage}`
+    : 'Latest Wcash Transactions';
 
   const eyebrow = 'ALL_TRANSACTIONS';
 
@@ -845,7 +845,7 @@ export default function TxsClient({
             <MetricCard size="compact"
               label="Total Transactions"
               value={activeList.pagination.total > 0 ? activeList.pagination.total.toLocaleString() : '—'}
-              hint="All confirmed Zcash txs"
+              hint="All confirmed Wcash txs"
             />
             <MetricCard size="compact"
               label="Transactions (24h)"

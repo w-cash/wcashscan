@@ -27,19 +27,19 @@ interface ChartEntry {
 
 const CHART_DEFS: ChartEntry[] = [
   { id: 'privacy-adoption', title: 'Shielded Tx Adoption', description: 'Daily shielded transaction share (%)', category: 'privacy', href: '/privacy' },
-  { id: 'pool-growth', title: 'Shielded Pool Growth', description: 'Total ZEC in shielded pools over time', category: 'privacy', href: '/privacy' },
+  { id: 'pool-growth', title: 'Shielded Pool Growth', description: 'Total WCASH in shielded pools over time', category: 'privacy', href: '/privacy' },
   { id: 'daily-activity', title: 'Daily Activity', description: 'Shielded vs transparent transaction counts', category: 'privacy', href: '/privacy' },
   { id: 'anonymity-set', title: 'Anonymity Set', description: 'How many txs could be your source at each amount', category: 'privacy', href: '/privacy', isNew: true },
   { id: 'shielding-dist', title: 'Shielding Distribution', description: 'Shield/deshield histogram by amount bucket', category: 'privacy', href: '/privacy', isNew: true },
   { id: 'pool-balances', title: 'Pool Balances', description: 'Ironwood, Orchard, Sapling, Sprout pool sizes over time', category: 'pools', href: '/pools' },
-  { id: 'flow-volume', title: 'Shield/Deshield Flows', description: 'Daily ZEC flowing in/out of shielded pools', category: 'pools', href: '/pools' },
-  { id: 'turnstile', title: 'Turnstile Tracker', description: 'Where deshielded ZEC goes after leaving pools', category: 'pools', href: '/turnstile' },
+  { id: 'flow-volume', title: 'Shield/Deshield Flows', description: 'Daily WCASH flowing in/out of shielded pools', category: 'pools', href: '/pools' },
+  { id: 'turnstile', title: 'Turnstile Tracker', description: 'Where deshielded WCASH goes after leaving pools', category: 'pools', href: '/turnstile' },
   { id: 'mining-dist', title: 'Pool Distribution', description: 'Mining pool block share', category: 'mining', href: '/mining' },
   { id: 'hashrate-share', title: 'Hashrate Share', description: 'Per-pool network share over time', category: 'mining', href: '/mining' },
   { id: 'miner-behavior', title: 'Miner Behavior', description: 'Block rewards: earned vs moved vs held', category: 'mining', href: '/mining' },
   { id: 'mining-metrics', title: 'Mining Metrics', description: 'Solrate, difficulty, block time (rolling avg)', category: 'mining', href: '/mining' },
-  { id: 'network-hashrate', title: 'Network Hashrate', description: 'Total Zcash network hashrate (GSol/s) over time', category: 'mining', href: '/mining', isNew: true },
-  { id: 'supply-emission', title: 'Supply Emission', description: 'ZEC circulating supply toward 21M cap', category: 'network', href: '/network' },
+  { id: 'network-hashrate', title: 'Network Hashrate', description: 'Total Wcash network hashrate (GSol/s) over time', category: 'mining', href: '/mining', isNew: true },
+  { id: 'supply-emission', title: 'Supply Emission', description: 'WCASH circulating supply toward 21M cap', category: 'network', href: '/network' },
   { id: 'chain-size', title: 'Chain Size', description: 'Blockchain disk size growth (GB)', category: 'network', href: '/network' },
   { id: 'protocol-stats', title: 'Protocol Stats', description: 'Monthly Sapling/Orchard commitments & nullifiers', category: 'network', href: '/network' },
   { id: 'fee-dist', title: 'Fee Distribution', description: 'Daily fee percentile bands (p10–p90)', category: 'fees', href: '/network', isNew: true },
@@ -49,7 +49,7 @@ const CHART_DEFS: ChartEntry[] = [
 ];
 
 const LIVE_VIZ_DEFS = [
-  { id: 'node-map', title: 'Node Map', description: 'Geographic Zcash node distribution', href: '/network' },
+  { id: 'node-map', title: 'Node Map', description: 'Geographic Wcash node distribution', href: '/network' },
   { id: 'mempool', title: 'Mempool Bubbles', description: 'Live unconfirmed transactions', href: '/mempool' },
   { id: 'privacy-risks', title: 'Privacy Risk Scanner', description: 'Round-trip and batch pattern detection', href: '/privacy-risks' },
   { id: 'network-pulse', title: 'Network Pulse', description: 'Auto-detected statistical anomalies', href: '/pulse', isNew: true },

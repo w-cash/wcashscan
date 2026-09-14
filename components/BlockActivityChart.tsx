@@ -26,7 +26,7 @@ const DEFAULT_BLOCKS = 60;
  * Color-coded by finality state: green (finalized), cyan (pending), orange
  * (being voted on right now). Hover for details, click to open block detail.
  *
- * Works for any Zcash chain because it only needs /api/blocks — we just
+ * Works for any Wcash chain because it only needs /api/blocks — we just
  * recommend showing it for Crosslink where the classic geo node map is
  * less useful (small peer pool).
  */

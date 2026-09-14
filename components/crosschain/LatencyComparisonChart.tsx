@@ -44,7 +44,7 @@ const CHAIN_ICON_MAP: Record<string, string> = {
 
 const CHAIN_DISPLAY_NAMES: Record<string, string> = {
   btc: 'Bitcoin', eth: 'Ethereum', sol: 'Solana', near: 'NEAR',
-  doge: 'Dogecoin', xrp: 'Ripple', zec: 'Zcash', base: 'Base',
+  doge: 'Dogecoin', xrp: 'Ripple', zec: 'Wcash', base: 'Base',
   arb: 'Arbitrum', pol: 'Polygon', avax: 'Avalanche', trx: 'Tron',
   tron: 'Tron', apt: 'Aptos', sui: 'Sui', ton: 'TON',
   bnb: 'BNB Chain', bsc: 'BNB Chain', op: 'Optimism', ltc: 'Litecoin',
@@ -100,12 +100,12 @@ function LatencyTooltip({ active, payload, colors }: {
       <p className="mb-2 text-[10px] uppercase tracking-wider text-muted">{row.chainName}</p>
       {row.inboundCount > 0 && (
         <p className="tabular-nums text-secondary">
-          <span className="text-cipher-green">Buy ZEC</span>: {formatMinutes(row.inboundMedian)} median · {row.inboundCount.toLocaleString()} swaps
+          <span className="text-cipher-green">Buy WCASH</span>: {formatMinutes(row.inboundMedian)} median · {row.inboundCount.toLocaleString()} swaps
         </p>
       )}
       {row.outboundCount > 0 && (
         <p className="tabular-nums text-secondary">
-          <span className="text-cipher-orange">Sell ZEC</span>: {formatMinutes(row.outboundMedian)} median · {row.outboundCount.toLocaleString()} swaps
+          <span className="text-cipher-orange">Sell WCASH</span>: {formatMinutes(row.outboundMedian)} median · {row.outboundCount.toLocaleString()} swaps
         </p>
       )}
     </div>
@@ -146,7 +146,7 @@ export function LatencyComparisonChart({ inbound, outbound }: { inbound: Latency
   return (
     <ChartCard title="ZEC_LATENCY_BY_CHAIN" height={chartHeight}>
       <p className="text-xs text-muted mb-3 max-w-2xl">
-        Median time from swap initiation to ZEC confirmation, by chain and direction. Sorted by swap volume.
+        Median time from swap initiation to WCASH confirmation, by chain and direction. Sorted by swap volume.
       </p>
       <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height={chartHeight - 20}>
         <BarChart data={displayRows} layout="vertical" margin={{ left: 8, right: 24 }}>
@@ -162,7 +162,7 @@ export function LatencyComparisonChart({ inbound, outbound }: { inbound: Latency
           <Tooltip content={<LatencyTooltip colors={colors} />} cursor={{ fill: colors.barCursor }} />
           <Legend
             wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-            formatter={(value) => value === 'inboundMedian' ? 'Buy ZEC (inbound)' : 'Sell ZEC (outbound)'}
+            formatter={(value) => value === 'inboundMedian' ? 'Buy WCASH (inbound)' : 'Sell WCASH (outbound)'}
           />
           <Bar dataKey="inboundMedian" name="inboundMedian" fill="var(--color-cipher-green)" fillOpacity={0.85} radius={[0, 3, 3, 0]} barSize={9} />
           <Bar dataKey="outboundMedian" name="outboundMedian" fill="var(--color-cipher-orange)" fillOpacity={0.85} radius={[0, 3, 3, 0]} barSize={9} />

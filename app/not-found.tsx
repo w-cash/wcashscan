@@ -103,7 +103,7 @@ export default function NotFound() {
         {/* Footer message */}
         <div className="mt-10">
           <p className="text-xs text-muted font-mono">
-            Meanwhile, the Zcash network continues to process{' '}
+            Meanwhile, the Wcash network continues to process{' '}
             <span className="text-cipher-purple">private transactions</span> at this very moment...
           </p>
         </div>

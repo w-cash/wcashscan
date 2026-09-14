@@ -71,13 +71,13 @@ export function CrosslinkLearn() {
                 What is Crosslink?
               </h1>
               <p className="text-secondary leading-relaxed mb-4">
-                Crosslink is an upgrade to Zcash that adds a <strong className="text-primary">Proof-of-Stake finality gadget</strong> on
+                Crosslink is an upgrade to Wcash that adds a <strong className="text-primary">Proof-of-Stake finality gadget</strong> on
                 top of Proof-of-Work. It strengthens the network by making confirmed blocks irreversible, while keeping PoW
                 as the foundation of consensus.
               </p>
               <p className="text-secondary leading-relaxed mb-6">
                 This is the <strong className="text-primary">Season 1 Feature Net</strong> — an incentivized
-                testnet where participants earn cTAZ that converts to real ZEC rewards.
+                testnet where participants earn cTWC that converts to real WCASH rewards.
               </p>
 
               <div className="flex flex-wrap gap-3">
@@ -127,7 +127,7 @@ export function CrosslinkLearn() {
                   <span className="text-muted">irreversible, no reorgs</span>
                 </div>
                 <div className="mt-4 pt-4 border-t border-cipher-border-alpha/30 text-muted text-xs leading-relaxed">
-                  Stakers delegate cTAZ to finalizers, who gain voting power.
+                  Stakers delegate cTWC to finalizers, who gain voting power.
                   Once 2/3+ of stake agrees, a block becomes finalized.
                 </div>
               </div>
@@ -147,7 +147,7 @@ export function CrosslinkLearn() {
               </div>
               <h3 className="font-bold text-primary mb-2">Miner</h3>
               <p className="text-sm text-secondary leading-relaxed">
-                Produce new blocks using Proof-of-Work. Every block earns <strong className="text-primary">5 cTAZ</strong> for
+                Produce new blocks using Proof-of-Work. Every block earns <strong className="text-primary">5 cTWC</strong> for
                 the miner. The desktop app CPU-mines by default.
               </p>
             </CardBody>
@@ -177,8 +177,8 @@ export function CrosslinkLearn() {
               </div>
               <h3 className="font-bold text-primary mb-2">Staker (Protocol Guardian)</h3>
               <p className="text-sm text-secondary leading-relaxed">
-                Lock cTAZ in a delegation bond to a finalizer. Your stake earns a share of
-                the <strong className="text-primary">5 cTAZ</strong> block reward distributed to stakers.
+                Lock cTWC in a delegation bond to a finalizer. Your stake earns a share of
+                the <strong className="text-primary">5 cTWC</strong> block reward distributed to stakers.
                 Staking uses shielded funds for privacy.
               </p>
             </CardBody>
@@ -259,26 +259,26 @@ export function CrosslinkLearn() {
             <h2 className="text-xs font-mono text-muted uppercase tracking-wider">{'>'} SEASON_1_REWARDS</h2>
           </div>
           <p className="text-secondary mb-8 max-w-2xl">
-            Season 1 is allocated <strong className="text-primary">25 real ZEC</strong>, distributed pro rata
-            based on cTAZ earned through mining and staking.
+            Season 1 is allocated <strong className="text-primary">25 real WCASH</strong>, distributed pro rata
+            based on cTWC earned through mining and staking.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <Card variant="compact" className="text-center">
               <CardBody>
-                <span className="text-2xl font-mono font-bold text-cipher-cyan">5 cTAZ</span>
+                <span className="text-2xl font-mono font-bold text-cipher-cyan">5 cTWC</span>
                 <p className="text-xs text-muted mt-1">per block to miner</p>
               </CardBody>
             </Card>
             <Card variant="compact" className="text-center">
               <CardBody>
-                <span className="text-2xl font-mono font-bold text-cipher-cyan">5 cTAZ</span>
+                <span className="text-2xl font-mono font-bold text-cipher-cyan">5 cTWC</span>
                 <p className="text-xs text-muted mt-1">per block to stakers (weighted)</p>
               </CardBody>
             </Card>
             <Card variant="compact" className="text-center">
               <CardBody>
-                <span className="text-2xl font-mono font-bold text-muted">1.25 cTAZ</span>
+                <span className="text-2xl font-mono font-bold text-muted">1.25 cTWC</span>
                 <p className="text-xs text-muted mt-1">per block to Dev Fund</p>
               </CardBody>
             </Card>
@@ -287,7 +287,7 @@ export function CrosslinkLearn() {
           <div className="alert alert-info">
             <Icons.Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-secondary leading-relaxed">
-              Only cTAZ earned from block rewards is eligible for ZEC payouts. cTAZ received from faucets, transfers,
+              Only cTWC earned from block rewards is eligible for WCASH payouts. cTWC received from faucets, transfers,
               or other participants does not count. Rewards are based on what you <strong className="text-primary">earn by participating</strong>,
               not what you hold.
             </p>
@@ -319,11 +319,11 @@ export function CrosslinkLearn() {
 
             <Card variant="compact">
               <CardBody>
-                <GlossaryItem term="Delegation Bond" definition="cTAZ locked in a staking contract, delegated to a specific finalizer. Earns rewards proportional to total stake." />
+                <GlossaryItem term="Delegation Bond" definition="cTWC locked in a staking contract, delegated to a specific finalizer. Earns rewards proportional to total stake." />
                 <GlossaryItem term="Staking Day" definition={`A recurring ${STAKING_DAY_WINDOW}-block window (every ${STAKING_DAY_PERIOD} blocks) during which staking actions are allowed.`} />
-                <GlossaryItem term="cTAZ" definition="Crosslink TAZ — the native currency of the Crosslink feature net. Earned through mining and staking, converts to ZEC rewards." />
+                <GlossaryItem term="cTWC" definition="Crosslink TWC — the native currency of the Crosslink feature net. Earned through mining and staking, converts to WCASH rewards." />
                 <GlossaryItem term="Retarget" definition="Moving an existing delegation bond to a different finalizer. Unlike other staking actions, this can be done at any time." />
-                <GlossaryItem term="Voting Power" definition="A finalizer's influence when voting on blocks, proportional to the total cTAZ staked to it." />
+                <GlossaryItem term="Voting Power" definition="A finalizer's influence when voting on blocks, proportional to the total cTWC staked to it." />
               </CardBody>
             </Card>
           </div>
@@ -338,7 +338,7 @@ export function CrosslinkLearn() {
             <h2 className="text-xs font-mono text-muted uppercase tracking-wider">{'>'} GET_STARTED</h2>
           </div>
           <p className="text-secondary mb-8 max-w-2xl">
-            Join the Crosslink feature net and start earning cTAZ.
+            Join the Crosslink feature net and start earning cTWC.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

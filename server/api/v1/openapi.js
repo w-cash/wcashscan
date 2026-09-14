@@ -34,7 +34,7 @@ const PROBLEM_SCHEMA = {
 const ZATOSHI_STRING_SCHEMA = {
   type: 'string',
   pattern: '^-?[0-9]+$',
-  description: 'Integer amount in zatoshis (1 ZEC = 100,000,000 zatoshis), encoded as a decimal string to avoid float precision loss. Never a JSON number.',
+  description: 'Integer amount in zatoshis (1 WCASH = 100,000,000 zatoshis), encoded as a decimal string to avoid float precision loss. Never a JSON number.',
 };
 
 const META_SCHEMA = {
@@ -208,9 +208,9 @@ function buildOpenApiDocument() {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'CipherScan API v1',
+      title: 'WcashExplorer API v1',
       version: '1.0.0-preview',
-      summary: 'Versioned, contract-stable read/write API for the Zcash blockchain data and privacy-intelligence features exposed by CipherScan.',
+      summary: 'Versioned, contract-stable read/write API for Wcash blockchain data and privacy-intelligence features exposed by WcashExplorer.',
       description: [
         'This is the v1 contract layer. It is gated behind API_V1_ENABLED and,',
         'pre-launch, an X-API-Preview-Key header (see the previewKey security',
@@ -220,11 +220,11 @@ function buildOpenApiDocument() {
         'problem+json document. Every public inventory entry is adapted;',
         'private, internal, operational, and deprecated surfaces are excluded.',
       ].join(' '),
-      contact: { name: 'CipherScan / Atmosphere Labs' },
+      contact: { name: 'WcashExplorer / Atmosphere Labs' },
     },
     servers: [
-      { url: 'https://api.mainnet.cipherscan.app', description: 'Mainnet API host.' },
-      { url: 'https://api.testnet.cipherscan.app', description: 'Testnet API host.' },
+      { url: process.env.NEXT_PUBLIC_MAINNET_API_URL || process.env.WCASHEXPLORER_MAINNET_API_URL || 'http://127.0.0.1:3001', description: 'Configured mainnet API host.' },
+      { url: process.env.NEXT_PUBLIC_TESTNET_API_URL || process.env.WCASHEXPLORER_TESTNET_API_URL || 'http://127.0.0.1:3001', description: 'Configured testnet API host.' },
       { url: 'http://127.0.0.1:3001', description: 'Local development API host.' },
     ],
     tags: [...tagSet].sort().map((name) => ({ name })),

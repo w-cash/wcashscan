@@ -312,7 +312,7 @@ function RankingSection() {
                     align: 'right',
                     className: 'hidden md:table-cell',
                     cell: (pool) => (
-                      <span className="font-mono text-xs tabular-nums text-muted">{formatZec(pool.totalFeesZat)} ZEC</span>
+                      <span className="font-mono text-xs tabular-nums text-muted">{formatZec(pool.totalFeesZat)} WCASH</span>
                     ),
                   },
                 ]}
@@ -620,7 +620,7 @@ function MinerBehaviorSection() {
             <CardBody className="py-3">
               <p className="text-[10px] font-mono text-muted uppercase mb-1">Total Earned</p>
               <p className="text-lg font-bold font-mono tabular-nums text-primary">
-                {formatZec(summary.totalEarnedZat)} ZEC
+                {formatZec(summary.totalEarnedZat)} WCASH
               </p>
             </CardBody>
           </Card>
@@ -628,7 +628,7 @@ function MinerBehaviorSection() {
             <CardBody className="py-3">
               <p className="text-[10px] font-mono text-muted uppercase mb-1">Total Moved</p>
               <p className="text-lg font-bold font-mono tabular-nums text-cipher-orange">
-                {formatZec(summary.totalSpentZat)} ZEC
+                {formatZec(summary.totalSpentZat)} WCASH
               </p>
             </CardBody>
           </Card>
@@ -636,7 +636,7 @@ function MinerBehaviorSection() {
             <CardBody className="py-3">
               <p className="text-[10px] font-mono text-muted uppercase mb-1">Still Held</p>
               <p className="text-lg font-bold font-mono tabular-nums text-cipher-green">
-                {formatZec(summary.totalHeldZat)} ZEC
+                {formatZec(summary.totalHeldZat)} WCASH
               </p>
             </CardBody>
           </Card>
@@ -684,7 +684,7 @@ function MinerBehaviorSection() {
                 stroke={colors.axis}
                 tick={{ fill: colors.axis, fontSize: 10 }}
                 tickFormatter={(v: number) => `${v.toFixed(0)}`}
-                label={{ value: 'ZEC', angle: -90, position: 'insideLeft', fill: colors.axis, fontSize: 10 }}
+                label={{ value: 'WCASH', angle: -90, position: 'insideLeft', fill: colors.axis, fontSize: 10 }}
               />
               <Tooltip
                 cursor={{ fill: 'rgba(255,255,255,0.03)' }}
@@ -699,7 +699,7 @@ function MinerBehaviorSection() {
                 labelStyle={{ color: colors.tooltipText, marginBottom: 4 }}
                 formatter={(value, name) => {
                   const label = name === 'earned' ? 'Earned' : name === 'spent' ? 'Moved/Sold' : 'Held';
-                  return [`${Number(value).toFixed(2)} ZEC`, label];
+                  return [`${Number(value).toFixed(2)} WCASH`, label];
                 }}
                 labelFormatter={(label) => String(label)}
               />
@@ -723,7 +723,7 @@ export default function MiningPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 overflow-x-hidden">
       <PageHeader
         eyebrow="MINING"
-        title="Zcash Mining"
+        title="Wcash Mining"
         subtitle="Hashrate, difficulty, block economics, pool distribution, and miner behavior."
       />
 
@@ -746,7 +746,7 @@ export default function MiningPage() {
           </h2>
           <div className="space-y-3 text-sm text-muted leading-relaxed">
             <p>
-              Zcash is secured by Equihash proof-of-work mining with a 75-second block target.
+              Wcash is secured by Equihash proof-of-work mining with a 75-second block target.
               Pool attribution is derived from coinbase transaction payout addresses. A single
               pool may use multiple addresses; unknown addresses are labeled by region when
               identifiable through peer analysis.

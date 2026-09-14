@@ -20,14 +20,14 @@ export function DonateFooter({ address }: DonateFooterProps) {
   return (
     <div className="nl-donate">
       <QRCodeSVG
-        value={`zcash:${address}`}
+        value={`wcash:${address}`}
         size={72}
         bgColor="transparent"
         fgColor="#56d4c8"
         level="L"
       />
       <div className="nl-donate-text">
-        <span className="nl-donate-label">Support CipherScan</span>
+        <span className="nl-donate-label">Support WcashExplorer</span>
         <button className="nl-donate-addr" onClick={handleCopy} title={address}>
           {copied ? 'Copied ✓' : truncated}
         </button>

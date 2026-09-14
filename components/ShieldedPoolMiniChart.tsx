@@ -60,7 +60,7 @@ function MiniTooltip({
         if (!entry) return null;
         return (
           <p key={key} className="tabular-nums text-secondary">
-            <span style={{ color: colors[key] }}>{seriesLabel}</span>: {formatZecCompact(Number(entry.value ?? 0))} ZEC
+            <span style={{ color: colors[key] }}>{seriesLabel}</span>: {formatZecCompact(Number(entry.value ?? 0))} WCASH
           </p>
         );
       })}
@@ -109,11 +109,11 @@ export const ShieldedPoolMiniChart = memo(function ShieldedPoolMiniChart({ foote
           <div className="grid grid-cols-3 gap-3 pb-2 mb-2 border-b border-cipher-border/50 shrink-0">
             <div>
               <span className="text-[10px] font-mono text-muted uppercase tracking-widest block mb-0.5">Shielded</span>
-              <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatZecCompact(latest.shielded)} ZEC</span>
+              <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatZecCompact(latest.shielded)} WCASH</span>
             </div>
             <div>
               <span className="text-[10px] font-mono text-muted uppercase tracking-widest block mb-0.5">Transparent</span>
-              <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatZecCompact(latest.transparent)} ZEC</span>
+              <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatZecCompact(latest.transparent)} WCASH</span>
             </div>
             <div>
               <span className="text-[10px] font-mono text-muted uppercase tracking-widest block mb-0.5">Shielded %</span>

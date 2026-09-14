@@ -6,6 +6,7 @@ import { fmtValue, type CurrencyMode } from '@/hooks/useCurrencyToggle';
 import { InflowFlow, inflowPathDescription } from '../InflowFlow';
 import { IronwoodLedgerStat } from './SupplyVerification';
 import type { ChartColors, Overview } from './types';
+import { getPublicUrl } from '@/lib/brand';
 
 export function InflowSources({
   sources,
@@ -127,15 +128,15 @@ export function IronwoodInflowCard({
 }) {
   const netZat = sources.totalInZat - sources.totalOutZat;
   const fmt = (zat: number) => fmtValue(zat, currencyMode, zecPrice);
-  const shareText = `Ironwood pool inflows on Zcash: ${fmt(sources.totalInZat)} in, ${fmt(sources.totalOutZat)} out, ${fmt(netZat)} net.\n\nhttps://cipherscan.app/ironwood`;
+  const shareText = `Ironwood pool inflows on Wcash: ${fmt(sources.totalInZat)} in, ${fmt(sources.totalOutZat)} out, ${fmt(netZat)} net.\n\n${getPublicUrl('/ironwood')}`;
 
   return (
     <ShareableCard
-      title="Where Ironwood ZEC comes from"
+      title="Where Ironwood WCASH comes from"
       sourceHeight={pools.sourceHeight}
       isLive={pools.isLive}
       shareText={shareText}
-      fileName="cipherscan-ironwood-inflows.png"
+      fileName="wcashexplorer-ironwood-inflows.png"
       watermark={false}
     >
       <InflowSources sources={sources} colors={colors} currencyMode={currencyMode} zecPrice={zecPrice} />

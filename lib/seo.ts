@@ -6,6 +6,7 @@ import {
 } from '@/lib/network';
 import { getApiUrlForNetwork } from '@/lib/api-config';
 import { fetchWithDeadline } from '@/lib/server-fetch';
+import { BRAND_NAME } from '@/lib/brand';
 
 export type SeoNetwork = AppNetwork;
 
@@ -27,9 +28,9 @@ export function getNetwork(): SeoNetwork {
 export function getBaseUrl(): string {
   const network = getNetwork();
   const urls: Record<SeoNetwork, string> = {
-    mainnet: 'https://cipherscan.app',
-    testnet: 'https://testnet.cipherscan.app',
-    'crosslink-testnet': 'https://crosslink.cipherscan.app',
+    mainnet: process.env.NEXT_PUBLIC_MAINNET_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+    testnet: process.env.NEXT_PUBLIC_TESTNET_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+    'crosslink-testnet': process.env.NEXT_PUBLIC_CROSSLINK_URL || process.env.NEXT_PUBLIC_TESTNET_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
   };
   return urls[network];
 }
@@ -96,14 +97,14 @@ export function buildPageMetadata({
     title,
     description,
     url: canonical,
-    siteName: 'CipherScan',
+    siteName: BRAND_NAME,
     locale: 'en_US',
     images: [
       {
         url: image,
         width: 1051,
         height: 520,
-        alt: imageAlt || `${title} — CipherScan`,
+        alt: imageAlt || `${title} — ${BRAND_NAME}`,
       },
     ],
   };
@@ -125,7 +126,7 @@ export function buildPageMetadata({
       title,
       description,
       images: [image],
-      creator: '@Kenbak',
+      creator: process.env.NEXT_PUBLIC_SOCIAL_HANDLE || '@wcash',
     },
     robots: {
       index: shouldIndex,

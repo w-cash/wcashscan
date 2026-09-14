@@ -79,7 +79,7 @@ function CrosschainSkeleton() {
 
 const CHAIN_NAMES: Record<string, string> = {
   btc: 'Bitcoin', eth: 'Ethereum', sol: 'Solana', near: 'NEAR',
-  doge: 'Dogecoin', xrp: 'Ripple', zec: 'Zcash', base: 'Base',
+  doge: 'Dogecoin', xrp: 'Ripple', zec: 'Wcash', base: 'Base',
   arb: 'Arbitrum', pol: 'Polygon', avax: 'Avalanche', trx: 'Tron',
   apt: 'Aptos', sui: 'Sui', ton: 'TON', bnb: 'BNB Chain',
   op: 'Optimism', ltc: 'Litecoin', tron: 'Tron', bsc: 'BNB Chain',
@@ -337,7 +337,7 @@ export function CrosschainDashboard() {
           <TokenChainIcon token={swap.fromSymbol} chain={swap.direction === 'in' ? swap.fromChain : 'zec'} size={22} />
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-mono text-primary font-semibold truncate tabular-nums">{formatAmount(swap.fromAmount)} {swap.fromSymbol}</span>
-            <span className="text-[10px] text-muted">{swap.direction === 'in' ? (CHAIN_NAMES[swap.fromChain] || swap.fromChain) : 'Zcash'}</span>
+            <span className="text-[10px] text-muted">{swap.direction === 'in' ? (CHAIN_NAMES[swap.fromChain] || swap.fromChain) : 'Wcash'}</span>
           </div>
         </div>
       ),
@@ -350,14 +350,14 @@ export function CrosschainDashboard() {
           <TokenChainIcon token={swap.toSymbol} chain={swap.direction === 'in' ? 'zec' : swap.toChain} size={22} />
           <div className="flex flex-col min-w-0">
             <span className="text-xs font-mono text-primary font-semibold truncate tabular-nums">{formatAmount(swap.toAmount)} {swap.toSymbol}</span>
-            <span className="text-[10px] text-muted">{swap.direction === 'in' ? 'Zcash' : (CHAIN_NAMES[swap.toChain] || swap.toChain)}</span>
+            <span className="text-[10px] text-muted">{swap.direction === 'in' ? 'Wcash' : (CHAIN_NAMES[swap.toChain] || swap.toChain)}</span>
           </div>
         </div>
       ),
       skeletonWidth: 'w-28',
     },
     {
-      id: 'amount', header: unit === 'zec' ? 'ZEC' : 'USD', align: 'right',
+      id: 'amount', header: unit === 'zec' ? 'WCASH' : 'USD', align: 'right',
       cell: (swap) => swap.amountUsd
         ? <span className="text-xs font-mono text-secondary tabular-nums">{fv(swap.amountUsd)}</span>
         : <span className="text-muted">—</span>,
@@ -385,7 +385,7 @@ export function CrosschainDashboard() {
   const unitToggle = zecPrice ? (
     <div className="filter-group">
       <button onClick={() => setUnit('usd')} className={`filter-btn ${unit === 'usd' ? 'filter-btn-active' : ''}`}>USD</button>
-      <button onClick={() => setUnit('zec')} className={`filter-btn ${unit === 'zec' ? 'filter-btn-active' : ''}`}>ZEC</button>
+      <button onClick={() => setUnit('zec')} className={`filter-btn ${unit === 'zec' ? 'filter-btn-active' : ''}`}>WCASH</button>
     </div>
   ) : null;
 
@@ -493,7 +493,7 @@ export function CrosschainDashboard() {
           <WrappedZecTracker assets={wrappedZec.assets} totalWrapped={wrappedZec.totalWrapped} unit={unit} zecPrice={zecPrice} />
         ) : (
           <div className="card text-center py-8">
-            <p className="text-muted text-sm font-mono">No wrapped ZEC data available</p>
+            <p className="text-muted text-sm font-mono">No wrapped WCASH data available</p>
           </div>
         )}
       </section>

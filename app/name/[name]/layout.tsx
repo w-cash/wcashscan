@@ -18,7 +18,7 @@ const resolveName = cache(async (name: string): Promise<NameResolution> => {
       ? { state: 'registered', registration }
       : { state: 'available' };
   } catch (error) {
-    console.error('Error resolving Zcash Name:', error);
+    console.error('Error resolving Wcash Name:', error);
     return { state: 'error' };
   }
 });
@@ -51,8 +51,8 @@ export async function generateMetadata({
   const resolution = await resolveName(name);
   if (resolution.state === 'error') {
     return buildPageMetadata({
-      title: `${name} Zcash Name | CipherScan`,
-      description: `Look up the Zcash Name ${name} on CipherScan. Registration details are temporarily unavailable.`,
+      title: `${name} Wcash Name | WcashExplorer`,
+      description: `Look up the Wcash Name ${name} on WcashExplorer. Registration details are temporarily unavailable.`,
       path,
       index: false,
     });
@@ -60,8 +60,8 @@ export async function generateMetadata({
 
   if (resolution.state === 'available') {
     return buildPageMetadata({
-      title: `${name} Is Available | Zcash Names | CipherScan`,
-      description: `${name} is currently available as a Zcash Name. View claim pricing and registration details on CipherScan.`,
+      title: `${name} Is Available | Wcash Names | WcashExplorer`,
+      description: `${name} is currently available as a Wcash Name. View claim pricing and registration details on WcashExplorer.`,
       path,
       index: false,
     });
@@ -73,11 +73,11 @@ export async function generateMetadata({
     : registration.address;
 
   return buildPageMetadata({
-    title: `${name} Zcash Name | CipherScan`,
-    description: `${name} is a registered Zcash Name resolving to ${shortAddress}. View its status and registration history on CipherScan.`,
+    title: `${name} Wcash Name | WcashExplorer`,
+    description: `${name} is a registered Wcash Name resolving to ${shortAddress}. View its status and registration history on WcashExplorer.`,
     path,
     networks: ['mainnet'],
-    imageAlt: `${name} registered Zcash Name`,
+    imageAlt: `${name} registered Wcash Name`,
   });
 }
 
@@ -96,10 +96,10 @@ export default async function NameLayout({
   const path = `/name/${encodeURIComponent(name)}`;
   const canonical = new URL(path, `${getBaseUrl()}/`).toString();
   const summary = resolution.state === 'registered'
-    ? `${name} is a registered Zcash Name resolving to ${resolution.registration.address}.`
+    ? `${name} is a registered Wcash Name resolving to ${resolution.registration.address}.`
     : resolution.state === 'available'
-      ? `${name} is currently available as a Zcash Name.`
-      : `Registration details for the Zcash Name ${name} are temporarily unavailable.`;
+      ? `${name} is currently available as a Wcash Name.`
+      : `Registration details for the Wcash Name ${name} are temporarily unavailable.`;
   const jsonLd = resolution.state === 'error'
     ? null
     : {
@@ -107,7 +107,7 @@ export default async function NameLayout({
         '@type': 'WebPage',
         '@id': `${canonical}#webpage`,
         url: canonical,
-        name: `${name} Zcash Name`,
+        name: `${name} Wcash Name`,
         description: summary,
         isPartOf: { '@id': `${getBaseUrl()}/#website` },
         mainEntity: {
@@ -126,7 +126,7 @@ export default async function NameLayout({
         <span className="text-[10px] font-mono text-muted tracking-wider">&gt; ZCASH_NAME</span>
         <h1 className="mt-2 text-primary break-all">
           <span className="block text-3xl font-mono">{name}</span>
-          <span className="block mt-1 text-sm font-normal">Zcash Name</span>
+          <span className="block mt-1 text-sm font-normal">Wcash Name</span>
         </h1>
         <p className="mt-2 text-sm text-secondary break-words">{summary}</p>
       </header>

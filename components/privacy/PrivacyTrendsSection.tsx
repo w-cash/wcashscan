@@ -19,6 +19,7 @@ import { ShareableCard } from '@/components/ShareableCard';
 import { PeriodSelector, type Period } from '@/components/privacy/PeriodSelector';
 import { getChartColors } from '@/lib/chart-theme';
 import { formatTrendDate, normalizeTrendDateKey, parseTrendDate } from '@/lib/privacy-trend-dates';
+import { getPublicUrl } from '@/lib/brand';
 
 const CHART_VIEWS = [
   { id: 'adoption', label: 'TX ADOPTION' },
@@ -65,7 +66,7 @@ function segmentedClass(active: boolean) {
 
 function chartDescription(view: TrendChartView) {
   if (view === 'adoption') {
-    return 'Daily share of non-coinbase transactions that use shielded pools — transaction count, not ZEC volume.';
+    return 'Daily share of non-coinbase transactions that use shielded pools — transaction count, not WCASH volume.';
   }
   if (view === 'activity') {
     return 'Daily shielded vs transparent transaction counts (coinbase excluded from transparent).';
@@ -80,20 +81,20 @@ function buildShareText(
   chartData: TrendDay[],
 ) {
   const periodLabel = period === 'all' ? 'all time' : period.toUpperCase();
-  const url = 'https://cipherscan.app/privacy';
+  const url = getPublicUrl('/privacy');
   const latest = chartData[chartData.length - 1];
 
   if (view === 'score') {
     const score = latest?.privacyScore ?? privacyScore;
-    return `Zcash Privacy Score: ${score}/100 (${periodLabel}) on CipherScan\n\n${url}`;
+    return `Wcash Privacy Score: ${score}/100 (${periodLabel}) on WcashExplorer\n\n${url}`;
   }
   if (view === 'adoption' && latest) {
-    return `Zcash shielded tx share: ${latest.shieldedPercentage.toFixed(1)}% (${periodLabel}) on CipherScan\n\n${url}`;
+    return `Wcash shielded tx share: ${latest.shieldedPercentage.toFixed(1)}% (${periodLabel}) on WcashExplorer\n\n${url}`;
   }
   if (view === 'activity' && latest) {
-    return `Zcash shielded activity: ${latest.shielded.toLocaleString()} shielded txs (${periodLabel}) on CipherScan\n\n${url}`;
+    return `Wcash shielded activity: ${latest.shielded.toLocaleString()} shielded txs (${periodLabel}) on WcashExplorer\n\n${url}`;
   }
-  return `Zcash privacy metrics on CipherScan (${periodLabel})\n\n${url}`;
+  return `Wcash privacy metrics on WcashExplorer (${periodLabel})\n\n${url}`;
 }
 
 export function PrivacyTrendsSection({
@@ -161,7 +162,7 @@ export function PrivacyTrendsSection({
       title="Historical trends"
       sourceHeight={lastBlockScanned}
       shareText={shareText}
-      fileName="cipherscan-privacy-trends.png"
+      fileName="wcashexplorer-privacy-trends.png"
       className=""
     >
       <div
@@ -212,7 +213,7 @@ export function PrivacyTrendsSection({
                 />
                 <RechartsTooltip
                   contentStyle={tooltipStyle}
-                  labelFormatter={(label) => formatTrendDate(label)}
+                  labelFormatter={(label) => formatTrendDate(String(label))}
                   formatter={(v) => [`${Number(v).toFixed(1)}%`, 'Shielded tx share']}
                 />
                 <Line
@@ -246,7 +247,7 @@ export function PrivacyTrendsSection({
                 />
                 <RechartsTooltip
                   contentStyle={tooltipStyle}
-                  labelFormatter={(label) => formatTrendDate(label)}
+                  labelFormatter={(label) => formatTrendDate(String(label))}
                 />
                 <Legend wrapperStyle={{ fontSize: 11, color: colors.axis }} />
                 <Bar dataKey="shielded" name="Shielded" fill={colors.cyan} radius={[3, 3, 0, 0]} />
@@ -286,7 +287,7 @@ export function PrivacyTrendsSection({
                 />
                 <RechartsTooltip
                   contentStyle={tooltipStyle}
-                  labelFormatter={(label) => formatTrendDate(label)}
+                  labelFormatter={(label) => formatTrendDate(String(label))}
                   formatter={(v) => [`${Number(v).toFixed(0)} / 100`, 'Privacy Score']}
                 />
                 <Area

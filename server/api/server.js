@@ -270,15 +270,21 @@ app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet());
 
-// CORS configuration (only allow your domains)
+// CORS configuration (only allow explicitly configured WcashExplorer origins
+// plus the two local development ports). No legacy explorer host is trusted
+// by default.
+const configuredCorsOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 const allowedOrigins = [
-  'https://testnet.cipherscan.app',
-  'https://cipherscan.app',
-  'https://crosslink.cipherscan.app',
   'http://localhost:3000',
   'http://localhost:3001',
-  ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : []),
-];
+  process.env.NEXT_PUBLIC_MAINNET_URL,
+  process.env.NEXT_PUBLIC_TESTNET_URL,
+  process.env.NEXT_PUBLIC_CROSSLINK_URL,
+  ...configuredCorsOrigins,
+].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -323,15 +329,15 @@ app.use(createRequestObservability({
 // Internal service API keys bypass rate limiting (comma-separated in env)
 const SERVICE_API_KEYS = (process.env.SERVICE_API_KEYS || '').split(',').filter(Boolean);
 
-// Our own frontend domains — never rate-limit browsers visiting CipherScan
+// Our own frontend origins — used for the WebSocket upgrade check.
 const OWN_ORIGINS = [
-  'https://cipherscan.app',
-  'https://www.cipherscan.app',
-  'https://testnet.cipherscan.app',
-  'https://crosslink.cipherscan.app',
   'http://localhost:3000',
   'http://localhost:3001',
-];
+  process.env.NEXT_PUBLIC_MAINNET_URL,
+  process.env.NEXT_PUBLIC_TESTNET_URL,
+  process.env.NEXT_PUBLIC_CROSSLINK_URL,
+  ...configuredCorsOrigins,
+].filter(Boolean);
 
 // OWN_ORIGINS is used ONLY for the WebSocket upgrade check below — it is
 // NOT a rate-limit bypass signal (see the HTTP rate limiter's `skip`,
@@ -883,7 +889,7 @@ server.listen(PORT, HOST, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
-║   🚀 Zcash Explorer API Server                           ║
+║   🚀 WcashExplorer API Server                            ║
 ║                                                           ║
 ║   HTTP:      http://localhost:${PORT}                        ║
 ║   WebSocket: ws://localhost:${PORT}                          ║

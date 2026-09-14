@@ -131,7 +131,7 @@ export function SearchBar({ compact = false, subtitle }: SearchBarProps) {
   }, []);
 
   // PoW block hashes must have leading zeros (difficulty target).
-  // 4+ leading zeros safely covers every Zcash block ever mined.
+  // 4+ leading zeros safely covers every Wcash block ever mined.
   // Tested BEFORE the generic 64-char hex check (same pattern as mempool.space).
   const BLOCK_HASH_REGEX = /^0{4}[a-fA-F0-9]{60}$/;
 

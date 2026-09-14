@@ -182,7 +182,7 @@ export default function NodesClient() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <PageHeader
         eyebrow="Network"
-        title={<>Zcash Nodes</>}
+        title={<>Wcash Nodes</>}
         subtitle="Verified reachable nodes discovered via network crawl"
         actions={
           <Link href="/network" className="text-xs text-muted hover:text-secondary font-mono transition-colors">

@@ -20,14 +20,14 @@ function formatSupply(supply: number, unit: DisplayUnit, zecPrice: number | null
   if (unit === 'usd' && zecPrice && zecPrice > 0) {
     return formatUSD(supply * zecPrice);
   }
-  return `${formatAmount(supply)} ZEC`;
+  return `${formatAmount(supply)} WCASH`;
 }
 
 function formatTotal(total: number, unit: DisplayUnit, zecPrice: number | null): string {
   if (unit === 'usd' && zecPrice && zecPrice > 0) {
     return formatUSD(total * zecPrice);
   }
-  return `${formatAmount(total)} ZEC`;
+  return `${formatAmount(total)} WCASH`;
 }
 
 export function WrappedZecTracker({
@@ -49,7 +49,7 @@ export function WrappedZecTracker({
         label="WRAPPED_ZEC"
         actions={
           <div className="flex items-center gap-2">
-            <Tooltip content="Live total supply of each known ZEC representation on other chains, read directly from each token's own contract via that chain's public RPC." />
+            <Tooltip content="Live total supply of each known WCASH representation on other chains, read directly from each token's own contract via that chain's public RPC." />
             <span className="text-xs font-mono text-muted tabular-nums">
               {formatTotal(totalWrapped, unit, zecPrice)}{' '}
               {unit !== 'usd' && <span className="text-muted">total</span>}

@@ -117,14 +117,14 @@ function renderSection(section: ParsedSection) {
 
 function sectionLabel(section: ParsedSection): string {
   if (section.kind === 'privacy-corner') return 'Privacy Corner';
-  if (section.kind === 'privacy-index') return 'Zcash Privacy Index';
+  if (section.kind === 'privacy-index') return 'Wcash Privacy Index';
   return section.title;
 }
 
 function extractDonateAddress(text: string): { address: string | null; cleaned: string } {
   const match = text.match(/`(u1[a-z0-9]{80,})`/);
   if (!match) return { address: null, cleaned: text };
-  const cleaned = text.replace(/\*Support CipherScan:\*\s*`u1[a-z0-9]+`/, '').trim();
+  const cleaned = text.replace(/\*Support WcashExplorer:\*\s*`u1[a-z0-9]+`/, '').trim();
   return { address: match[1], cleaned };
 }
 

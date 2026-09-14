@@ -507,7 +507,7 @@ function FrontierMarker({
         </div>
         {!compact && (
           <div className="text-[9px] text-muted font-mono whitespace-nowrap">
-            {finalizerCount} finalizers · {totalStakeZec.toFixed(1)} cTAZ
+            {finalizerCount} finalizers · {totalStakeZec.toFixed(1)} cTWC
           </div>
         )}
       </div>

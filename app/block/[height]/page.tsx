@@ -21,7 +21,7 @@ function blockDescription(block: BlockRecord, height: number, hash: string): str
   const count = Number.isFinite(transactionCount) ? transactionCount : 0;
   const status = block.isOrphaned === true ? 'orphaned' : 'canonical';
 
-  return `Zcash block ${height.toLocaleString('en-US')} is ${status}, has hash ${hash}, and records ${count.toLocaleString('en-US')} transaction${count === 1 ? '' : 's'}.`;
+  return `Wcash block ${height.toLocaleString('en-US')} is ${status}, has hash ${hash}, and records ${count.toLocaleString('en-US')} transaction${count === 1 ? '' : 's'}.`;
 }
 
 async function getCurrentTipHeight(): Promise<number> {
@@ -97,7 +97,7 @@ export default async function BlockPage({
     `${baseUrl}/`,
   ).toString();
   const statusLabel = isOrphaned ? 'Orphaned' : 'Canonical';
-  const name = `${statusLabel} Zcash Block #${height.toLocaleString('en-US')}`;
+  const name = `${statusLabel} Wcash Block #${height.toLocaleString('en-US')}`;
   const description = blockDescription(block, height, hash);
   const structuredData = {
     '@context': 'https://schema.org',
@@ -110,7 +110,7 @@ export default async function BlockPage({
       '@type': 'WebSite',
       '@id': `${baseUrl}/#website`,
       url: `${baseUrl}/`,
-      name: 'CipherScan',
+      name: 'WcashExplorer',
     },
     mainEntity: {
       '@type': 'Thing',
@@ -120,7 +120,7 @@ export default async function BlockPage({
       description,
       identifier: {
         '@type': 'PropertyValue',
-        propertyID: 'Zcash block hash',
+        propertyID: 'Wcash block hash',
         value: hash,
       },
     },

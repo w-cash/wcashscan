@@ -53,7 +53,7 @@ export function TxNotFoundView({
                 </h2>
                 <p className="text-sm text-secondary mb-6 max-w-md mx-auto">
                   {isUnavailable
-                    ? 'CipherScan could not reach the transaction data service. Try this lookup again shortly.'
+                    ? 'WcashExplorer could not reach the transaction data service. Try this lookup again shortly.'
                     : 'This transaction is not in the indexed chain or current mempool.'}
                 </p>
                 <Link

@@ -1,5 +1,15 @@
 export type AppNetwork = 'mainnet' | 'testnet' | 'crosslink-testnet';
 
+export function getCurrencyForNetwork(network: AppNetwork): string {
+  if (network === 'mainnet') {
+    return process.env.NEXT_PUBLIC_MAINNET_CURRENCY || 'WCASH';
+  }
+  if (network === 'crosslink-testnet') {
+    return process.env.NEXT_PUBLIC_CROSSLINK_CURRENCY || 'TWC';
+  }
+  return process.env.NEXT_PUBLIC_TESTNET_CURRENCY || 'TWC';
+}
+
 /**
  * Normalize the build-time network selector in one place so metadata, API
  * routing, and visible network labels cannot disagree.
@@ -25,11 +35,10 @@ export function getConfiguredNetwork(): AppNetwork | undefined {
  * page-level network badge (tx detail, block detail, …) so they can't drift
  * into different wording for the same three states.
  */
-export function getNetworkLabel(): string {
-  const network = getConfiguredNetwork();
-  if (network === 'testnet') return 'ZCASH TESTNET (TAZ)';
-  if (network === 'crosslink-testnet') return 'ZCASH CROSSLINK TESTNET';
-  return 'ZCASH MAINNET';
+export function getNetworkLabel(network: AppNetwork = getConfiguredNetwork() || 'testnet'): string {
+  if (network === 'testnet') return `WCASH TESTNET (${getCurrencyForNetwork('testnet')})`;
+  if (network === 'crosslink-testnet') return `WCASH CROSSLINK TESTNET (${getCurrencyForNetwork('crosslink-testnet')})`;
+  return `WCASH MAINNET (${getCurrencyForNetwork('mainnet')})`;
 }
 
 /**

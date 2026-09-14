@@ -2,8 +2,8 @@ import BroadcastClient from './BroadcastClient';
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'Broadcast a Zcash Transaction | CipherScan',
-  description: 'Broadcast a fully signed raw Zcash transaction through CipherScan\'s Zebra node. No private key is required or submitted.',
+  title: 'Broadcast a Wcash Transaction | WcashExplorer',
+  description: 'Broadcast a fully signed raw Wcash transaction through WcashExplorer\'s Zebra node. No private key is required or submitted.',
   keywords: [
     'broadcast zcash transaction',
     'sendrawtransaction zcash',

@@ -247,7 +247,7 @@ export function VolumeAreaChart({ data, width, height: chartHeight, colors, priv
                 />
                 <span className="text-secondary">{GRADE_LABELS[g]}:</span>
                 <span className="text-primary">
-                  {tooltip.bucket[g].toLocaleString(undefined, { maximumFractionDigits: 1 })} ZEC
+                  {tooltip.bucket[g].toLocaleString(undefined, { maximumFractionDigits: 1 })} WCASH
                 </span>
                 {tooltip.total > 0 && (
                   <span className="text-muted">

@@ -9,6 +9,5 @@ export async function generateMetadata() {
 export default function LatestBlocksPage() {
   return BlocksPage({
     searchParams: Promise.resolve({}),
-    unavailablePolicy: 'shell',
   });
 }

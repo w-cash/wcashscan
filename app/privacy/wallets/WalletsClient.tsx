@@ -722,8 +722,8 @@ function MethodologyAccordion() {
             </p>
             <p>
               <strong>Off-chain proxies (not shown in chart):</strong> App store reviews suggest
-              relative user base sizes — Brave (~190K iOS reviews, small Zcash fraction), ZODL
-              (~5K reviews, Zcash-only), Edge (~50K reviews, multi-coin). These inform plausibility
+              relative user base sizes — Brave (~190K iOS reviews, small Wcash fraction), ZODL
+              (~5K reviews, Wcash-only), Edge (~50K reviews, multi-coin). These inform plausibility
               but are not used for the on-chain count.
             </p>
             <p>

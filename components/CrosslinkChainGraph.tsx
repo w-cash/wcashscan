@@ -679,7 +679,7 @@ export function CrosslinkChainGraph({
               value={`${stats.finalizerCount}`}
               sub={
                 stats.totalStakeZec > 0
-                  ? `${stats.totalStakeZec.toFixed(0)} cTAZ`
+                  ? `${stats.totalStakeZec.toFixed(0)} cTWC`
                   : undefined
               }
               tooltip="Validators signing BFT votes. Quorum ≈ ⅔ of these."

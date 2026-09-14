@@ -35,7 +35,7 @@ export function CrossChainTable({ crossChain }: CrossChainTableProps) {
               <div className="col-span-1"></div>
               <div className="col-span-3">To</div>
               <div className="col-span-2 text-right">Value</div>
-              <div className="col-span-2 text-right">ZEC TX</div>
+              <div className="col-span-2 text-right">WCASH TX</div>
             </div>
 
             {/* Swap Rows */}
@@ -92,7 +92,7 @@ export function CrossChainTable({ crossChain }: CrossChainTableProps) {
                       <span className="text-[10px] text-muted">{swapAge}</span>
                     </div>
 
-                    {/* ZEC TX */}
+                    {/* WCASH TX */}
                     <div className="col-span-2 text-right">
                       {swap.zecTxid ? (
                         <Link href={`/tx/${swap.zecTxid}`} className="text-xs text-cipher-cyan hover:underline font-mono group-hover:text-primary transition-colors">

@@ -10,10 +10,10 @@ import AttestationsClient from './AttestationsClient';
 // No ISR snapshot may outlive a security observation's freshness window.
 export const dynamic = 'force-dynamic';
 export const metadata = buildPageMetadata({
-  title: 'Zero Indexer Attestation Monitor | CipherScan',
-  description: 'Check fresh enclave evidence, TLS certificate bindings and software release status for experimental Zcash Zero Indexer shims and hubs.',
+  title: 'Zero Indexer Attestation Monitor | WcashExplorer',
+  description: 'Check fresh enclave evidence, TLS certificate bindings and software release status for experimental Wcash indexer shims and hubs.',
   path: '/network/attestations', index: true, networks: ['mainnet', 'testnet'],
-  imageAlt: 'CipherScan Zero Indexer attestation monitor',
+  imageAlt: 'WcashExplorer Zero Indexer attestation monitor',
 });
 
 export default async function AttestationsPage() {
@@ -27,7 +27,7 @@ export default async function AttestationsPage() {
       if (data.success === true && data.network === network && Array.isArray(data.endpoints)) initialData = data;
     }
   } catch { /* The introduction and explicit unavailable state still render on an API outage. */ }
-  const publicApiUrl = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL || `https://api.${network}.cipherscan.app`);
+  const publicApiUrl = normalizeApiBaseUrl(process.env.NEXT_PUBLIC_API_URL || getApiUrl());
   const initialNow = Date.now();
   const url = `${getBaseUrl()}/network/attestations`;
   const schema = {
@@ -35,13 +35,13 @@ export default async function AttestationsPage() {
     name: 'Zero Indexer Attestation Monitor',
     description: 'Observed enclave evidence and TLS certificate bindings for experimental Zero Indexer endpoints. Software release verification is shown separately.',
     isPartOf: { '@id': `${getBaseUrl()}/#website` },
-    publisher: { '@id': 'https://cipherscan.app/#organization' },
+    publisher: { '@id': `${getBaseUrl()}/#organization` },
   };
   return <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }} />
     <Link href="/network" className="inline-block text-sm text-muted hover:text-cipher-cyan mb-6">← Network overview</Link>
     <PageHeader eyebrow="NETWORK / ATTESTATIONS" title="Zero Indexer attestations"
-      subtitle="Independent observations of the experimental shims and hubs serving Zcash wallets. Check their enclave evidence, connection certificates and software release status."
+      subtitle="Independent observations of the experimental shims and hubs serving Wcash wallets. Check their enclave evidence, connection certificates and software release status."
       actions={<span className="font-mono text-xs px-3 py-1.5 rounded-full border border-cipher-border text-secondary">{network === 'mainnet' ? 'MAINNET' : 'TESTNET'} · EXPERIMENTAL</span>} />
     <AttestationsClient initialData={initialData} initialNow={initialNow} network={network} apiUrl={publicApiUrl} />
     <section className="mt-12 border-t border-cipher-border pt-8" aria-labelledby="attestation-method">
@@ -51,8 +51,8 @@ export default async function AttestationsPage() {
         <div><h3 className="font-medium text-primary mb-2">02 · A matching connection</h3><p>The domain and certificate fingerprint inside the signed evidence must match the HTTPS connection used by our observer.</p></div>
         <div><h3 className="font-medium text-primary mb-2">03 · A separate software check</h3><p>Release verification needs independently established build measurements. Valid evidence alone does not confirm the expected software or prove that the software is safe.</p></div>
       </div>
-      <p className="text-sm text-muted mt-6 max-w-4xl">Canary adds signed observations for endpoints with reproduced build measurements, checked every minute and expiring after three minutes. It runs on CipherScan’s server with operator-pinned signing keys; Canary’s own runtime is not enclave-attested. Connection warnings remain visible even when a recent signed check passed.</p>
-      <p className="text-sm text-muted mt-6 max-w-4xl">These are periodic observations from CipherScan, not verification of your wallet’s connection. A passing shim does not establish its hub’s status. Build tags identify reviewed source commits. A matching reproduced configuration can confirm a shim’s configured hub, but does not prove live routing or hub availability. The monitor does not measure transaction privacy, batching or wallet service uptime.</p>
+      <p className="text-sm text-muted mt-6 max-w-4xl">Canary adds signed observations for endpoints with reproduced build measurements, checked every minute and expiring after three minutes. It runs on WcashExplorer’s server with operator-pinned signing keys; Canary’s own runtime is not enclave-attested. Connection warnings remain visible even when a recent signed check passed.</p>
+      <p className="text-sm text-muted mt-6 max-w-4xl">These are periodic observations from WcashExplorer, not verification of your wallet’s connection. A passing shim does not establish its hub’s status. Build tags identify reviewed source commits. A matching reproduced configuration can confirm a shim’s configured hub, but does not prove live routing or hub availability. The monitor does not measure transaction privacy, batching or wallet service uptime.</p>
       <div className="flex flex-wrap gap-x-6 gap-y-3 mt-5 text-sm">
         <a className="text-cipher-cyan hover:underline" href="https://docs.caution.co/concepts/attestation/" target="_blank" rel="noopener noreferrer">Attestation methodology ↗</a>
         <a className="text-cipher-cyan hover:underline" href="https://docs.caution.co/guides/verify-an-app/" target="_blank" rel="noopener noreferrer">Verify a build yourself ↗</a>

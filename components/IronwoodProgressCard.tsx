@@ -97,12 +97,12 @@ export const IronwoodProgressCard = memo(function IronwoodProgressCard({ footer 
   return (
     <div className="card p-0 overflow-hidden flex flex-col" style={{ height: CARD_HEIGHT_PX }}>
       <div className="px-5 py-4 flex-1 min-h-0">
-        <span className="text-[10px] font-mono text-muted uppercase tracking-widest">ZEC Migrated to Ironwood</span>
+        <span className="text-[10px] font-mono text-muted uppercase tracking-widest">WCASH Migrated to Ironwood</span>
         <div className="mt-1 flex items-baseline gap-1.5">
           <span className="text-2xl sm:text-3xl font-bold font-mono text-cipher-yellow tabular-nums">
             {formatZecCompact(ironwoodZec)}
           </span>
-          <span className="text-sm text-muted font-mono">ZEC</span>
+          <span className="text-sm text-muted font-mono">WCASH</span>
         </div>
 
         {verifiedPct !== null && (
@@ -127,15 +127,15 @@ export const IronwoodProgressCard = memo(function IronwoodProgressCard({ footer 
           </div>
           <div>
             <span className="text-[10px] font-mono text-muted uppercase tracking-widest block mb-1">Velocity</span>
-            <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatZecCompact(velocityZecPerHour)} ZEC/hr</span>
+            <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatZecCompact(velocityZecPerHour)} WCASH/hr</span>
           </div>
           <div>
             <span className="text-[10px] font-mono text-muted uppercase tracking-widest block mb-1">Migrated Today</span>
-            <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatZecCompact(migratedTodayZec)} ZEC</span>
+            <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatZecCompact(migratedTodayZec)} WCASH</span>
           </div>
           <div>
             <span className="text-[10px] font-mono text-muted uppercase tracking-widest block mb-1">Orchard Remaining</span>
-            <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatZecCompact(orchardZec)} ZEC</span>
+            <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatZecCompact(orchardZec)} WCASH</span>
           </div>
         </div>
       </div>

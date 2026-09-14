@@ -21,24 +21,24 @@ export async function generateMetadata({ searchParams }: TransactionsPageProps):
 
   if (request.type === 'shielded') {
     return buildPageMetadata({
-      title: `Zcash Shielded Transactions${pageSuffix} | CipherScan`,
+      title: `Wcash Shielded Transactions${pageSuffix} | WcashExplorer`,
       description: request.page > 1
-        ? `Browse Zcash shielded transaction archive page ${request.page}, including shielding and unshielding flows across privacy pools.`
-        : 'Browse shielded Zcash transactions and track shielding and unshielding flows across Ironwood, Orchard, and Sapling privacy pools.',
+        ? `Browse Wcash shielded transaction archive page ${request.page}, including shielding and unshielding flows across privacy pools.`
+        : 'Browse shielded Wcash transactions and track shielding and unshielding flows across Ironwood, Orchard, and Sapling privacy pools.',
       path: isStableArchive ? getArchiveCanonicalPath(request) : '/txs?type=shielded',
       index: isStableArchive && request.page === 1,
-      keywords: ['zcash shielded transactions', 'zcash orchard', 'zcash sapling', 'shielded ZEC', 'zcash privacy'],
+      keywords: ['zcash shielded transactions', 'zcash orchard', 'zcash sapling', 'shielded WCASH', 'zcash privacy'],
     });
   }
 
   return buildPageMetadata({
-    title: `Latest Zcash Transactions${pageSuffix} | CipherScan`,
+    title: `Latest Wcash Transactions${pageSuffix} | WcashExplorer`,
     description: request.page > 1
-      ? `Browse Zcash transaction archive page ${request.page}, with transaction hashes, block heights, transaction types, sizes, and confirmation times.`
-      : 'Browse the latest Zcash transactions including shielded, transparent, and coinbase transactions. Real-time transaction explorer.',
+      ? `Browse Wcash transaction archive page ${request.page}, with transaction hashes, block heights, transaction types, sizes, and confirmation times.`
+      : 'Browse the latest Wcash transactions including shielded, transparent, and coinbase transactions. Real-time transaction explorer.',
     path: isStableArchive ? getArchiveCanonicalPath(request) : '/txs',
     index: isStableArchive && request.page === 1,
-    keywords: ['zcash transactions', 'zcash transaction explorer', 'ZEC transactions', 'zcash shielded transactions', 'zcash tx'],
+    keywords: ['zcash transactions', 'zcash transaction explorer', 'WCASH transactions', 'zcash shielded transactions', 'zcash tx'],
   });
 }
 
