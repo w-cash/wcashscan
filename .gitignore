@@ -1,0 +1,8 @@
+.DS_Store
+.sites-runtime/
+.preview/
+node_modules/
+/node_modules
+/server/api/node_modules
+.next/
+*.tsbuildinfo

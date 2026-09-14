@@ -1,0 +1,1731 @@
+@import "tailwindcss";
+@source "../components";
+@source "../app";
+@source "../lib";
+
+/* Avoid painting defaults before local preferences are known, even when
+   hydration is delayed. HomeFeedCard's noscript styles restore the SSR view. */
+.home-feed-placeholder { display: none; }
+.home-feed[data-preferences-ready="false"] > .home-feed-content { display: none; }
+.home-feed[data-preferences-ready="false"] > .home-feed-placeholder { display: block; }
+
+/* Class-based dark: variant — <html> carries .dark/.light (see ThemeContext).
+   Matches the selector the v3 config bridge generated (descendants of .dark). */
+@custom-variant dark (&:is(.dark *));
+
+/* ===== DESIGN TOKENS (Tailwind v4 @theme) =====
+ *
+ * Single source of truth for every design token. The runtime CSS variables
+ * (defined in :root below, flipped by .light) hold the actual per-theme
+ * values; these @theme blocks expose them as Tailwind utilities.
+ *
+ * Rules:
+ * - Theme-aware tokens live in `@theme inline` and reference runtime vars.
+ * - Static tokens (type scale, radii, motion) live in the plain `@theme`.
+ * - Never add a @theme variable whose name collides with a runtime var.
+ */
+
+/* Theme-aware tokens — inlined into utilities so they follow the runtime
+   variables that flip between dark and light themes. */
+@theme inline {
+  /* Backgrounds / surfaces (theme-aware) */
+  --color-cipher-bg: var(--color-bg);
+  --color-cipher-elevated: var(--color-elevated);
+  --color-cipher-surface: var(--color-surface);
+  --color-cipher-surface-solid: var(--color-surface-solid);
+  --color-cipher-hover: var(--color-hover);
+  --color-cipher-active: var(--color-active);
+  --color-cipher-border: var(--color-border);
+  --color-cipher-border-subtle: var(--color-border-subtle);
+  --color-cipher-border-alpha: rgb(var(--color-border-rgb));
+
+  /* Brand (theme-aware via RGB channel vars) */
+  --color-cipher-cyan: rgb(var(--color-cyan-rgb));
+  --color-cipher-green: rgb(var(--color-green-rgb));
+  --color-cipher-purple: rgb(var(--color-purple-rgb));
+  --color-cipher-yellow: rgb(var(--color-yellow-rgb));
+  --color-cipher-orange: rgb(var(--color-orange-rgb));
+
+  /* Semantic text colors — generate text-primary / text-secondary / text-muted */
+  --color-primary: var(--color-text-primary);
+  --color-secondary: var(--color-text-secondary);
+  --color-muted: var(--color-text-muted);
+
+  /* Semantic status colors — theme-aware (danger/warning flip per theme) */
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-success: var(--color-green);
+  --color-info: var(--color-cyan);
+
+  /* Glass overlays (theme-aware) */
+  --color-glass-2: var(--glass-2);
+  --color-glass-3: var(--glass-3);
+  --color-glass-4: var(--glass-4);
+  --color-glass-6: var(--glass-6);
+  --color-glass-8: var(--glass-8);
+  --color-glass-12: var(--glass-12);
+  --color-glass-18: var(--glass-18);
+
+  /* Fonts — reference next/font variables set on <body> */
+  --font-sans: var(--font-geist-sans), Geist, 'SF Pro Display', system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), 'Berkeley Mono', 'JetBrains Mono', 'Fira Code', monospace;
+  --font-display: var(--font-geist-sans), Geist, 'SF Pro Display', system-ui, sans-serif;
+}
+
+/* Static tokens — identical in both themes. */
+@theme {
+  /* Static brand accents (intentionally not theme-aware; matches v3 config) */
+  --color-cipher-blue: #5B9CF6;
+  --color-cipher-teal: #56D4C8;
+  --color-cipher-coral: #F0826F;
+  --color-cipher-cyan-bright: #00D4FF;
+  --color-cipher-cyan-glow: #00E5FF;
+  --color-cipher-cyan-muted: #5EBBCE;
+  --color-cipher-green-bright: #34D399;
+  --color-cipher-purple-bright: #A78BFA;
+  --color-cipher-purple-glow: #C4B5FD;
+  --color-cipher-yellow-bright: #F4B728;
+  --color-cipher-yellow-glow: #FFD060;
+  --color-cipher-yellow-muted: #C9A035;
+  --color-cipher-orange-bright: #FF6B35;
+
+  /* Forced-theme colors (deliberately static) */
+  --color-cipher-bg-dark: #08090F;
+  --color-cipher-surface-dark: #14161F;
+  --color-cipher-bg-light: #FAFBFC;
+  --color-cipher-surface-light: #FFFFFF;
+  --color-cipher-border-light: #E2E8F0;
+
+  /* Type scale (Major Third — 1.250) */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.4;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 1.3;
+  --text-2xl: 1.875rem;
+  --text-2xl--line-height: 1.25;
+  --text-3xl: 2.375rem;
+  --text-3xl--line-height: 1.2;
+  --text-4xl: 3rem;
+  --text-4xl--line-height: 1.1;
+  --text-5xl: 3.75rem;
+  --text-5xl--line-height: 1.05;
+
+  /* Letter spacing */
+  --tracking-tighter: -0.02em;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.02em;
+  --tracking-wider: 0.05em;
+
+  /* Border radius hierarchy (bare `rounded` = 8px) */
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+
+  /* Shadow elevation levels (v3 overrides preserved) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.04), 0 16px 32px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.06), 0 32px 64px rgba(0, 0, 0, 0.12);
+
+  /* Animations (scan/shimmer keyframes live in @layer utilities below) */
+  --animate-fade-in: fadeIn 0.5s ease-out;
+  --animate-fade-in-up: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-scale-in: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-slide-in-right: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes fadeInUp {
+    0% { opacity: 0; transform: translateY(12px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scaleIn {
+    0% { opacity: 0; transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes slideInRight {
+    0% { transform: translateX(100%); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+}
+
+/**
+ * WCASHEXPLORER Design System v2.0
+ *
+ * Design Philosophy:
+ * - Apple-inspired refinement with cypherpunk identity
+ * - Layered depth system for visual hierarchy
+ * - Consistent spacing on 4px grid
+ * - Purposeful micro-interactions
+ *
+ * Color Usage:
+ * CYAN (#00D4FF) - Brand identity, titles, links
+ * GREEN (#00E676) - Success, confirmations, positive
+ * PURPLE (#A78BFA) - Shielded, privacy, encryption
+ * ORANGE (#FF6B35) - Warnings, fees only
+ *
+ * Emoji System:
+ * 🔐 - Logo / Brand
+ * 📦 - Blocks
+ * 📝 - Transactions
+ * 👤 - Addresses
+ * 💰 - Amounts
+ * 🛡️ - Shielded / Privacy
+ * 💡 - Help / Information
+ * ✅ - Success / Confirmed
+ * ⚠️ - Warning
+ * 📭 - Empty state
+ */
+
+/* ===== CSS CUSTOM PROPERTIES ===== */
+:root {
+  /* Sticky chrome offsets — synced from NavBar/StatsBar/IronwoodBanner at runtime via ResizeObserver */
+  --app-nav-height: 4rem;
+  --app-stats-height: 2.75rem;
+  --app-ironwood-height: 0px;
+
+  /* Colors - Dark Theme (default) */
+  --color-bg: #08090F;
+  --color-elevated: #0A0B12;
+  --color-surface: rgba(14, 16, 24, 0.45);
+  --color-surface-solid: #0E1018;
+  --color-hover: #13151E;
+  --color-active: #1A1D28;
+  --color-border: rgba(30, 41, 59, 0.6);
+  --color-border-subtle: rgba(255, 255, 255, 0.04);
+  --color-border-rgb: 30 41 59;
+
+  /* Brand — RGB channels for Tailwind opacity support */
+  --color-cyan-rgb: 0 212 255;
+  --color-green-rgb: 52 211 153;
+  --color-yellow-rgb: 244 183 40;
+  --color-purple-rgb: 167 139 250;
+  --color-orange-rgb: 255 107 53;
+
+  /* Brand — hex shortcuts for use in custom CSS */
+  --color-cyan: #00D4FF;
+  --color-cyan-glow: #00E5FF;
+  --color-cyan-muted: #5EBBCE;
+  --color-green: #34D399;
+  --color-yellow: #F4B728;
+  --color-purple: #A78BFA;
+  --color-purple-glow: #C4B5FD;
+  --color-orange: #FF6B35;
+
+  /* Semantic flow colors — shield/deshield (matches ShieldFlowBadge) */
+  --color-shielding: var(--color-green);
+  --color-deshielding: var(--color-orange);
+  --color-shielded-state: var(--color-purple);
+
+  /* Semantic status colors — use text-danger/text-warning etc. in markup,
+     never physical palette colors (text-red-400) for themeable UI */
+  --danger: #F87171;
+  --warning: #FB923C;
+
+  /* Ambient page-background gradients (none in light mode) */
+  --body-ambient:
+    radial-gradient(circle at 20% 50%, rgba(0, 212, 255, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(167, 139, 250, 0.04) 0%, transparent 50%);
+
+  /* Text — three distinct steps (primary brightest, muted dimmest).
+     secondary and muted previously collapsed to the same #9CA3AF, flattening
+     the hierarchy to two effective tiers instead of three. */
+  --color-text-primary: #E5E7EB;
+  --color-text-secondary: #C4CAD4;
+  --color-text-muted: #9CA3AF;
+
+  /* Node map */
+  --color-map-dot: rgba(55, 65, 81, 0.45);
+
+  /* Glass overlays — theme-aware subtle backgrounds & borders */
+  --glass-2: rgba(255, 255, 255, 0.02);
+  --glass-3: rgba(255, 255, 255, 0.03);
+  --glass-4: rgba(255, 255, 255, 0.04);
+  --glass-6: rgba(255, 255, 255, 0.06);
+  --glass-8: rgba(255, 255, 255, 0.08);
+  --glass-12: rgba(255, 255, 255, 0.12);
+  --glass-18: rgba(255, 255, 255, 0.18);
+
+  /* Shadows */
+  --shadow-card: 0 2px 4px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.12);
+  --shadow-card-hover: 0 4px 8px rgba(0, 0, 0, 0.1), 0 16px 32px rgba(0, 0, 0, 0.16);
+  --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.15);
+  --shadow-glow-lg: 0 0 40px rgba(0, 212, 255, 0.2);
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+
+  /* Transitions */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-instant: 100ms;
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --duration-slower: 600ms;
+
+  /* ===== COMPONENT TOKENS =====
+     One variable per themeable declaration, flipped by .light below.
+     Component rules reference these — never hardcode a per-theme value
+     in a component rule and never add `.light .component` override blocks. */
+
+  /* Cards */
+  --card-border: rgba(255, 255, 255, 0.06);
+  --card-border-hover: rgba(255, 255, 255, 0.08);
+  --card-blur: blur(12px);
+  --card-shadow: 0 0 0 1px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.04), 0 12px 24px rgba(0, 0, 0, 0.08);
+  --card-shadow-hover: 0 0 0 1px rgba(0, 212, 255, 0.05), 0 4px 8px rgba(0, 0, 0, 0.05), 0 16px 32px rgba(0, 0, 0, 0.1);
+  --card-glass-bg: rgba(14, 16, 24, 0.6);
+  --card-glass-blur: blur(24px);
+  --card-glass-border: rgba(255, 255, 255, 0.06);
+  --card-dark-bg: var(--color-bg);
+  --card-dark-border: rgba(255, 255, 255, 0.04);
+  --card-featured-border: rgba(0, 212, 255, 0.12);
+  --card-interactive-shadow: 0 0 0 1px rgba(0, 212, 255, 0.06), 0 4px 8px rgba(0, 0, 0, 0.06), 0 20px 40px rgba(0, 0, 0, 0.12);
+  --card-interactive-border-hover: var(--card-border);
+  --divider: rgba(255, 255, 255, 0.06);
+
+  /* Badges */
+  --badge-cyan-bg: rgba(0, 212, 255, 0.12);
+  --badge-purple-bg: rgba(167, 139, 250, 0.12);
+  --badge-green-bg: rgba(0, 230, 118, 0.12);
+  --badge-orange-bg: rgba(255, 107, 53, 0.12);
+  --badge-amber-bg: rgba(245, 158, 11, 0.15);
+  --badge-danger-bg: rgba(248, 113, 113, 0.14);
+  --badge-amber-text: #F59E0B;
+
+  /* Buttons */
+  --btn-primary-bg: linear-gradient(180deg, var(--color-cyan) 0%, #00B8E0 100%);
+  --btn-primary-bg-hover: linear-gradient(180deg, #00E0FF 0%, var(--color-cyan) 100%);
+  --btn-primary-text: var(--color-bg);
+  --btn-primary-shadow-hover: 0 4px 12px rgba(0, 212, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+  /* Accent interaction states (ghost buttons, suggestion rows, focus) */
+  --accent-soft: rgba(0, 212, 255, 0.08);
+  --accent-soft-active: rgba(0, 212, 255, 0.12);
+  --focus-ring: 0 0 0 3px rgba(0, 212, 255, 0.1);
+
+  /* Filter groups */
+  --filter-danger-bg: rgba(248, 113, 113, 0.08);
+  --filter-warning-bg: rgba(251, 191, 36, 0.08);
+  --amber-strong: #FBBF24;
+
+  /* App chrome (navbar, drawer, footer) — matches page bg for a seamless edge */
+  --navbar-bg: rgba(8, 9, 15, 0.8);
+  --chrome-bg: var(--color-bg);
+  --nav-accent-hover: #00D4FF;
+
+  /* Search bar accessories */
+  --kbd-bg: var(--color-hover);
+  --kbd-border: var(--color-border);
+  --kbd-text: var(--color-text-muted);
+  --tag-bg: var(--color-surface);
+  --tag-border: var(--color-border);
+  --tag-text: var(--color-text-secondary);
+  --tag-bg-hover: var(--color-hover);
+
+  /* Popovers, dropdowns, modals */
+  --popover-bg: #0C0D14;
+  --popover-border: rgba(255, 255, 255, 0.08);
+  --suggestions-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1);
+  --dropdown-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+  --modal-backdrop: rgba(0, 0, 0, 0.8);
+  --modal-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3), 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+
+  /* Misc surfaces */
+  --gradient-purple-start: rgba(167, 139, 250, 0.08);
+  --progress-track: rgba(107, 114, 128, 0.3);
+  --tooltip-bg: var(--color-bg);
+  --inset-bg: var(--color-bg);           /* recessed panels: hashes, code blocks */
+  --inset-bg-30: rgba(8, 9, 15, 0.3);    /* tx summary box */
+  --inset-bg-50: rgba(8, 9, 15, 0.5);    /* block tx rows */
+  --inset-panel: rgba(20, 22, 31, 0.5);  /* scan progress */
+  --raised-bg: var(--color-elevated);    /* docs sidebar, card-bg */
+  --decrypt-bg: var(--color-bg);
+  --sticky-header-bg: rgba(8, 9, 15, 0.95);
+  --warning-box-text: #FBBF24;
+  --warning-box-border: rgba(251, 191, 36, 0.25);
+
+  /* Decrypt inbox — glass surface matching .card-glass, not a standalone slate palette */
+  --inbox-container-bg: var(--card-glass-bg);
+  --inbox-panel: var(--card-glass-bg);
+  --inbox-chrome: var(--raised-bg);
+  --inbox-message-bg: var(--glass-4);
+  --inbox-message-header-bg: linear-gradient(90deg, var(--glass-4) 0%, var(--glass-2) 100%);
+  --inbox-message-body-bg: var(--glass-2);
+
+  /* Privacy visuals */
+  --risk-connector-color: rgba(167, 139, 250, 0.25);
+  --reactflow-bg-opacity: 1;
+}
+
+/* Light Theme Overrides */
+.light {
+  --color-bg: #FAFBFE;
+  --color-elevated: #F5F6FA;
+  --color-surface: #F7F8FC;
+  --color-surface-solid: #F5F6FA;
+  --color-hover: #F0F1F5;
+  --color-active: #E8EAF0;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-border-subtle: rgba(0, 0, 0, 0.04);
+  --color-border-rgb: 216 222 230;
+
+  /* Brand — RGB channels for Tailwind opacity support */
+  --color-cyan-rgb: 0 151 178;
+  --color-green-rgb: 5 150 105;
+  --color-yellow-rgb: 212 155 0;
+  --color-purple-rgb: 124 58 237;
+  --color-orange-rgb: 194 65 12;
+
+  /* Brand — hex shortcuts for use in custom CSS */
+  --color-cyan: #0097B2;
+  --color-cyan-glow: #0891B2;
+  --color-cyan-muted: #0891B2;
+  --color-green: #059669;
+  --color-yellow: #D49B00;
+  --color-purple: #7C3AED;
+  --color-purple-glow: #8B5CF6;
+  --color-orange: #C2410C;
+
+  /* Semantic flow colors — shield/deshield (matches ShieldFlowBadge) */
+  --color-shielding: var(--color-green);
+  --color-deshielding: var(--color-orange);
+  --color-shielded-state: var(--color-purple);
+
+  /* Semantic status colors — darker for light-surface contrast */
+  --danger: #DC2626;
+  --warning: #C2410C;
+
+  /* Light mode — clean, no ambient gradients */
+  --body-ambient: none;
+
+  /* Text - high contrast for readability */
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748B;
+
+  /* Node map */
+  --color-map-dot: rgba(148, 163, 184, 0.5);
+
+  /* Glass overlays — dark tints for light backgrounds */
+  --glass-2: rgba(0, 0, 0, 0.02);
+  --glass-3: rgba(0, 0, 0, 0.03);
+  --glass-4: rgba(0, 0, 0, 0.04);
+  --glass-6: rgba(0, 0, 0, 0.06);
+  --glass-8: rgba(0, 0, 0, 0.08);
+  --glass-12: rgba(0, 0, 0, 0.12);
+  --glass-18: rgba(0, 0, 0, 0.18);
+
+  /* Shadows - minimal, borders do the work */
+  --shadow-card: none;
+  --shadow-card-hover: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-glow: none;
+  --shadow-glow-lg: none;
+
+  /* ===== COMPONENT TOKENS (light theme) ===== */
+
+  /* Cards — subtle borders, minimal elevation */
+  --card-border: rgba(0, 0, 0, 0.06);
+  --card-border-hover: rgba(0, 0, 0, 0.1);
+  --card-blur: none;
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --card-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --card-glass-bg: rgba(255, 255, 255, 0.6);
+  --card-glass-blur: blur(20px);
+  --card-glass-border: rgba(0, 0, 0, 0.06);
+  --card-dark-bg: var(--color-bg);
+  --card-dark-border: rgba(0, 0, 0, 0.06);
+  --card-featured-border: rgba(14, 116, 144, 0.2);
+  --card-interactive-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --card-interactive-border-hover: var(--color-cyan);
+  --divider: rgba(0, 0, 0, 0.06);
+
+  /* Badges — deeper tints for light-surface contrast */
+  --badge-cyan-bg: rgba(14, 116, 144, 0.12);
+  --badge-purple-bg: rgba(124, 58, 237, 0.12);
+  --badge-green-bg: rgba(4, 120, 87, 0.14);
+  --badge-orange-bg: rgba(194, 65, 12, 0.12);
+  --badge-amber-bg: rgba(217, 119, 6, 0.12);
+  --badge-danger-bg: rgba(220, 38, 38, 0.12);
+  --badge-amber-text: #D97706;
+
+  /* Buttons */
+  --btn-primary-bg: linear-gradient(180deg, #0C7792 0%, #155E75 100%);
+  --btn-primary-bg-hover: linear-gradient(180deg, #155E75 0%, #164E63 100%);
+  --btn-primary-text: #FFFFFF;
+  --btn-primary-shadow-hover: 0 2px 8px rgba(14, 116, 144, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+
+  /* Accent interaction states */
+  --accent-soft: rgba(14, 116, 144, 0.08);
+  --accent-soft-active: rgba(14, 116, 144, 0.1);
+  --focus-ring: 0 0 0 3px rgba(14, 116, 144, 0.1);
+
+  /* Filter groups */
+  --filter-danger-bg: rgba(220, 38, 38, 0.06);
+  --filter-warning-bg: rgba(245, 158, 11, 0.06);
+  --amber-strong: #D97706;
+
+  /* App chrome — matches page bg for a seamless edge */
+  --navbar-bg: rgba(250, 251, 254, 0.85);
+  --chrome-bg: var(--color-bg);
+  --nav-accent-hover: #0C7792;
+
+  /* Search bar accessories */
+  --kbd-bg: #F3F4F6;
+  --kbd-border: #E5E7EB;
+  --kbd-text: #6B7280;
+  --tag-bg: #F9FAFB;
+  --tag-border: #E5E7EB;
+  --tag-text: #4B5563;
+  --tag-bg-hover: #F3F4F6;
+
+  /* Popovers, dropdowns, modals */
+  --popover-bg: rgba(255, 255, 255, 0.95);
+  --popover-border: rgba(0, 0, 0, 0.08);
+  --suggestions-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --dropdown-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --modal-backdrop: rgba(0, 0, 0, 0.5);
+  --modal-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* Misc surfaces */
+  --gradient-purple-start: rgba(124, 58, 237, 0.06);
+  --progress-track: rgba(0, 0, 0, 0.1);
+  --tooltip-bg: var(--color-surface);
+  --inset-bg: var(--color-elevated);
+  --inset-bg-30: var(--color-elevated);
+  --inset-bg-50: var(--color-elevated);
+  --inset-panel: var(--color-elevated);
+  --raised-bg: var(--color-elevated);
+  --decrypt-bg: var(--color-surface);
+  --sticky-header-bg: rgba(255, 255, 255, 0.95);
+  --warning-box-text: #B45309;
+  --warning-box-border: rgba(180, 83, 9, 0.25);
+
+  /* Decrypt inbox — same glass tokens as dark theme, values flip automatically */
+  --inbox-container-bg: var(--card-glass-bg);
+  --inbox-panel: var(--card-glass-bg);
+  --inbox-chrome: var(--raised-bg);
+  --inbox-message-bg: var(--glass-4);
+  --inbox-message-header-bg: linear-gradient(90deg, var(--glass-4) 0%, var(--glass-2) 100%);
+  --inbox-message-body-bg: var(--glass-2);
+
+  /* Privacy visuals */
+  --risk-connector-color: rgba(124, 58, 237, 0.4);
+  --reactflow-bg-opacity: 0.5;
+}
+
+@layer base {
+  /* Dark mode (default) */
+  body {
+    @apply font-sans transition-colors;
+    transition-duration: var(--duration-normal);
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    background-image: var(--body-ambient);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Cypherpunk noise texture overlay - subtle organic warmth
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.015;
+    pointer-events: none;
+    z-index: 9999;
+  } */
+
+  code {
+    @apply font-mono;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Better focus outlines */
+  :focus-visible {
+    outline: 2px solid var(--color-cyan);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* ===== UNIFIED CARD SYSTEM ===== */
+  /* Card System - Apple-inspired with shadow-based elevation */
+  .card {
+    background: var(--color-surface);
+    backdrop-filter: var(--card-blur);
+    -webkit-backdrop-filter: var(--card-blur);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: var(--space-6);
+    overflow: visible;
+    min-width: 0;
+    box-shadow: var(--card-shadow);
+    transition: border-color 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1), transform 250ms cubic-bezier(0.16, 1, 0.3, 1), background-color 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Subtle shadow enhancement on hover - no transform (that's for .card-interactive) */
+  .card:hover:not(.card-static) {
+    border-color: var(--card-border-hover);
+    box-shadow: var(--card-shadow-hover);
+  }
+
+  /* Card variants - used by legacy code and Card component */
+  .card-glass {
+    background: var(--card-glass-bg);
+    backdrop-filter: var(--card-glass-blur);
+    -webkit-backdrop-filter: var(--card-glass-blur);
+    border: 1px solid var(--card-glass-border);
+    border-radius: 20px;
+    padding: var(--space-6);
+    transition: border-color 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1), transform 250ms cubic-bezier(0.16, 1, 0.3, 1), background-color 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .card-dark {
+    background: var(--card-dark-bg);
+    border: 1px solid var(--card-dark-border);
+    border-radius: 16px;
+    padding: var(--space-6);
+    transition: border-color 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1), transform 250ms cubic-bezier(0.16, 1, 0.3, 1), background-color 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .card-dark:hover {
+    border-color: rgba(0, 212, 255, 0.2);
+  }
+
+  /* ===== BADGES ===== */
+  /* Base badge styling - used by Badge component */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    border-radius: var(--radius-sm);
+    transition: color var(--duration-fast), background-color var(--duration-fast), border-color var(--duration-fast), opacity var(--duration-fast);
+  }
+
+  .badge-icon {
+    display: flex;
+    align-items: center;
+  }
+
+  .badge-text {
+    display: inline-block;
+  }
+
+  .badge-count {
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .badge-cyan {
+    background: var(--badge-cyan-bg);
+    color: var(--color-cyan);
+  }
+
+  .badge-purple {
+    background: var(--badge-purple-bg);
+    color: var(--color-purple);
+  }
+
+  .badge-green {
+    background: var(--badge-green-bg);
+    color: var(--color-green);
+  }
+
+  .badge-orange {
+    background: var(--badge-orange-bg);
+    color: var(--color-orange);
+  }
+
+  .badge-amber {
+    background: var(--badge-amber-bg);
+    color: var(--badge-amber-text);
+  }
+
+  .badge-danger {
+    background: var(--badge-danger-bg);
+    color: var(--color-danger);
+  }
+
+  .badge-muted {
+    background: var(--color-hover);
+    color: var(--color-text-muted);
+  }
+
+  /* Subtle variant — a neutral chip where only the icon carries color.
+     Used where several badges sit in one row (tx-detail header) so the row
+     reads as one calm strip instead of a different saturated fill per badge.
+     The default (non-subtle) fully-tinted style stays for dense table
+     columns, where color is the only way to scan a Type/Pool column at a
+     glance without an icon.
+     Must come after every .badge-{color} rule (including .badge-muted) —
+     same specificity (one class each), so source order decides the winner.
+     This was previously placed before .badge-muted, so muted subtle badges
+     (network, mixed, unknown) silently kept the opaque .badge-muted
+     background instead of the translucent one every other color got. */
+  .badge-subtle {
+    background: var(--card-glass-bg);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid var(--card-glass-border);
+    color: var(--color-text-secondary);
+  }
+
+  .badge-subtle .badge-icon {
+    color: var(--color-text-muted);
+  }
+
+  /* Opt-in hover for a badge that's also a link (e.g. a labeled address in a
+     flow diagram) — plain informational badges elsewhere shouldn't visually
+     react to hover since they aren't clickable. */
+  .badge-link:hover {
+    color: var(--color-text-primary);
+  }
+
+  .badge-subtle.badge-cyan .badge-icon {
+    color: var(--color-cyan);
+  }
+
+  .badge-subtle.badge-purple .badge-icon {
+    color: var(--color-purple);
+  }
+
+  .badge-subtle.badge-green .badge-icon {
+    color: var(--color-green);
+  }
+
+  .badge-subtle.badge-orange .badge-icon {
+    color: var(--color-orange);
+  }
+
+  .badge-subtle.badge-amber .badge-icon {
+    color: var(--badge-amber-text);
+  }
+
+  .badge-subtle.badge-danger .badge-icon {
+    color: var(--color-danger);
+  }
+
+  /* ===== BUTTONS ===== */
+  /* Base button styling - used by Button component */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--ease-out-expo), background-color var(--duration-fast) var(--ease-out-expo), border-color var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) var(--ease-out-expo), transform var(--duration-fast) var(--ease-out-expo), opacity var(--duration-fast) var(--ease-out-expo);
+    border: none;
+    white-space: nowrap;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-sm {
+    padding: var(--space-2) var(--space-4);
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .btn-md {
+    padding: var(--space-3) var(--space-6);
+    font-size: 14px;
+  }
+
+  .btn-lg {
+    padding: var(--space-4) var(--space-8);
+    font-size: 16px;
+    border-radius: 12px;
+  }
+
+  .btn-full {
+    width: 100%;
+  }
+
+  .btn-primary {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--btn-primary-bg-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--btn-primary-shadow-hover);
+  }
+
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--color-hover);
+    border-color: var(--color-cyan);
+    color: var(--color-cyan);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-text-secondary);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    color: var(--color-cyan);
+    background: var(--accent-soft);
+  }
+
+  .btn-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #EF4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+
+  .btn-icon-only {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--ease-out-expo), background-color var(--duration-fast) var(--ease-out-expo), border-color var(--duration-fast) var(--ease-out-expo), transform var(--duration-fast) var(--ease-out-expo), opacity var(--duration-fast) var(--ease-out-expo);
+    border: none;
+  }
+
+  .btn-loading {
+    position: relative;
+  }
+
+  .btn-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-icon {
+    display: flex;
+    align-items: center;
+  }
+
+  .btn-label {
+    display: inline-block;
+  }
+
+  /* ===== FILTER GROUPS — Terminal Aesthetic ===== */
+  /* Segmented pill control — the one tab/filter pattern app-wide.
+     Matches the period selectors on /mining and the LIVE/PAUSED toggle
+     on /mempool. Active option = cyan tint pill. */
+  .filter-group {
+    display: inline-flex;
+    gap: 0;
+    padding: 2px;
+    border-radius: var(--radius-md);
+    background: var(--glass-3);
+  }
+
+  .filter-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-family: var(--font-mono), monospace;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    background: transparent;
+    color: var(--color-text-muted);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--ease-out-expo), background-color var(--duration-fast) var(--ease-out-expo), border-color var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) var(--ease-out-expo);
+  }
+
+  .filter-btn:hover:not(.filter-btn-active):not(.filter-btn-danger):not(.filter-btn-warning) {
+    color: var(--color-text-primary);
+  }
+
+  .filter-btn-active {
+    background: var(--color-cipher-bg);
+    color: var(--color-text-primary);
+    font-weight: 700;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+    outline: 1px solid var(--glass-12);
+  }
+
+  .filter-btn-danger {
+    background: var(--filter-danger-bg);
+    color: var(--danger);
+    font-weight: 700;
+  }
+
+  .filter-btn-warning {
+    background: var(--filter-warning-bg);
+    color: var(--amber-strong);
+    font-weight: 700;
+  }
+
+  @media (min-width: 640px) {
+    .filter-btn {
+      padding: 5px 12px;
+      font-size: 12px;
+    }
+  }
+
+  /* ===== STATS BAR ===== */
+  .stats-bar {
+    /* --navbar-bg (translucent), not --chrome-bg (opaque) — this bar is
+       sticky over scrolling content, so backdrop-filter needs something to
+       actually show through, same as the navbar directly above it. */
+    background-color: var(--navbar-bg);
+    border-color: var(--color-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* Fades whichever edge(s) of the scrollable stat list currently have more
+     content off-screen, so it reads as "scroll this way" instead of an abrupt
+     cut-off. Which edge(s) fade is driven by scroll position in StatsBar.tsx —
+     never fade an edge that's already fully at rest (e.g. "Block" at scrollLeft 0). */
+  .stats-bar-fade-left {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, black 28px, black 100%);
+    mask-image: linear-gradient(to right, transparent 0, black 28px, black 100%);
+  }
+  .stats-bar-fade-right {
+    -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 28px), transparent 100%);
+    mask-image: linear-gradient(to right, black 0, black calc(100% - 28px), transparent 100%);
+  }
+  .stats-bar-fade-both {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, black 28px, black calc(100% - 28px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, black 28px, black calc(100% - 28px), transparent 100%);
+  }
+
+  .ironwood-banner {
+    /* Same reasoning as .stats-bar above — needs translucency for the blur
+       to be visible while sticky over scrolling content. */
+    background-color: var(--navbar-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* Block page fact-row sizing (BlockFactsCard) — only meaningful once those
+     boxes are laid out as a flex row (sm+ / 640px, matching Tailwind's `sm:`
+     breakpoint). Below that they're grid cells sized by the grid column, and
+     a forced min-width there would overflow the cell — this must be a real
+     media query, not an inline style, since inline styles apply at every
+     breakpoint with no way to scope them.
+     All sizing for this row lives in this one plain-CSS block (rather than
+     split between here and `sm:` Tailwind utilities) so there's exactly one
+     cascade layer and source order to reason about — .fact-box-hash /
+     .fact-box-timestamp override .fact-box-fit's defaults simply by being
+     declared later, no cross-layer utilities-vs-components precedence to
+     get right. */
+  @media (min-width: 640px) {
+    .fact-box-fit {
+      flex: 1 1 0%;
+      min-width: 150px;
+    }
+    .fact-box-hash {
+      flex-grow: 1.4;
+      min-width: 260px;
+    }
+    .fact-box-timestamp {
+      flex-grow: 1.8;
+      min-width: 260px;
+    }
+    /* Content-hugging variant (tx-detail fact rows) — .fact-box-fit's equal
+       flex-grow makes every box in a row the same width regardless of how
+       little it holds (e.g. "Size" ends up as wide as "Block", which has a
+       link + confirmation count + a badge), leaving visibly empty padding
+       in the shorter ones. This sizes to *content* first (flex-basis: auto)
+       instead of an equal share, so mixed-length facts still read as
+       mixed-length boxes — but flex-grow: 1 lets them then share out
+       whatever's left so the row still reaches the card's full width
+       instead of stopping short and leaving a dead gap when the boxes'
+       combined natural width doesn't fill it.
+       .fact-box-hash-inline is the equivalent for a hash sharing this row
+       (e.g. Block Hash) — the truncated hash + copy button need more floor
+       width than a short numeric fact does. */
+    .fact-box-hug {
+      flex: 1 1 auto;
+      min-width: 120px;
+    }
+    .fact-box-hash-inline {
+      flex: 1 1 auto;
+      min-width: 220px;
+    }
+  }
+
+  .page-section-nav {
+    /* Same chrome treatment as .stats-bar/.ironwood-banner directly above it —
+       it previously used --color-border-subtle (rgba(255,255,255,0.04), almost
+       invisible) instead of --color-border, so even though it was already
+       full-width in the DOM, it had no visible edge and read as a floating
+       pill rather than a continuous bar. */
+    background-color: var(--navbar-bg);
+    border-color: var(--color-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* ===== NAVBAR ===== */
+  .navbar-container {
+    @apply transition-colors;
+    background-color: var(--navbar-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-color: var(--color-border);
+    transition-duration: var(--duration-normal);
+  }
+
+  /* Keep navbar markup stable across SSR/hydration; page content controls search visibility. */
+  body:has(.home-page) .nav-search-compact {
+    display: none !important;
+  }
+
+  /* Navbar elements */
+  .navbar-border {
+    border-color: var(--color-border);
+  }
+
+  .mobile-menu-item {
+    color: var(--color-text-secondary);
+    transition: color var(--duration-fast) var(--ease-out-expo), background-color var(--duration-fast) var(--ease-out-expo);
+  }
+
+  .mobile-menu-item:hover {
+    background-color: var(--color-hover);
+    color: var(--color-text-primary);
+  }
+
+  .mobile-drawer {
+    background-color: var(--chrome-bg);
+  }
+
+  /* ===== FOOTER ===== */
+  .footer-container {
+    background-color: var(--chrome-bg);
+    border-color: var(--color-border);
+    transition: color var(--duration-normal), background-color var(--duration-normal), border-color var(--duration-normal);
+  }
+
+  .footer-link {
+    color: var(--color-text-muted);
+    transition: color var(--duration-fast) var(--ease-out-expo);
+  }
+
+  .footer-link:hover {
+    color: var(--color-text-primary);
+  }
+
+  .footer-border {
+    border-color: var(--color-border-subtle);
+  }
+
+  /* ===== THEME TOGGLE ===== */
+  .theme-toggle-btn {
+    background-color: transparent;
+    border: none;
+  }
+
+  /* ===== TEXT UTILITIES ===== */
+  .text-primary {
+    color: var(--color-text-primary);
+  }
+
+  .text-secondary {
+    color: var(--color-text-secondary);
+  }
+
+  .text-muted {
+    color: var(--color-text-muted);
+  }
+
+  /* ===== DONATE BUTTON ===== */
+  .donate-btn {
+    color: var(--color-text-secondary);
+    background-color: transparent;
+    border: none;
+    transition: color var(--duration-fast) var(--ease-out-expo), background-color var(--duration-fast) var(--ease-out-expo), opacity var(--duration-fast) var(--ease-out-expo), transform var(--duration-fast) var(--ease-out-expo);
+  }
+
+  .donate-btn:hover {
+    color: var(--color-text-primary);
+  }
+
+  /* ===== SEARCH BAR ===== */
+  .search-input {
+    @apply font-mono rounded-md;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    transition-property: color, background-color, border-color, box-shadow;
+    transition-timing-function: var(--ease-out-expo);
+    transition-duration: var(--duration-fast);
+  }
+
+  .search-input::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: var(--color-cyan);
+    box-shadow: var(--focus-ring);
+  }
+
+  /* Hero search input - uses CSS variables for theme support */
+  .search-input-hero {
+    background-color: var(--color-surface);
+  }
+
+  /* Keyboard shortcut hints */
+  .kbd-hint {
+    padding: 2px 6px;
+    font-size: 10px;
+    font-family: var(--font-mono), monospace;
+    border-radius: 4px;
+    background-color: var(--kbd-bg);
+    border: 1px solid var(--kbd-border);
+    color: var(--kbd-text);
+  }
+
+  /* Example tags under search */
+  .example-tag {
+    padding: 3px 10px;
+    font-size: 10px;
+    font-family: var(--font-mono), monospace;
+    border-radius: 5px;
+    transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .example-tag-default {
+    background-color: var(--tag-bg);
+    border: 1px solid var(--tag-border);
+    color: var(--tag-text);
+  }
+
+  .example-tag-default:hover {
+    background-color: var(--tag-bg-hover);
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
+  }
+
+  /* Search suggestions dropdown - must be opaque */
+  .suggestions-dropdown {
+    background-color: var(--popover-bg);
+    border: 1px solid var(--popover-border);
+    box-shadow: var(--suggestions-shadow);
+    backdrop-filter: none;
+  }
+
+  .suggestion-item {
+    color: var(--color-text-secondary);
+    transition: color var(--duration-fast), background-color var(--duration-fast);
+  }
+
+  .suggestion-item:hover {
+    background-color: var(--accent-soft);
+    color: var(--color-text-primary);
+  }
+
+  .suggestion-item-active {
+    background-color: var(--accent-soft-active);
+    color: var(--color-cyan);
+  }
+
+  .suggestion-label {
+    color: var(--color-text-primary);
+  }
+
+  /* ===== DROPDOWN MENU ===== */
+  .dropdown-menu {
+    background-color: var(--popover-bg);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--dropdown-shadow);
+    border-radius: var(--radius-md);
+    backdrop-filter: none;
+  }
+
+  .dropdown-item {
+    color: var(--color-text-secondary);
+    transition: color var(--duration-fast), background-color var(--duration-fast);
+  }
+
+  .dropdown-item:hover {
+    background-color: var(--color-hover);
+    color: var(--color-text-primary);
+  }
+
+  /* ===== GRADIENT CARDS ===== */
+  .gradient-card-purple {
+    background: linear-gradient(135deg, var(--gradient-purple-start) 0%, var(--color-surface) 100%);
+    border-color: rgb(var(--color-purple-rgb) / 0.2);
+  }
+
+  /* ===== PROGRESS BARS ===== */
+  .progress-bar-bg {
+    background-color: var(--progress-track);
+    border-radius: 9999px;
+  }
+
+  .privacy-progress-bg {
+    background-color: var(--inset-bg);
+  }
+
+  /* ===== SKELETON ===== */
+  .skeleton-bg {
+    background-color: var(--color-hover);
+  }
+
+  /* ===== TOOLTIPS ===== */
+  .tooltip-content {
+    background-color: var(--tooltip-bg);
+    color: var(--color-text-primary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card-hover);
+    border: 1px solid var(--color-border);
+  }
+
+  /* ===== MODALS ===== */
+  .modal-backdrop {
+    background-color: var(--modal-backdrop);
+  }
+
+  .modal-content {
+    background-color: var(--popover-bg);
+    border: 1px solid var(--popover-border);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--modal-shadow);
+    backdrop-filter: none;
+  }
+
+  .modal-inner-card {
+    background-color: var(--inset-bg);
+    border: 1px solid var(--color-border);
+  }
+
+  /* ===== CARD BG ===== */
+  .card-bg {
+    background-color: var(--raised-bg);
+  }
+
+  /* ===== DECRYPT PAGE ===== */
+  .decrypt-input {
+    background-color: var(--decrypt-bg);
+  }
+
+  /* ===== TERMINAL (Always dark) ===== */
+  .terminal-container {
+    background-color: #111827;
+  }
+
+  .terminal-header {
+    background-color: #1F2937;
+  }
+
+  .terminal-body {
+    background-color: rgba(0, 0, 0, 0.8);
+  }
+
+  /* ===== SCAN PROGRESS ===== */
+  .scan-progress-bg {
+    background-color: var(--inset-panel);
+  }
+
+  /* ===== WARNINGS ===== */
+  .warning-box {
+    color: var(--warning-box-text);
+    background-color: rgba(251, 191, 36, 0.08);
+    border: 1px solid var(--warning-box-border);
+  }
+
+  /* ===== DOCS PAGE ===== */
+  .docs-sidebar {
+    background-color: var(--raised-bg);
+  }
+
+  .docs-sidebar-item:hover {
+    background-color: var(--color-hover);
+  }
+
+  .docs-category-header {
+    background-color: var(--sticky-header-bg);
+  }
+
+  .docs-code-block {
+    background-color: var(--inset-bg);
+  }
+
+  /* ===== BLOCK PAGE ===== */
+  .block-info-border {
+    border-color: var(--color-border);
+  }
+
+  .block-hash-bg {
+    background-color: var(--inset-bg);
+  }
+
+  .block-tx-row {
+    background-color: var(--inset-bg-50);
+  }
+
+  /* ===== TX PAGE ===== */
+  .tx-summary-box {
+    background-color: var(--inset-bg-30);
+  }
+
+  .shielded-input-row {
+    background: linear-gradient(90deg, rgb(var(--color-purple-rgb) / 0.04) 0%, rgb(var(--color-purple-rgb) / 0.06) 100%);
+  }
+
+  /* ===== INBOX (Decrypt results) ===== */
+  .inbox-container {
+    background: var(--inbox-container-bg);
+    backdrop-filter: var(--card-glass-blur);
+    -webkit-backdrop-filter: var(--card-glass-blur);
+  }
+
+  .inbox-header {
+    background-color: var(--inbox-chrome);
+  }
+
+  .inbox-body {
+    background-color: var(--inbox-panel);
+  }
+
+  .inbox-footer {
+    background-color: var(--inbox-chrome);
+  }
+
+  .inbox-message {
+    background-color: var(--inbox-message-bg);
+  }
+
+  .inbox-message-header {
+    background: var(--inbox-message-header-bg);
+  }
+
+  .inbox-message-body {
+    background-color: var(--inbox-message-body-bg);
+  }
+
+  /* ===== RISK CONNECTOR LINE ===== */
+  .risk-connector-line {
+    height: 1px;
+    flex: 1;
+    background-image: repeating-linear-gradient(90deg, var(--risk-connector-color) 0px, var(--risk-connector-color) 2px, transparent 2px, transparent 6px);
+  }
+
+  /* ===== CARD MODIFIERS ===== */
+  .card-compact {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .card-featured {
+    padding: 32px;
+    border-radius: 20px;
+    border: 1px solid var(--card-featured-border);
+  }
+
+  .card-interactive {
+    cursor: pointer;
+  }
+
+  .card-interactive:hover {
+    transform: translateY(-2px);
+    border-color: var(--card-interactive-border-hover);
+    box-shadow: var(--card-interactive-shadow);
+  }
+
+  .card-interactive:active {
+    transform: translateY(0);
+    transition-duration: var(--duration-fast);
+  }
+
+  /* Card internal elements */
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--divider);
+  }
+
+  .card-body {
+    flex: 1;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .card-footer {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--divider);
+  }
+
+  .card-divider {
+    height: 1px;
+    background: var(--divider);
+    margin: 16px 0;
+  }
+
+
+  /* ===== INPUT SYSTEM ===== */
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .input-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-field {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    font-size: 14px;
+    font-family: var(--font-mono), monospace;
+    color: var(--color-text-primary);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: color var(--duration-fast) var(--ease-out-expo), background-color var(--duration-fast) var(--ease-out-expo), border-color var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) var(--ease-out-expo);
+  }
+
+  .input-field::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .input-field:focus {
+    outline: none;
+    border-color: var(--color-cyan);
+    box-shadow: var(--focus-ring);
+  }
+
+  .input-field.input-error {
+    border-color: #EF4444;
+  }
+
+  .input-field.input-error:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  }
+
+  .input-with-icon-left {
+    padding-left: 44px;
+  }
+
+  .input-with-icon-right {
+    padding-right: 44px;
+  }
+
+  .input-icon {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  .input-icon-left {
+    left: var(--space-4);
+  }
+
+  .input-icon-right {
+    right: var(--space-4);
+  }
+
+  .input-hint {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .input-error-message {
+    font-size: 12px;
+    color: #EF4444;
+  }
+
+  .textarea-field {
+    width: 100%;
+    min-height: 120px;
+    padding: var(--space-3) var(--space-4);
+    font-size: 14px;
+    font-family: var(--font-mono), monospace;
+    color: var(--color-text-primary);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    resize: vertical;
+    transition: color var(--duration-fast) var(--ease-out-expo), background-color var(--duration-fast) var(--ease-out-expo), border-color var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) var(--ease-out-expo);
+  }
+
+  .textarea-field::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .textarea-field:focus {
+    outline: none;
+    border-color: var(--color-cyan);
+    box-shadow: var(--focus-ring);
+  }
+
+  /* Search input v2 */
+  .search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-input-icon {
+    position: absolute;
+    left: var(--space-4);
+    display: flex;
+    align-items: center;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  .search-input-field {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    padding-left: 44px;
+    font-size: 14px;
+    font-family: var(--font-mono), monospace;
+    color: var(--color-text-primary);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    transition: color var(--duration-fast) var(--ease-out-expo), background-color var(--duration-fast) var(--ease-out-expo), border-color var(--duration-fast) var(--ease-out-expo), box-shadow var(--duration-fast) var(--ease-out-expo);
+  }
+
+  .search-input-field::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .search-input-field:focus {
+    outline: none;
+    border-color: var(--color-cyan);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+  }
+
+  .search-input-clear {
+    position: absolute;
+    right: var(--space-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-1);
+    color: var(--color-text-muted);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: color var(--duration-fast), background-color var(--duration-fast), opacity var(--duration-fast);
+  }
+
+  .search-input-clear:hover {
+    color: var(--color-text-primary);
+    background: var(--color-hover);
+  }
+
+  /* ===== ALERT SYSTEM ===== */
+  .alert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: 12px;
+  }
+
+  .alert svg {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+  }
+
+  .alert p {
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .alert-info {
+    background: rgba(0, 212, 255, 0.08);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    color: var(--color-cyan);
+  }
+
+  .alert-success {
+    background: rgba(0, 230, 118, 0.08);
+    border: 1px solid rgba(0, 230, 118, 0.2);
+    color: var(--color-green);
+  }
+
+  .alert-warning {
+    background: rgba(255, 107, 53, 0.08);
+    border: 1px solid rgba(255, 107, 53, 0.2);
+    color: var(--color-orange);
+  }
+
+  .alert-error {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #EF4444;
+  }
+
+}
+
+@layer utilities {
+  /* Cypherpunk scan line animation */
+  @keyframes scan {
+    0% {
+      top: 0%;
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.5;
+    }
+    90% {
+      opacity: 0.5;
+    }
+    100% {
+      top: 100%;
+      opacity: 0;
+    }
+  }
+
+  .animate-scan {
+    animation: scan 4s ease-in-out infinite;
+  }
+
+  /* Stagger animation delays */
+  .stagger-1 { animation-delay: 0ms; }
+  .stagger-2 { animation-delay: 50ms; }
+  .stagger-3 { animation-delay: 100ms; }
+  .stagger-4 { animation-delay: 150ms; }
+  .stagger-5 { animation-delay: 200ms; }
+  .stagger-6 { animation-delay: 250ms; }
+
+  /* Shimmer effect for loading states */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* Hide scrollbar for horizontal overflow */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Mono with emoji fallback — for miner-tag / coinbase text that mixes hex and emoji */
+  .font-mono-emoji {
+    font-family: var(--font-geist-mono), ui-monospace, monospace, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
+  }
+
+  /* Decorative CRT scanline texture for terminal-style panels */
+  .bg-scanlines {
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 255, 255, 0.03) 2px, rgba(255, 255, 255, 0.03) 4px);
+  }
+
+  /* Turnstile hero — adapts to theme */
+  .turnstile-hero {
+    --turnstile-bg: radial-gradient(ellipse at 50% 40%, rgba(30,27,60,0.5), rgba(6,8,15,0.95));
+  }
+  .light .turnstile-hero {
+    --turnstile-bg: radial-gradient(ellipse at 50% 40%, rgba(240,242,248,0.9), rgba(248,250,252,0.95));
+    --color-text-primary: #0F172A;
+    --color-text-secondary: #475569;
+    --color-text-muted: #64748B;
+  }
+
+  /* Reduced motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

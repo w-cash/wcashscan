@@ -1,0 +1,26 @@
+/** Strip grant status blocks, leaving trailing prose (e.g. CTA links). */
+
+const ZCG_ISSUE_BASE = 'https://github.com/ZcashCommunityGrants/zcashcommunitygrants/issues';
+
+/** Turn `#312 — Title` (optionally bold) into a markdown link if not already linked. */
+export function linkifyGrantItem(item: string): string {
+  if (/\]\(https?:\/\//.test(item)) return item;
+
+  const bare = item.replace(/^\*\*(.+)\*\*$/, '$1').trim();
+  const match = bare.match(/^#(\d+)\s*(—|–|-)\s*(.+)$/);
+  if (!match) return item;
+
+  const [, id, sep, title] = match;
+  return `[#${id} ${sep} ${title}](${ZCG_ISSUE_BASE}/${id})`;
+}
+
+export function stripGrantGroupsFromBody(body: string): string {
+  const blockLabelRegex = /^\*\*(Approved[^*]*|Under [Rr]eview[^*]*|Declined[^*]*|Closed[^*]*|New(?:ly [Ff]iled)?[^*]*|Previously [Aa]pproved[^*]*|Recently [Dd]eclined[^*]*)\*\*:?\s*$/gm;
+  const inlineLabelRegex = /^\*\*(Approved[^*]*|Under [Rr]eview[^*]*|Declined[^*]*|Closed[^*]*|New(?:ly [Ff]iled)?[^*]*|Previously [Aa]pproved[^*]*|Recently [Dd]eclined[^*]*)\*\*:?\s+.+$/gm;
+  return body
+    .replace(blockLabelRegex, '')
+    .replace(inlineLabelRegex, '')
+    .replace(/^[\-\*] .+$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}

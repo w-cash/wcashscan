@@ -1,0 +1,98 @@
+'use client';
+
+import Link from 'next/link';
+import { formatRelativeTime } from '@/lib/format-numbers';
+import { useApiQuery } from '@/hooks/useApiQuery';
+import { DataTable, EmptyState, SectionHeader, type DataTableColumn } from '@/components/ui';
+
+export interface RecentBlock {
+  height: number;
+  hash: string;
+  timestamp: number;
+  txCount: number;
+  size: number;
+  minerReward: number;
+  fees: number;
+}
+
+export interface RecentBlocksResponse {
+  blocks: RecentBlock[];
+}
+
+const columns: DataTableColumn<RecentBlock>[] = [
+  {
+    id: 'block',
+    header: 'Block',
+    skeletonWidth: 'w-24',
+    cell: (b) => (
+      <Link href={`/block/${b.height}`} className="font-mono text-sm text-cipher-cyan hover:underline">
+        {b.height.toLocaleString()}
+      </Link>
+    ),
+  },
+  {
+    id: 'reward',
+    header: 'Miner reward',
+    align: 'right',
+    skeletonWidth: 'w-20',
+    cell: (b) => (
+      <span className="font-mono text-sm text-primary whitespace-nowrap">{b.minerReward.toFixed(4)} WCASH</span>
+    ),
+  },
+  {
+    id: 'txs',
+    header: 'Txs',
+    align: 'right',
+    skeletonWidth: 'w-8',
+    cell: (b) => <span className="font-mono text-sm text-secondary">{b.txCount}</span>,
+  },
+  {
+    id: 'size',
+    header: 'Size',
+    align: 'right',
+    skeletonWidth: 'w-14',
+    cell: (b) => (
+      <span className="font-mono text-sm text-muted whitespace-nowrap">{(b.size / 1024).toFixed(1)} KB</span>
+    ),
+  },
+  {
+    id: 'time',
+    header: 'Time',
+    align: 'right',
+    skeletonWidth: 'w-16',
+    cell: (b) => (
+      <span className="font-mono text-sm text-muted whitespace-nowrap">{formatRelativeTime(b.timestamp)}</span>
+    ),
+  },
+];
+
+export function RecentBlocksTable({ initialData }: { initialData?: RecentBlocksResponse | null }) {
+  const { data, loading } = useApiQuery<RecentBlocksResponse>(
+    '/api/network/blocks/recent',
+    { limit: 15 },
+    { refreshInterval: 60_000, initialData: initialData ?? undefined },
+  );
+  const blocks = data?.blocks ?? [];
+
+  return (
+    <div>
+      <SectionHeader
+        label="RECENT_BLOCKS"
+        actions={
+          <Link href="/blocks" className="text-xs font-mono text-cipher-cyan hover:underline">
+            View all →
+          </Link>
+        }
+      />
+      <DataTable
+        columns={columns}
+        rows={blocks}
+        rowKey={(b) => b.height}
+        loading={loading}
+        skeletonRows={15}
+        size="comfortable"
+        empty={<EmptyState title="No recent blocks" />}
+      />
+    </div>
+  );
+}

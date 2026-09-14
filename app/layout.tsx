@@ -1,0 +1,185 @@
+import type { Metadata } from "next";
+import localFont from "next/font/local";
+import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
+import { NavBar } from "@/components/NavBar";
+import { StatsBar } from "@/components/StatsBar";
+import { Footer } from "@/components/Footer";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
+import { ChainSyncBanner } from "@/components/ChainSyncBanner";
+import { NU7VoteBanner } from "@/components/NU7VoteBanner";
+import { MainnetPreviewBanner } from "@/components/MainnetPreviewBanner";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { WebSocketProvider } from "@/contexts/WebSocketContext";
+import { buildPageMetadata, getBaseUrl, getNetwork } from "@/lib/seo";
+import { BRAND_NAME, SCANNER_REPOSITORY_URL } from "@/lib/brand";
+import "./globals.css";
+
+const geistSans = localFont({
+  src: "../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2",
+  variable: "--font-geist-sans",
+  display: "swap",
+});
+
+const geistMono = localFont({
+  src: "../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2",
+  variable: "--font-geist-mono",
+  display: "swap",
+});
+
+const network = getNetwork();
+const baseUrl = getBaseUrl();
+
+const siteCopy = network === 'mainnet'
+  ? {
+      title: `${BRAND_NAME}: Wcash Block Explorer & Privacy Analytics`,
+      description: `${BRAND_NAME} is the Wcash block explorer for searching blocks, transactions, and addresses, with live shielded pool, privacy, and network analytics.`,
+      keywords: ['wcash block explorer', 'wcash explorer', 'WCASH explorer', 'wcash blockchain explorer', 'wcash transactions', 'wcash shielded pool', 'privacy', BRAND_NAME],
+      imageAlt: `${BRAND_NAME} - Wcash Block Explorer`,
+    }
+  : network === 'testnet'
+    ? {
+        title: `${BRAND_NAME} Testnet - Wcash Testnet Explorer`,
+        description: `Explore the Wcash testnet with ${BRAND_NAME}. Search blocks, transactions, and addresses, monitor pending transactions, and inspect testnet network activity.`,
+        keywords: ['wcash testnet', 'TWC', 'wcash testnet explorer', 'wcash testnet transactions', `${BRAND_NAME} testnet`],
+        imageAlt: `${BRAND_NAME} - Wcash Testnet Explorer`,
+      }
+    : {
+        title: `${BRAND_NAME} Crosslink - Wcash Crosslink Explorer`,
+        description: 'Explore the Wcash Crosslink feature network, including blocks, finality, staking, and validators.',
+        keywords: ['wcash crosslink', 'crosslink explorer', 'wcash finality', 'TWC'],
+        imageAlt: `${BRAND_NAME} - Wcash Crosslink Explorer`,
+      };
+
+const rootPageMetadata = buildPageMetadata({
+  ...siteCopy,
+  path: '/',
+  indexOnTestnet: true,
+});
+
+export const metadata: Metadata = {
+  ...rootPageMetadata,
+  authors: [{ name: "Kenbak" }],
+  creator: "Kenbak",
+  publisher: BRAND_NAME,
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/manifest.json",
+  alternates: {
+    canonical: `${baseUrl}/`,
+    types: {
+      'application/rss+xml': `${baseUrl}/newsletter/rss`,
+    },
+  },
+  category: 'technology',
+};
+
+// Site-wide JSON-LD structured data.
+// WebSite.name + alternateName identify the WcashExplorer product, while the
+// repository link keeps the source provenance explicit.
+const websiteAlternateNames = network === 'mainnet'
+  ? [`${BRAND_NAME} Wcash Explorer`, 'Wcash Explorer']
+  : network === 'testnet'
+    ? [`${BRAND_NAME} Testnet`, 'Wcash Testnet Explorer', 'TWC Explorer']
+    : [`${BRAND_NAME} Crosslink`, 'Wcash Crosslink Explorer'];
+
+const siteJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${baseUrl}/#website`,
+      name: BRAND_NAME,
+      alternateName: websiteAlternateNames,
+      description: siteCopy.description,
+      url: `${baseUrl}/`,
+      publisher: { '@id': `${baseUrl}/#organization` },
+    },
+    {
+      '@type': 'Organization',
+      '@id': `${baseUrl}/#organization`,
+      name: BRAND_NAME,
+      url: baseUrl,
+      logo: `${baseUrl}/apple-touch-icon.png`,
+      sameAs: [SCANNER_REPOSITORY_URL],
+    },
+  ],
+};
+
+function AppContent({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
+      />
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-cipher-surface focus:px-4 focus:py-2 focus:text-primary focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
+      <MaintenanceBanner />
+      <ChainSyncBanner />
+      <MainnetPreviewBanner />
+      <NavBar />
+      <StatsBar />
+      <NU7VoteBanner />
+      <main id="main-content" tabIndex={-1} className="min-h-screen">{children}</main>
+      <Footer />
+    </>
+  );
+}
+
+// Script to prevent flash of wrong theme
+const themeScript = `
+  (function() {
+    try {
+      var theme = localStorage.getItem('theme');
+      var userChose = localStorage.getItem('theme-user-set');
+      if (!theme || !userChose) {
+        theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(theme);
+    } catch (e) {}
+  })();
+`;
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Supports sitemap-detection tools; robots.txt remains the standards-based declaration. */}
+        <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+        {/*
+          next/script's beforeInteractive strategy is Next's own documented
+          mechanism for exactly this case (must run before hydration/paint
+          to avoid a flash of the wrong theme). It's injected outside the
+          normal React child-render path, which avoids React 19's "script
+          tag inside a component" warning that a plain <script> here would
+          trigger. JSON-LD scripts below stay as plain <script> tags on
+          purpose — that's the separate Next-recommended pattern for
+          structured data, needed to keep it in the initial server HTML for
+          crawlers (next/script's strategies inject client-side instead).
+        */}
+        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <ThemeProvider>
+          <WebSocketProvider>
+            <AppContent>{children}</AppContent>
+          </WebSocketProvider>
+        </ThemeProvider>
+        <Analytics />
+      </body>
+    </html>
+  );
+}

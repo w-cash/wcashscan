@@ -1,0 +1,77 @@
+# Dependabot configuration
+# Only proposes patch and minor updates (no major version bumps).
+# Security fixes are always raised immediately regardless of schedule.
+version: 2
+
+updates:
+  # ----- npm: Next.js frontend (repo root) -----
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - frontend
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      frontend-patches:
+        update-types:
+          - minor
+          - patch
+
+  # ----- npm: Express API backend -----
+  - package-ecosystem: npm
+    directory: "/server/api"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - backend
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      backend-patches:
+        update-types:
+          - minor
+          - patch
+
+  # ----- npm: zcash-decoder package -----
+  - package-ecosystem: npm
+    directory: "/packages/zcash-decoder"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - zcash-decoder
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # ----- pip: Python ML jobs -----
+  - package-ecosystem: pip
+    directory: "/server/jobs"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - python
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # ----- GitHub Actions used by the workflows -----
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - ci

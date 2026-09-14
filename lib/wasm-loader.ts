@@ -1,0 +1,270 @@
+// WASM Loader for Zcash memo decryption
+// This wrapper handles dynamic loading of the WASM module
+
+import { getApiUrl } from './api-config';
+
+let wasmModule: any = null;
+let wasmInitialized = false;
+
+export interface DecryptedOutput {
+  memo: string;
+  amount: number; // Amount in ZEC
+}
+
+export interface UnifiedAddressComponents {
+  network: string;
+  has_transparent: boolean;
+  has_sapling: boolean;
+  has_orchard: boolean;
+  transparent_address: string | null;
+  sapling_address: string | null;
+}
+
+export interface ZcashWasm {
+  test_wasm: () => string;
+  detect_key_type: (viewingKey: string) => string;
+  decrypt_memo: (txHex: string, viewingKey: string) => string;
+  decrypt_compact_output: (nullifierHex: string, cmxHex: string, ephemeralKeyHex: string, ciphertextHex: string, viewingKey: string) => string;
+  batch_filter_compact_outputs: (outputsJson: string, viewingKey: string) => string;
+  decode_unified_address: (uaString: string) => string;
+}
+
+/**
+ * Load and initialize the WASM module
+ * @returns Promise<ZcashWasm> - The initialized WASM module
+ */
+export async function loadWasm(): Promise<ZcashWasm> {
+  if (wasmModule && wasmInitialized) {
+    return wasmModule;
+  }
+
+  try {
+    // Use dynamic import to load the wasm-bindgen generated JS
+    // We need to use a function to avoid webpack trying to resolve it at build time
+    const loadWasmModule = new Function('return import("/wasm/zcash_wasm.js")');
+    const wasmInit = await loadWasmModule();
+
+    // Initialize the WASM (this loads the .wasm file from public/)
+    await wasmInit.default();
+
+    // Extract the exported functions
+      wasmModule = {
+        test_wasm: wasmInit.test_wasm,
+        detect_key_type: wasmInit.detect_key_type,
+        decrypt_memo: wasmInit.decrypt_memo,
+        decrypt_compact_output: wasmInit.decrypt_compact_output,
+        batch_filter_compact_outputs: wasmInit.batch_filter_compact_outputs,
+        decode_unified_address: wasmInit.decode_unified_address,
+      };
+
+    wasmInitialized = true;
+    return wasmModule;
+  } catch (error) {
+    console.error('❌ Failed to load WASM:', error);
+    console.error('Error details:', error);
+    throw error;
+  }
+}
+
+/**
+ * Test if WASM is working
+ */
+export async function testWasm(): Promise<string> {
+  const wasm = await loadWasm();
+  return wasm.test_wasm();
+}
+
+/**
+ * Detect the type of viewing key
+ */
+export async function detectKeyType(viewingKey: string): Promise<string> {
+  const wasm = await loadWasm();
+  return wasm.detect_key_type(viewingKey);
+}
+
+/**
+ * Decode a unified address and return its component receivers
+ */
+export async function decodeUnifiedAddress(uaString: string): Promise<UnifiedAddressComponents> {
+  const wasm = await loadWasm();
+  const result = wasm.decode_unified_address(uaString);
+  return JSON.parse(result);
+}
+
+/**
+ * Patch unknown consensus branch IDs to NU5 for parsing.
+ * NU6/NU6.1/NU6.2 use the same v5 tx format — only proof rules changed.
+ * The WASM only needs to parse structure for decryption, not validate proofs.
+ */
+function patchBranchId(hex: string): string {
+  if (hex.length < 24) return hex;
+  // Branch IDs the deployed WASM recognizes (up to NU5)
+  const knownBranchIds = [
+    '00000000', '191ba85b', 'bb09b876', '602bb42b', '0b23b9f5',
+    'a675ffe9', 'b4d0d6c2',
+  ];
+  const branchIdHex = hex.substring(16, 24);
+  if (!knownBranchIds.includes(branchIdHex)) {
+    // Patch to NU5 — same v5 format, WASM can parse it
+    return hex.substring(0, 16) + 'b4d0d6c2' + hex.substring(24);
+  }
+  return hex;
+}
+
+/**
+ * Decrypt a memo from a transaction
+ * @returns DecryptedOutput with memo and amount
+ */
+export async function decryptMemo(txHex: string, viewingKey: string): Promise<DecryptedOutput> {
+  const wasm = await loadWasm();
+  const patchedHex = patchBranchId(txHex);
+
+  try {
+    const result = wasm.decrypt_memo(patchedHex, viewingKey);
+    return JSON.parse(result);
+  } catch (err: any) {
+    const msg = err?.message || err?.toString() || '';
+    if (msg.includes('No memo found')) {
+      throw new Error(
+        'No text memo in this transaction. The transaction may match your key but contains no memo (most transfers don\'t include one), or the viewing key doesn\'t match any outputs.'
+      );
+    }
+    throw err;
+  }
+}
+
+/**
+ * Decrypt a memo from a transaction ID (fetches raw hex first)
+ * @returns DecryptedOutput with memo and amount
+ */
+export async function decryptMemoFromTxid(txid: string, viewingKey: string): Promise<DecryptedOutput> {
+  // Use the correct API based on network
+  const apiBaseUrl = getApiUrl();
+  const apiUrl = `${apiBaseUrl}/api/tx/${txid}/raw`;
+
+  try {
+    const response = await fetch(apiUrl);
+    if (response.status === 404) {
+      throw new Error('Transaction not found on mainnet. Check the transaction ID or ensure it is a mainnet transaction.');
+    }
+    if (!response.ok) {
+      throw new Error(`Failed to fetch raw transaction: ${response.status}`);
+    }
+
+    const txData = await response.json();
+
+    if (txData.hex) {
+      return decryptMemo(txData.hex, viewingKey);
+    }
+
+    throw new Error('Transaction data does not include raw hex');
+  } catch (error: any) {
+    if (error.message?.includes('not found') || error.message?.includes('Failed to fetch raw')) {
+      throw error;
+    }
+    throw new Error(`Could not fetch transaction. Please provide the raw transaction hex instead.`);
+  }
+}
+
+/**
+ * Filter compact block outputs to find which ones belong to the viewing key (BATCH VERSION - FAST!)
+ * Returns the TXIDs that match (without decrypting the full memo)
+ */
+export async function filterCompactOutputsBatch(
+  compactBlocks: any[],
+  viewingKey: string,
+  onProgress?: (blocksProcessed: number, totalBlocks: number, matchesFound: number) => void,
+  shouldCancel?: () => boolean
+): Promise<{ txid: string; height: number; timestamp: number }[]> {
+  console.log(`🚀 [BATCH FILTER] Starting BATCH filtering of ${compactBlocks.length} compact blocks...`);
+
+  const wasm = await loadWasm();
+  const totalBlocks = compactBlocks.length;
+  const matchingTxs: { txid: string; height: number; timestamp: number }[] = [];
+  const txMap = new Map<string, { txid: string; height: number; timestamp: number }>();
+
+  // Process in SMALLER chunks to keep UI responsive (10k blocks = ~1-2 seconds each)
+  const CHUNK_SIZE = 10000; // Reduced from 50k to 10k for better responsiveness
+
+  for (let chunkStart = 0; chunkStart < totalBlocks; chunkStart += CHUNK_SIZE) {
+    // Check for cancellation before each chunk
+    if (shouldCancel && shouldCancel()) {
+      console.log('🛑 [BATCH FILTER] Cancelled by user');
+      throw new Error('Scan cancelled by user');
+    }
+
+    const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, totalBlocks);
+    const chunk = compactBlocks.slice(chunkStart, chunkEnd);
+
+    console.log(`🚀 [BATCH FILTER] Processing chunk ${Math.floor(chunkStart / CHUNK_SIZE) + 1}: blocks ${chunkStart} to ${chunkEnd}`);
+
+    // Extract all Orchard outputs from this chunk
+    const allOutputs: any[] = [];
+
+    for (const block of chunk) {
+      for (const tx of block.vtx || []) {
+        for (const action of tx.actions || []) {
+          allOutputs.push({
+            pool: action.pool,
+            nullifier: action.nullifier,
+            cmx: action.cmx,
+            ephemeral_key: action.ephemeralKey,
+            ciphertext: action.ciphertext,
+            txid: tx.hash,
+            height: parseInt(block.height),
+            timestamp: block.time,
+          });
+        }
+      }
+    }
+
+    if (allOutputs.length === 0) {
+      // No outputs in this chunk, update progress and continue
+      if (onProgress) {
+        onProgress(chunkEnd, totalBlocks, matchingTxs.length);
+      }
+      continue;
+    }
+
+    console.log(`🚀 [BATCH FILTER] Chunk has ${allOutputs.length} Orchard outputs`);
+
+    // Call WASM batch API for this chunk
+    const outputsJson = JSON.stringify(allOutputs);
+    const startTime = Date.now();
+
+    const matchesJson = wasm.batch_filter_compact_outputs(outputsJson, viewingKey);
+    const matches = JSON.parse(matchesJson);
+
+    const elapsed = Date.now() - startTime;
+    console.log(`✅ [BATCH FILTER] Chunk filtered in ${elapsed}ms! Found ${matches.length} new matches`);
+
+    // Convert matches to TXIDs (deduplicate)
+    for (const match of matches) {
+      const output = allOutputs[match.index];
+      if (!txMap.has(output.txid)) {
+        const tx = {
+          txid: output.txid,
+          height: output.height,
+          timestamp: output.timestamp,
+        };
+        txMap.set(output.txid, tx);
+        matchingTxs.push(tx);
+        console.log(`✅ [BATCH FILTER] Found matching TX: ${output.txid.slice(0, 8)}... at block ${output.height} (${match.scope} scope)`);
+      }
+    }
+
+    // Update progress after each chunk and let React re-render + browser repaint
+    if (onProgress) {
+      onProgress(chunkEnd, totalBlocks, matchingTxs.length);
+      // CRITICAL: Wait for React to update the UI AND browser to repaint
+      await new Promise(resolve => {
+        requestAnimationFrame(() => {
+          setTimeout(resolve, 10); // Extra 10ms to ensure UI update
+        });
+      });
+    }
+  }
+
+  console.log(`✅ [BATCH FILTER] Filtering complete! Checked ${compactBlocks.length} blocks, found ${matchingTxs.length} matches`);
+  return matchingTxs;
+}

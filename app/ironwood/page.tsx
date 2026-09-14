@@ -1,0 +1,102 @@
+import { MigrationClient } from './MigrationClient';
+import { getApiUrl, getBaseUrl, getNetwork } from '@/lib/seo';
+import { fetchWithDeadline } from '@/lib/server-fetch';
+import { notFound } from 'next/navigation';
+
+const PAGE_NAME = 'Wcash Ironwood Upgrade & Migration Tracker';
+const PAGE_DESCRIPTION =
+  'Track the Wcash Ironwood (NU6.3) activation, Orchard migration, Ironwood shielded supply, and observable turnstile activity on WcashExplorer.';
+
+async function fetchJson(
+  apiBase: string,
+  path: string,
+  expectedNetwork: 'mainnet' | 'testnet',
+  revalidate = 300,
+) {
+  try {
+    const res = await fetchWithDeadline(`${apiBase}${path}`, { next: { revalidate } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.success === true && data.network === expectedNetwork ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function MigrationPage() {
+  const network = getNetwork();
+  if (network === 'crosslink-testnet') notFound();
+
+  const apiBase = getApiUrl();
+  const baseUrl = getBaseUrl();
+  const pageUrl = new URL('/ironwood', `${baseUrl}/`).toString();
+  const fallbackActivationHeight = network === 'mainnet'
+    ? 3428143
+    : network === 'testnet'
+      ? 4134000
+      : 0;
+
+  const [overview, cohorts, activityHourly, activityDaily] = await Promise.all([
+    fetchJson(apiBase, '/api/migration/overview', network),
+    fetchJson(apiBase, '/api/migration/cohorts', network),
+    fetchJson(apiBase, '/api/migration/activity?granularity=hour', network, 30),
+    fetchJson(apiBase, '/api/migration/activity?granularity=day', network, 60),
+  ]);
+
+  const dataset = {
+    '@type': 'Dataset',
+    '@id': `${pageUrl}#dataset`,
+    url: pageUrl,
+    name: 'Wcash Ironwood Upgrade and Migration Data',
+    description:
+      'Live Wcash Ironwood activation and Orchard-to-Ironwood migration data, including pool balances, supply verification, migration velocity, cohort anonymity, and privacy analysis.',
+    creator: { '@id': `${baseUrl}/#organization` },
+    isPartOf: { '@id': `${baseUrl}/#website` },
+    mainEntityOfPage: { '@id': `${pageUrl}#webpage` },
+  };
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': `${pageUrl}#webpage`,
+        url: pageUrl,
+        name: PAGE_NAME,
+        description: PAGE_DESCRIPTION,
+        isPartOf: { '@id': `${baseUrl}/#website` },
+        breadcrumb: { '@id': `${pageUrl}#breadcrumb` },
+        mainEntity: { '@id': `${pageUrl}#dataset` },
+      },
+      dataset,
+      {
+        '@type': 'BreadcrumbList',
+        '@id': `${pageUrl}#breadcrumb`,
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Dashboard', item: `${baseUrl}/` },
+          { '@type': 'ListItem', position: 2, name: 'Pools', item: `${baseUrl}/pools` },
+          { '@type': 'ListItem', position: 3, name: 'Ironwood', item: pageUrl },
+        ],
+      },
+    ],
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
+        }}
+      />
+      <MigrationClient
+        initialOverview={overview}
+        initialCohorts={cohorts}
+        initialActivityHourly={activityHourly}
+        initialActivityDaily={activityDaily}
+        initialDenominations={null}
+        deploymentNetwork={network}
+        fallbackActivationHeight={fallbackActivationHeight}
+      />
+    </>
+  );
+}

@@ -1,0 +1,206 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION_FILE: ".node-version"
+  # CI validates the primary public deployment. Every hosted build must also
+  # set its own network identity explicitly.
+  NEXT_PUBLIC_NETWORK: "mainnet"
+  # Never phone home from CI.
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Next.js frontend: lint, type-check, build
+  # ---------------------------------------------------------------------------
+  frontend:
+    name: Frontend (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: ${{ env.NODE_VERSION_FILE }}
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Run the local/CI frontend verification contract
+        run: npm run verify:frontend
+      - name: Inbox orchestration and worker lifecycle regressions
+        run: node --test server/tests/inbox-scan.test.js server/tests/scan-worker-pool.test.js
+      - name: Supply-map accounting regressions
+        run: npm run test:supply-treemap
+      - name: Attestation page regressions
+        run: node --test server/tests/attestations-page.test.mjs
+
+  # ---------------------------------------------------------------------------
+  # Express API backend: locked install, syntax check, and real-Redis tests
+  # ---------------------------------------------------------------------------
+  backend-api:
+    name: Backend API (Express)
+    runs-on: ubuntu-latest
+    env:
+      TEST_REDIS_URL: redis://127.0.0.1:6379
+      TEST_UTXO_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: server/api
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Run the local/CI API verification contract
+        run: npm run verify
+      - name: Route/lib regression tests
+        # These live under server/tests/ (not server/api/test/) but exercise
+        # server/api/routes/* and server/lib/* directly with mocked pools —
+        # no DB or network required. They already had npm scripts
+        # (test:ironwood-accounting, test:peer-client) that were never wired
+        # into CI, plus two more (privacy-score, network-halving,
+        # exposure-consumers) with no CI coverage at all. Run from repo root
+        # with NODE_PATH pointing at server/api's already-installed
+        # node_modules so `require('express')` resolves.
+        working-directory: ${{ github.workspace }}
+        env:
+          NODE_PATH: ${{ github.workspace }}/server/api/node_modules
+        run: |
+          npm run test:server-regressions
+          node --test server/tests/attestations.test.mjs server/tests/attestations-baseline.test.mjs
+
+  # ---------------------------------------------------------------------------
+  # Indexer: install + syntax check
+  # ---------------------------------------------------------------------------
+  indexer:
+    name: Indexer
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server/indexer
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Syntax check all JS sources
+        run: npm run verify
+
+  # ---------------------------------------------------------------------------
+  # zcash-decoder package: build (tsc)
+  # ---------------------------------------------------------------------------
+  zcash-decoder:
+    name: Package (zcash-decoder)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/zcash-decoder
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - name: Install dependencies (skip postinstall banner)
+        run: npm ci --no-audit --no-fund --ignore-scripts
+      - name: Build
+        run: npm run build
+
+  # ---------------------------------------------------------------------------
+  # Rust WASM module: format, clippy, build
+  # ---------------------------------------------------------------------------
+  wasm:
+    name: WASM (Rust)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: wasm
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install 1.97.1 --profile minimal \
+            --component clippy
+          rustup target add wasm32-unknown-unknown --toolchain 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: wasm
+      - name: Install wasm-pack
+        run: command -v wasm-pack >/dev/null || cargo install wasm-pack --version 0.13.1 --locked
+      - name: Clippy
+        run: cargo clippy --target wasm32-unknown-unknown -- -D warnings
+      - name: Scanner cryptography regressions
+        run: cargo test --lib
+      - name: Build (wasm-pack)
+        run: wasm-pack build --target web --release
+
+  # ---------------------------------------------------------------------------
+  # Python ML jobs: install deps + byte-compile
+  # ---------------------------------------------------------------------------
+  python-jobs:
+    name: Python jobs
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server/jobs
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Compile sources in memory
+        run: python3 -c "import pathlib; [compile(path.read_text(), str(path), 'exec') for path in pathlib.Path('.').rglob('*.py')]"
+
+  # ---------------------------------------------------------------------------
+  # Shell scripts: shellcheck
+  # ---------------------------------------------------------------------------
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Run shellcheck
+        run: |
+          find . -name '*.sh' -not -path '*/node_modules/*' -not -path './.netlify/*' -not -path './.next/*' \
+            -print0 | xargs -0 -r shellcheck --severity=warning

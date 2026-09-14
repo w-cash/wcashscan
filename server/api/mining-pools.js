@@ -1,0 +1,229 @@
+/**
+ * Mining Pool Attribution
+ *
+ * Maps known coinbase payout addresses to mining pool identities.
+ * Sources: Zcashinfo.com labels, coinbase tag analysis, Shawn Murphy's peer analysis,
+ * AiCoin on-chain article (confirmed addresses), 2Miners documentation,
+ * zecminingpool.com network dashboard cross-reference (Aug 2026).
+ * Last updated: 2026-08-16
+ */
+
+const POOL_BY_ADDRESS = {
+  // --- ViaBTC ---
+  // ~35% hashrate (Aug 2026). No distinctive coinbase tag (just version bytes).
+  // Confirmed via zecminingpool.com cross-reference: this address mines 34.6%
+  // of blocks in 1-week window, matching ViaBTC's reported share exactly.
+  // Previous note said "NOT ViaBTC" — that was incorrect; ViaBTC rotated to
+  // this address around Jun 15 when their old address (t1at7nV...) stopped.
+  't1MKn34KBa8Xh4g8qU8psibBXvURafphVn7': {
+    name: 'ViaBTC',
+    url: 'https://www.viabtc.com',
+    region: 'US/CN',
+  },
+  // ViaBTC old address (AiCoin confirmed "t1at7nV...received 1.73M ZEC total")
+  't1at7nVNsv6taLRrNRvnQdtfLNRDfsGc3Ak': {
+    name: 'ViaBTC',
+    url: 'https://www.viabtc.com',
+    region: 'US/CN',
+    deprecated: '2026-06-22',
+  },
+
+  // --- ViaBTC-Solo ---
+  // ~7% hashrate (Aug 2026). ViaBTC's solo mining service.
+  // Previously mislabeled as NiceHash — corrected via zecminingpool.com cross-reference.
+  't1SEgZvXCu3ceE42qrq5pCeSq7HbLjX8NJv': {
+    name: 'ViaBTC-Solo',
+    url: 'https://www.viabtc.com',
+    region: 'US/CN',
+  },
+
+  // --- F2Pool ---
+  // Coinbase tag: "Mined by [username]"
+  // Source: Zcashinfo.com, AiCoin on-chain analysis
+  't1PEp2GJLSdhDfCKqc2J211WKDUS1NfoQNy': {
+    name: 'F2Pool',
+    url: 'https://f2pool.com',
+    region: 'HK',
+  },
+
+  // --- Foundry USA Pool ---
+  // Coinbase tag: "Foundry Zcash Pool #PrivacyMatt..."
+  // Source: Zcashinfo.com, AiCoin on-chain analysis (confirmed address)
+  't1SqwRAAdSig6dE4EBPLonAait219VmkUjP': {
+    name: 'Foundry USA',
+    url: 'https://foundrydigital.com',
+    region: 'US',
+  },
+
+  // --- Luxor ---
+  // Source: Shawn Murphy peer analysis (IP: 15.204.182.52, Reston VA)
+  't1XQZdZMnzXBcL8yx2PR27dSNrqctgwLgux': {
+    name: 'Luxor',
+    url: 'https://luxor.tech',
+    region: 'US',
+  },
+
+  // --- 2Miners ---
+  // Coinbase tag: "2Miners https://2miners.com"
+  // Current primary address (confirmed by coinbase tag, Aug 2026)
+  't1VTjv7XF3hYqxQkxKmHHErvus3bDrbbkGg': {
+    name: '2Miners',
+    url: 'https://2miners.com',
+    region: 'EU',
+  },
+  // 2Miners secondary address (same coinbase tag, low volume)
+  't1QxTHUputbmZRxd3EqP671sLqd6KNBQbXJ': {
+    name: '2Miners',
+    url: 'https://2miners.com',
+    region: 'EU',
+  },
+  // 2Miners old address (deprecated, confirmed by coinbase tag + 2Miners documentation)
+  't1fu6KgYtHEXk2ZhTpM1XD7jbnSmW6wokDM': {
+    name: '2Miners',
+    url: 'https://2miners.com',
+    region: 'EU',
+    deprecated: '2026-07',
+  },
+  't1bnxtY7aLCjWx9Ru1YcGwRWch3eEWUFK7u': {
+    name: '2Miners',
+    url: 'https://2miners.com',
+    region: 'EU',
+    deprecated: '2026-06-02',
+  },
+
+  // --- NiceHash ---
+  // Coinbase tag: "/NiceHash/"
+  // Sluicey is a separate shielded-payout pool; its coinbase tag is handled
+  // independently below and must not be attributed to NiceHash.
+  't1eBv4a3wBhVaFgWYjXrFYTU7pruCWaBpLW': {
+    name: 'NiceHash',
+    url: 'https://www.nicehash.com',
+    region: null,
+  },
+
+  // --- AntPool ---
+  // Coinbase tag: "." (minimal single dot)
+  // Source: Confirmed via coinbase tag matching against network monitoring
+  't1L2b66MXbgpVMXDfUa94GCBFAN4dCxGohM': {
+    name: 'AntPool',
+    url: 'https://www.antpool.com',
+    region: 'JP',
+  },
+  't1ZVi2YGk98tEGYcNpXYnJFWCoLG2oYwv3J': {
+    name: 'AntPool',
+    url: 'https://www.antpool.com',
+    region: 'JP',
+    deprecated: '2026-06-15',
+  },
+
+  // --- Kryptex ---
+  // Current address (confirmed via zecminingpool.com cross-reference, Aug 2026).
+  // Previously mislabeled as Poolin — corrected.
+  't1e6hceYHkzCbwcwGZzKeMfXXW7x7gr19Cw': {
+    name: 'Kryptex',
+    url: 'https://www.kryptex.com',
+    region: 'EU',
+  },
+  // Kryptex old address
+  't1Mofe2EigYNfgqSTPbK4k1iJTxyCEEQCEC': {
+    name: 'Kryptex',
+    url: 'https://www.kryptex.com',
+    region: 'EU',
+    deprecated: '2026-07',
+  },
+
+  // --- ZEC Mining Pool ---
+  // Coinbase tag: "🌸zecminingpool.com" (Zakura client)
+  't1Uo7EN1A3GN29UjQJbUFYvrhxQd6Gt7qdA': {
+    name: 'ZEC Mining Pool',
+    url: 'https://zecminingpool.com',
+    region: null,
+  },
+
+  // --- Mining Dutch ---
+  // Source: Shawn Murphy peer analysis (IP: 3.65.53.91, Frankfurt)
+  't1egMFNkP7EfkK25y8s4GeiMkEGnqcMnTb1': {
+    name: 'Mining Dutch',
+    url: 'https://www.mining-dutch.nl',
+    region: 'EU',
+  },
+
+  // --- Binance Pool ---
+  't1Na7ykQ6vE4CbxBPuUDUQx5n6aEWXu1VQq': {
+    name: 'Binance Pool',
+    url: 'https://pool.binance.com',
+    region: null,
+  },
+
+  // --- Unidentified / inactive ---
+  // Consistent ~7% hashrate, stopped Jun 15. No coinbase tag to confirm identity.
+  't1K79TgQbqu74d6rBmsMu2oFEXEwAmdYiT7': {
+    name: 'Unidentified #5',
+    url: null,
+    region: null,
+    deprecated: '2026-06-15',
+  },
+  // ~2% hashrate, no coinbase tag (just Zebra version marker).
+  // zecminingpool.com labels as "Private Miner B". Previously mislabeled as Solopool.
+  't1fpcZ2Dbwn4oj35oWBTUhtmUciSq7HG7LU': {
+    name: 'Private Miner B',
+    url: null,
+    region: null,
+  },
+
+  // --- Funding stream (not a pool) ---
+  // ZIP-207 funding-stream payout address, not a miner. blocks.miner_address
+  // (written by the indexer) can still end up pointing here on blocks where
+  // the actual miner reward is deposited entirely into a shielded pool and
+  // this is the only transparent coinbase output left — isFundingStream lets
+  // callers detect and correctly relabel that case instead of showing "Miner".
+  // A coinbase tag alone does not establish the miner identity. Never return
+  // a funding-stream recipient as a mining pool.
+  't3cFfPt1Bcvgez9ZbMBFWeZsskxTkPzGCow': {
+    name: 'FPF / Zcash Community Grants',
+    url: null,
+    region: null,
+    isFundingStream: true,
+  },
+
+  // --- Testnet Funding Streams ---
+  // ZIP-214 testnet FPF / Zcash Community Grants funding-stream address,
+  // used for all post-NU6 and post-NU6.1 address slots. This is distinct
+  // from the deferred-development lockbox, which has no output address.
+  // Source: https://zips.z.cash/zip-0214 (Testnet Recipients, Revision 1+2)
+  't2HifwjUj9uyxr9bknR8LFuQbc98c3vkXtu': {
+    // This metadata prevents the recipient being treated as a miner, but must
+    // not produce a miner-pool label in block-list responses.
+    name: null,
+    url: null,
+    region: null,
+    isFundingStream: true,
+  },
+};
+
+// Public pool marker corroborated by https://sluicey.xyz/ and its reported
+// block 3480541. Identifies the pool, never the shielded payout recipient.
+const POOL_BY_TAG = {
+  sluicey: { name: 'Sluicey Pool', url: 'https://sluicey.xyz/', region: null, attribution: 'coinbase-tag' },
+};
+const SLUICEY_TAG_HEX = Buffer.from('Get Sluicey Yall sluicey.xyz').toString('hex');
+const SLUICEY_TAG_PATTERN = `^(?:[0-9a-f]{2})*${SLUICEY_TAG_HEX}(?:[0-9a-f]{2})*$`;
+function getPoolTag(coinbaseHex) {
+  return typeof coinbaseHex === 'string' && new RegExp(SLUICEY_TAG_PATTERN, 'i').test(coinbaseHex) ? 'sluicey' : null;
+}
+// Identifiers are internal call-site constants, never request input.
+function getPoolTagSql(column = 'coinbase_hex') {
+  if (!/^[a-z_]+(?:\.[a-z_]+)?$/.test(column)) throw new Error('Invalid coinbase SQL column');
+  return `CASE WHEN ${column} ~* '${SLUICEY_TAG_PATTERN}' THEN 'sluicey' ELSE NULL END`;
+}
+function getPoolName(address, coinbaseHex) {
+  const pool = address ? POOL_BY_ADDRESS[address] : null;
+  if (pool && !pool.isFundingStream) return pool.name;
+  return POOL_BY_TAG[getPoolTag(coinbaseHex)]?.name || null;
+}
+
+function getPoolInfo(address, coinbaseHex) {
+  return (address ? POOL_BY_ADDRESS[address] : null) || POOL_BY_TAG[getPoolTag(coinbaseHex)] || null;
+}
+
+module.exports = { POOL_BY_ADDRESS, POOL_BY_TAG, getPoolName, getPoolInfo, getPoolTag, getPoolTagSql };

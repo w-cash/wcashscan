@@ -1,0 +1,26 @@
+import DecodeClient from './DecodeClient';
+import { buildPageMetadata } from '@/lib/seo';
+
+export const metadata = buildPageMetadata({
+  title: 'Decode Raw Transaction - Parse Wcash TX Hex | WcashExplorer',
+  description: 'Free tool to decode raw Wcash transaction hex into human-readable fields. View inputs, outputs, shielded data, and more without broadcasting.',
+  keywords: [
+    'decode zcash transaction',
+    'decoderawtransaction zcash',
+    'zcash tx decoder',
+    'zcash raw transaction parser',
+    'zcash transaction hex',
+    'zebra decoderawtransaction',
+    'zcash developer tool',
+  ],
+  path: '/tools/decode',
+  networks: ['mainnet'],
+});
+
+export default function DecodePage() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
+      <DecodeClient />
+    </div>
+  );
+}

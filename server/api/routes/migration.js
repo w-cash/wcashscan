@@ -1,0 +1,1259 @@
+/**
+ * Orchard → Ironwood Migration Routes (NU6.3)
+ *
+ * GET /api/migration/overview       — activation status, pool sizes, % migrated, supply audit
+ * GET /api/migration/cohorts        — migration volume + anonymity set per boundary bucket
+ * GET /api/migration/denominations  — power-of-ten denomination histogram of Ironwood outputs
+ *
+ * A ZIP-318 migration is a v6 transaction with no transparent I/O whose Orchard value
+ * balance is positive (value leaving Orchard) and Ironwood value balance is negative
+ * (value entering Ironwood). Because a compliant migration creates exactly one Ironwood
+ * output and spends no Ironwood notes, the magnitude of `value_balance_ironwood` equals
+ * the (otherwise shielded) output denomination — which is what makes the denomination
+ * histogram observable from the explorer's vantage point.
+ *
+ * Values are stored in zatoshis (BIGINT). 1 ZEC = 100,000,000 zatoshis.
+ */
+
+const express = require('express');
+const { createHash } = require('node:crypto');
+const { performance } = require('node:perf_hooks');
+const router = express.Router();
+const { classifyMigration } = require('../lib/migration-classifier');
+const { logSafeError, logSafeWarn } = require('../lib/safe-log');
+const { applyListCacheHeaders } = require('../list-cache');
+const { addRequestTiming } = require('../request-timing-context');
+
+// NU6.3 / Ironwood activation heights.
+// Mainnet: height 3,428,143 (~July 28 2026 8AM EST). Announced by Sean Bowe.
+const ACTIVATION_HEIGHT = {
+  testnet: 4134000,
+  mainnet: 3428143,
+};
+
+// Anchor boundary spacing per ZIP-318: height ≡ 0 mod 144
+// (~3h at 75s blocks). Migrations sharing a boundary form an anonymity cohort.
+const BOUNDARY_MODULUS = 144;
+
+let pool, redisClient, callZebraRPC, listCache;
+
+router.use((req, res, next) => {
+  pool = req.app.locals.pool;
+  redisClient = req.app.locals.redisClient;
+  callZebraRPC = req.app.locals.callZebraRPC;
+  listCache = req.app.locals.listCache;
+  next();
+});
+
+async function cached(key, ttl, fn) {
+  try {
+    if (redisClient?.isOpen) {
+      const hit = await redisClient.get(key);
+      if (hit) return JSON.parse(hit);
+    }
+  } catch {}
+  const data = await fn();
+  try {
+    if (redisClient?.isOpen) await redisClient.setEx(key, ttl, JSON.stringify(data));
+  } catch {}
+  return data;
+}
+
+function resolveNetwork() {
+  const net = (process.env.ZCASH_NETWORK || process.env.NETWORK || 'mainnet').toLowerCase();
+  if (net === 'testnet') return 'testnet';
+  if (net === 'crosslink' || net === 'crosslink-testnet') return 'crosslink-testnet';
+  return 'mainnet';
+}
+
+// Crosslink is a separate experimental chain and does not inherit Zcash
+// mainnet's Ironwood schedule. Keep these endpoints unavailable until that
+// deployment has an explicit, verified activation policy.
+router.use('/api/migration', (req, res, next) => {
+  if (resolveNetwork() === 'crosslink-testnet') {
+    return res.status(404).json({
+      success: false,
+      error: 'Ironwood migration data is not available on Crosslink.',
+    });
+  }
+  next();
+});
+
+// Reference node for testnet: zec.rocks lightwalletd gRPC
+const REFERENCE_GRPC_URL = 'testnet.zec.rocks:443';
+let referenceHeight = null;
+let referenceLastFetched = 0;
+
+async function fetchReferenceHeight() {
+  if (resolveNetwork() !== 'testnet') return null;
+  if (Date.now() - referenceLastFetched < 30000) return referenceHeight;
+  try {
+    const { execSync } = require('child_process');
+    const out = execSync(
+      `grpcurl -max-time 3 ${REFERENCE_GRPC_URL} cash.z.wallet.sdk.rpc.CompactTxStreamer/GetLatestBlock 2>/dev/null`,
+      { timeout: 5000, encoding: 'utf8' }
+    );
+    const parsed = JSON.parse(out);
+    referenceHeight = parseInt(parsed.height) || null;
+    referenceLastFetched = Date.now();
+  } catch {
+    // Non-critical — don't block the response
+  }
+  return referenceHeight;
+}
+
+// Shared WHERE clause identifying a compliant Orchard → Ironwood migration tx.
+const MIGRATION_PREDICATE = `
+  version = 6
+  AND has_ironwood = true
+  AND value_balance_orchard > 0
+  AND value_balance_ironwood < 0
+  AND vin_count = 0
+  AND vout_count = 0
+`;
+
+async function getTipHeight() {
+  const r = await pool.query('SELECT MAX(height) AS h FROM blocks');
+  return r.rows.length ? Number(r.rows[0].h) || 0 : 0;
+}
+
+function parsePoolZat(value) {
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function extractZebraPoolSnapshot(blockchainInfo) {
+  if (!blockchainInfo || !Array.isArray(blockchainInfo.valuePools)) return null;
+
+  const height = Number(blockchainInfo.blocks);
+  const pools = new Map(blockchainInfo.valuePools.map((entry) => [entry.id, entry]));
+  const orchardZat = parsePoolZat(pools.get('orchard')?.chainValueZat);
+  const ironwoodZat = parsePoolZat(pools.get('ironwood')?.chainValueZat);
+
+  if (!Number.isSafeInteger(height) || height < 0 || orchardZat === null || ironwoodZat === null) {
+    return null;
+  }
+
+  const sproutZat = parsePoolZat(pools.get('sprout')?.chainValueZat) ?? 0;
+  const saplingZat = parsePoolZat(pools.get('sapling')?.chainValueZat) ?? 0;
+  const deferredZat = parsePoolZat(pools.get('deferred')?.chainValueZat) ?? 0;
+
+  const shieldedTotalZat = sproutZat + saplingZat + orchardZat + ironwoodZat;
+
+  // chainSupply from Zebra gives total minted supply; transparent = total - shielded - lockbox
+  const chainSupplyZat = blockchainInfo.chainSupply?.chainValueZat != null
+    ? parsePoolZat(blockchainInfo.chainSupply.chainValueZat)
+    : null;
+  const transparentZat = chainSupplyZat != null
+    ? chainSupplyZat - shieldedTotalZat - deferredZat
+    : null;
+
+  return {
+    orchardZat,
+    ironwoodZat,
+    sproutZat,
+    saplingZat,
+    deferredZat,
+    transparentZat,
+    shieldedTotalZat,
+    chainSupplyZat,
+    height,
+    updatedAt: new Date().toISOString(),
+    source: 'zebra',
+    isLive: true,
+  };
+}
+
+function buildSupplyAudit({
+  ironwoodInZat,
+  ironwoodOutZat,
+  authoritativePoolZat,
+  accountingHeight,
+  sourceHeight,
+  source,
+}) {
+  const indexedNetZat = ironwoodInZat - ironwoodOutZat;
+  const differenceZat = authoritativePoolZat - indexedNetZat;
+
+  let status = 'balanced';
+  if (source !== 'zebra') status = 'stale';
+  else if (differenceZat !== 0 && accountingHeight < sourceHeight) status = 'syncing';
+  else if (differenceZat !== 0) status = 'mismatch';
+
+  return {
+    ironwoodInZat,
+    ironwoodOutZat,
+    indexedNetZat,
+    authoritativePoolZat,
+    differenceZat,
+    accountingHeight,
+    sourceHeight,
+    status,
+    balanced: status === 'balanced' ? true : status === 'mismatch' ? false : null,
+  };
+}
+
+// ─── GET /api/migration/overview ────────────────────────────────────────────
+
+router.get('/api/migration/overview', async (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    const network = resolveNetwork();
+    const activationHeight = ACTIVATION_HEIGHT[network];
+    const data = await cached(`zcash:migration:overview:v2:${network}`, 5, async () => {
+      const dbTipHeight = await getTipHeight();
+
+      // Zebra's valuePools are authoritative for the current net pool balances.
+      // Keep the hourly privacy_stats snapshot only as a disclosed availability
+      // fallback; cumulative transaction inflow is never a pool-balance fallback.
+      let poolSnapshot = null;
+      if (typeof callZebraRPC === 'function') {
+        try {
+          const blockchainInfo = await callZebraRPC('getblockchaininfo', [], { timeout: 2500 });
+          poolSnapshot = extractZebraPoolSnapshot(blockchainInfo);
+          if (!poolSnapshot) {
+            console.warn('[MIGRATION] Zebra returned invalid valuePools');
+          }
+        } catch (error) {
+          logSafeWarn('[MIGRATION] Live Zebra pool lookup failed:', error);
+        }
+      }
+
+      if (!poolSnapshot) {
+        try {
+          const snapshotResult = await pool.query(`
+            SELECT orchard_pool_size, ironwood_pool_size, last_block_scanned, updated_at,
+                   chain_supply, sapling_pool_size, sprout_pool_size, transparent_pool_size
+            FROM privacy_stats ORDER BY updated_at DESC LIMIT 1
+          `);
+          const snapshot = snapshotResult.rows[0];
+          const orchardZat = parsePoolZat(snapshot?.orchard_pool_size);
+          const ironwoodZat = parsePoolZat(snapshot?.ironwood_pool_size);
+          const height = Number(snapshot?.last_block_scanned);
+          if (orchardZat !== null && ironwoodZat !== null && Number.isSafeInteger(height)) {
+            const chainSupply = parsePoolZat(snapshot?.chain_supply);
+            const saplingZat = parsePoolZat(snapshot?.sapling_pool_size) ?? 0;
+            const sproutZat = parsePoolZat(snapshot?.sprout_pool_size) ?? 0;
+            const transparentZat = parsePoolZat(snapshot?.transparent_pool_size) ?? null;
+            poolSnapshot = {
+              orchardZat,
+              ironwoodZat,
+              sproutZat,
+              saplingZat,
+              deferredZat: 0,
+              transparentZat,
+              shieldedTotalZat: sproutZat + saplingZat + orchardZat + ironwoodZat,
+              chainSupplyZat: chainSupply,
+              height,
+              updatedAt: snapshot.updated_at,
+              source: 'privacy_stats',
+              isLive: false,
+            };
+          }
+        } catch (error) {
+          logSafeError('[MIGRATION] Stored pool snapshot lookup failed:', error);
+        }
+      }
+
+      if (!poolSnapshot) {
+        throw new Error('No authoritative or stored Ironwood pool snapshot is available');
+      }
+
+      const tipHeight = poolSnapshot.isLive ? poolSnapshot.height : dbTipHeight;
+      const activated = activationHeight != null && tipHeight >= activationHeight;
+
+      // One scan yields the gross ledger and migration metadata. Negative
+      // Ironwood value balance enters the pool; positive balance leaves it.
+      // Source breakdown: classify each inflow by where the value came from.
+      const ledgerResult = await pool.query(`
+        SELECT
+          COALESCE(SUM(-value_balance_ironwood)
+            FILTER (WHERE value_balance_ironwood < 0), 0) AS ironwood_in,
+          COALESCE(SUM(value_balance_ironwood)
+            FILTER (WHERE value_balance_ironwood > 0), 0) AS ironwood_out,
+          COALESCE(SUM(value_balance_orchard)
+            FILTER (WHERE value_balance_ironwood < 0 AND value_balance_orchard > 0), 0) AS orchard_out,
+          COALESCE(SUM(-value_balance_ironwood)
+            FILTER (WHERE value_balance_ironwood < 0 AND is_coinbase), 0) AS coinbase_in,
+          COALESCE(SUM(-value_balance_ironwood)
+            FILTER (WHERE value_balance_ironwood < 0 AND value_balance_sapling > 0
+                    AND NOT is_coinbase AND value_balance_orchard <= 0), 0) AS sapling_in,
+          COALESCE(SUM(-value_balance_ironwood)
+            FILTER (WHERE value_balance_ironwood < 0 AND vin_count > 0
+                    AND NOT is_coinbase AND value_balance_orchard <= 0
+                    AND value_balance_sapling <= 0), 0) AS transparent_in,
+          COUNT(*) FILTER (WHERE value_balance_ironwood < 0) AS inflow_tx_count,
+          COUNT(*) FILTER (WHERE value_balance_ironwood < 0 AND value_balance_orchard > 0
+                           AND NOT is_coinbase) AS orchard_tx_count,
+          COUNT(*) FILTER (WHERE value_balance_ironwood < 0 AND is_coinbase) AS coinbase_tx_count,
+          COUNT(*) FILTER (WHERE value_balance_ironwood < 0 AND value_balance_sapling > 0
+                           AND NOT is_coinbase AND value_balance_orchard <= 0) AS sapling_tx_count,
+          COUNT(*) FILTER (WHERE value_balance_ironwood < 0 AND vin_count > 0
+                           AND NOT is_coinbase AND value_balance_orchard <= 0
+                           AND value_balance_sapling <= 0) AS transparent_tx_count,
+          MIN(block_height) FILTER (WHERE value_balance_ironwood < 0) AS first_inflow_height,
+          MAX(block_height) FILTER (WHERE value_balance_ironwood < 0) AS last_inflow_height
+        FROM transactions
+        WHERE has_ironwood = true
+      `);
+      const ledger = ledgerResult.rows[0];
+      const ironwoodInZat = Number(ledger.ironwood_in) || 0;
+      const ironwoodOutZat = Number(ledger.ironwood_out) || 0;
+      const orchardOutZat = Number(ledger.orchard_out) || 0;
+      const coinbaseInZat = Number(ledger.coinbase_in) || 0;
+      const saplingInZat = Number(ledger.sapling_in) || 0;
+      const transparentInZat = Number(ledger.transparent_in) || 0;
+      const orchardInZat = ironwoodInZat - coinbaseInZat - saplingInZat - transparentInZat;
+      const migrationTxCount = Number(ledger.inflow_tx_count) || 0;
+      const firstMigrationHeight = ledger.first_inflow_height != null
+        ? Number(ledger.first_inflow_height)
+        : null;
+      const lastMigrationHeight = ledger.last_inflow_height != null
+        ? Number(ledger.last_inflow_height)
+        : null;
+      const totalMigratedZat = ironwoodInZat;
+
+      // Average block time from recent blocks (last 1000 for a stable estimate)
+      let avgBlockTimeSecs = 75;
+      try {
+        const bt = await pool.query(`
+          SELECT (MAX(timestamp) - MIN(timestamp))::float / NULLIF(COUNT(*) - 1, 0) AS avg_secs
+          FROM (SELECT timestamp FROM blocks ORDER BY height DESC LIMIT 1000) sub
+        `);
+        if (bt.rows.length && bt.rows[0].avg_secs) {
+          avgBlockTimeSecs = Math.round(Number(bt.rows[0].avg_secs) * 10) / 10;
+        }
+      } catch {}
+
+      const migratedFraction = (poolSnapshot.orchardZat + poolSnapshot.ironwoodZat) > 0
+        ? poolSnapshot.ironwoodZat / (poolSnapshot.orchardZat + poolSnapshot.ironwoodZat)
+        : 0;
+
+      let velocityZatPerHour = 0;
+      if (firstMigrationHeight && lastMigrationHeight && lastMigrationHeight > firstMigrationHeight) {
+        const blocksElapsed = lastMigrationHeight - firstMigrationHeight;
+        const hoursElapsed = (blocksElapsed * avgBlockTimeSecs) / 3600;
+        if (hoursElapsed > 0) velocityZatPerHour = Math.round(totalMigratedZat / hoursElapsed);
+      }
+
+      let migratedTodayZat = 0;
+      try {
+        const todayResult = await pool.query(`
+          SELECT COALESCE(SUM(ABS(value_balance_ironwood)), 0) AS today_zat
+          FROM transactions
+          WHERE has_ironwood = true
+            AND value_balance_ironwood < 0
+            AND block_time >= EXTRACT(EPOCH FROM DATE_TRUNC('day', NOW() AT TIME ZONE 'UTC'))
+        `);
+        migratedTodayZat = Number(todayResult.rows[0]?.today_zat) || 0;
+      } catch {}
+
+      const supplyAudit = buildSupplyAudit({
+        ironwoodInZat,
+        ironwoodOutZat,
+        authoritativePoolZat: poolSnapshot.ironwoodZat,
+        accountingHeight: dbTipHeight,
+        sourceHeight: poolSnapshot.height,
+        source: poolSnapshot.source,
+      });
+
+      const refHeight = await fetchReferenceHeight();
+
+      return {
+        network,
+        activationHeight,
+        tipHeight,
+        activated,
+        avgBlockTimeSecs,
+        referenceNode: refHeight ? { name: 'zec.rocks', height: refHeight } : null,
+        blocksUntilActivation: activated || activationHeight == null
+          ? 0
+          : Math.max(0, activationHeight - tipHeight),
+        poolSizes: {
+          orchardZat: poolSnapshot.orchardZat,
+          ironwoodZat: poolSnapshot.ironwoodZat,
+          sproutZat: poolSnapshot.sproutZat,
+          saplingZat: poolSnapshot.saplingZat,
+          deferredZat: poolSnapshot.deferredZat,
+          transparentZat: poolSnapshot.transparentZat,
+          shieldedTotalZat: poolSnapshot.shieldedTotalZat,
+          chainSupplyZat: poolSnapshot.chainSupplyZat,
+          updatedAt: poolSnapshot.updatedAt,
+          source: poolSnapshot.source,
+          sourceHeight: poolSnapshot.height,
+          isLive: poolSnapshot.isLive,
+        },
+        migration: {
+          totalMigratedZat,
+          migratedTodayZat,
+          txCount: migrationTxCount,
+          firstHeight: firstMigrationHeight,
+          lastHeight: lastMigrationHeight,
+          migratedPercent: migratedFraction * 100,
+          velocityZatPerHour,
+        },
+        inflowSources: {
+          fromOrchardZat: orchardInZat,
+          fromOrchardTxs: Number(ledger.orchard_tx_count) || 0,
+          fromSaplingZat: saplingInZat,
+          fromSaplingTxs: Number(ledger.sapling_tx_count) || 0,
+          fromTransparentZat: transparentInZat,
+          fromTransparentTxs: Number(ledger.transparent_tx_count) || 0,
+          fromCoinbaseZat: coinbaseInZat,
+          fromCoinbaseTxs: Number(ledger.coinbase_tx_count) || 0,
+          totalInZat: ironwoodInZat,
+          totalOutZat: ironwoodOutZat,
+        },
+        supplyAudit: {
+          orchardOutZat,
+          coinbaseInZat,
+          ...supplyAudit,
+        },
+        supplyVerification: poolSnapshot.chainSupplyZat != null ? {
+          chainSupplyZat: poolSnapshot.chainSupplyZat,
+          verifiedZat: poolSnapshot.chainSupplyZat - poolSnapshot.orchardZat,
+          unverifiedZat: poolSnapshot.orchardZat,
+          verifiedPct: poolSnapshot.chainSupplyZat > 0
+            ? ((poolSnapshot.chainSupplyZat - poolSnapshot.orchardZat) / poolSnapshot.chainSupplyZat) * 100
+            : 0,
+        } : null,
+      };
+    });
+
+    res.json({ success: true, ...data });
+  } catch (err) {
+    logSafeError('migration/overview error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─── GET /api/migration/cohorts ─────────────────────────────────────────────
+// Migration volume and anonymity set per boundary bucket. Each bucket spans
+// BOUNDARY_MODULUS blocks (~5.3h). Bucketing by block height is a proxy for the
+// ZIP-318 anchor-boundary cohort until the Ironwood anchor is indexed directly.
+//
+// Each cohort also includes:
+//   - ironwoodPoolZat: net Ironwood pool balance at this boundary (cumulative
+//     from ALL Ironwood txs, not just migrations — accounts for outflows)
+//   - orchardOutflowZat: cumulative Orchard outflow since activation
+
+router.get('/api/migration/cohorts', async (req, res) => {
+  try {
+    const network = resolveNetwork();
+    const data = await cached(`zcash:migration:cohorts:v2:${network}`, 10, async () => {
+      // 1) Migration cohorts: volume and anonymity per boundary (strict Orchard->Ironwood)
+      let migrationRows = [];
+      try {
+        const result = await pool.query(`
+          SELECT
+            (block_height / $1) AS boundary,
+            MIN(block_height) AS boundary_start,
+            COUNT(*) AS tx_count,
+            COALESCE(SUM(ABS(value_balance_ironwood)), 0) AS volume_zat,
+            MIN(block_time) AS first_time
+          FROM transactions
+          WHERE ${MIGRATION_PREDICATE}
+          GROUP BY boundary
+          ORDER BY boundary
+        `, [BOUNDARY_MODULUS]);
+        migrationRows = result.rows;
+      } catch {}
+
+      // 2) Net Ironwood pool balance per boundary from ALL Ironwood txs.
+      //    value_balance_ironwood: negative = into pool, positive = out of pool.
+      //    Cumulative SUM(-vbi) = net pool size at each boundary.
+      const netBalanceMap = new Map();
+      try {
+        const netResult = await pool.query(`
+          SELECT
+            boundary,
+            SUM(net_delta) OVER (ORDER BY boundary) AS cumulative_net_zat
+          FROM (
+            SELECT
+              (block_height / $1) AS boundary,
+              SUM(-value_balance_ironwood) AS net_delta
+            FROM transactions
+            WHERE has_ironwood = true
+            GROUP BY boundary
+          ) sub
+          ORDER BY boundary
+        `, [BOUNDARY_MODULUS]);
+        for (const r of netResult.rows) {
+          netBalanceMap.set(Number(r.boundary), Number(r.cumulative_net_zat));
+        }
+      } catch {}
+
+      // 3) Cumulative net Orchard outflow since activation.
+      //    value_balance_orchard: positive = leaving Orchard pool.
+      const activationHeight = ACTIVATION_HEIGHT[network];
+      const orchardDeltaMap = new Map();
+      try {
+        const orchardResult = await pool.query(`
+          SELECT
+            boundary,
+            SUM(orchard_delta) OVER (ORDER BY boundary) AS cumulative_orchard_outflow_zat
+          FROM (
+            SELECT
+              (block_height / $1) AS boundary,
+              SUM(value_balance_orchard) AS orchard_delta
+            FROM transactions
+            WHERE block_height >= $2
+              AND (has_orchard = true OR has_ironwood = true)
+            GROUP BY boundary
+          ) sub
+          ORDER BY boundary
+        `, [BOUNDARY_MODULUS, activationHeight || 0]);
+        for (const r of orchardResult.rows) {
+          orchardDeltaMap.set(Number(r.boundary), Number(r.cumulative_orchard_outflow_zat));
+        }
+      } catch {}
+
+      const cohorts = migrationRows.map(r => {
+        const boundary = Number(r.boundary);
+        return {
+          boundary,
+          boundaryStartHeight: Number(r.boundary_start),
+          txCount: Number(r.tx_count),
+          volumeZat: Number(r.volume_zat),
+          firstTime: r.first_time != null ? Number(r.first_time) : null,
+          ironwoodPoolZat: netBalanceMap.get(boundary) ?? null,
+          orchardOutflowZat: orchardDeltaMap.get(boundary) ?? null,
+        };
+      });
+
+      const anonymitySets = cohorts.map(c => c.txCount);
+      const avgAnonymitySet = anonymitySets.length
+        ? anonymitySets.reduce((a, b) => a + b, 0) / anonymitySets.length
+        : 0;
+
+      return {
+        network,
+        boundaryModulus: BOUNDARY_MODULUS,
+        cohortCount: cohorts.length,
+        avgAnonymitySet,
+        minAnonymitySet: anonymitySets.length ? Math.min(...anonymitySets) : 0,
+        maxAnonymitySet: anonymitySets.length ? Math.max(...anonymitySets) : 0,
+        cohorts,
+      };
+    });
+
+    res.json({ success: true, ...data });
+  } catch (err) {
+    logSafeError('migration/cohorts error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─── GET /api/migration/denominations ───────────────────────────────────────
+// Power-of-ten denomination histogram. For a single-output migration the note
+// denomination equals ABS(value_balance_ironwood). We bin by floor(log10(ZEC)).
+
+router.get('/api/migration/denominations', async (req, res) => {
+  try {
+    const network = resolveNetwork();
+    const data = await cached(`zcash:migration:denominations:${network}`, 10, async () => {
+      let rows = [];
+      try {
+        // Bin on the integer power of ten of the ZEC value. FLOOR(LOG10(zat/1e8))
+        // maps 100 → 2, 10 → 1, 1 → 0, 0.1 → -1, 0.01 → -2, etc.
+        const result = await pool.query(`
+          SELECT
+            FLOOR(LOG(10, GREATEST(ABS(value_balance_ironwood)::numeric / 100000000, 1e-8))) AS power,
+            COUNT(*) AS tx_count,
+            COALESCE(SUM(ABS(value_balance_ironwood)), 0) AS volume_zat
+          FROM transactions
+          WHERE ${MIGRATION_PREDICATE}
+          GROUP BY power
+          ORDER BY power DESC
+        `);
+        rows = result.rows;
+      } catch {}
+
+      const bins = rows.map(r => {
+        const power = Number(r.power);
+        return {
+          power,
+          denomination: Math.pow(10, power), // ZEC value of the bin (100, 10, 1, 0.1, …)
+          label: labelForPower(power),
+          txCount: Number(r.tx_count),
+          volumeZat: Number(r.volume_zat),
+        };
+      });
+
+      const totalTx = bins.reduce((a, b) => a + b.txCount, 0);
+
+      return { network, totalTx, bins };
+    });
+
+    res.json({ success: true, ...data });
+  } catch (err) {
+    logSafeError('migration/denominations error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+function labelForPower(power) {
+  const v = Math.pow(10, power);
+  if (v >= 1) return `${v} ZEC`;
+  return `${Number(v.toPrecision(2))} ZEC`;
+}
+
+// ─── GET /api/migration/activity ────────────────────────────────────────────
+// Compact hourly/daily migration activity buckets for time-series charts.
+// Unlike /scatter and /tiers (one row per migration tx, growing without
+// bound as more migrations occur), this returns a small, fixed-size series
+// of pre-aggregated buckets. Volumes are exact zatoshi integers straight
+// from SQL SUM() — never a lossy ZEC float division — matching project
+// convention (BIGINT zatoshis; 1 ZEC = 100,000,000 zatoshis).
+
+const ACTIVITY_GRANULARITY_SECONDS = { hour: 3600, day: 86400 };
+// Bounds the response/row count per granularity so a chart request can't
+// force an unbounded aggregation/response as migration history grows.
+const ACTIVITY_MAX_BUCKETS = { hour: 24 * 14, day: 180 };
+
+router.get('/api/migration/activity', async (req, res) => {
+  try {
+    const network = resolveNetwork();
+    const granularity = req.query.granularity === 'hour' ? 'hour' : 'day';
+    const bucketSeconds = ACTIVITY_GRANULARITY_SECONDS[granularity];
+    const maxBuckets = ACTIVITY_MAX_BUCKETS[granularity];
+
+    const data = await cached(`zcash:migration:activity:v1:${network}:${granularity}`, 30, async () => {
+      const sinceEpoch = Math.floor(Date.now() / 1000) - maxBuckets * bucketSeconds;
+
+      const result = await pool.query(`
+        SELECT
+          (block_time / $1::bigint) * $1::bigint AS bucket_start,
+          COUNT(*) AS tx_count,
+          COALESCE(SUM(ABS(value_balance_ironwood)), 0) AS volume_zat
+        FROM transactions
+        WHERE ${MIGRATION_PREDICATE}
+          AND block_time >= $2
+        GROUP BY bucket_start
+        ORDER BY bucket_start ASC
+      `, [bucketSeconds, sinceEpoch]);
+
+      const buckets = result.rows.map(r => ({
+        bucketStart: Number(r.bucket_start),
+        txCount: Number(r.tx_count),
+        volumeZat: Number(r.volume_zat),
+      }));
+
+      return { network, granularity, bucketSeconds, buckets };
+    });
+
+    res.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
+    res.json({ success: true, ...data });
+  } catch (err) {
+    logSafeError('migration/activity error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─── GET /api/migration/summary ─────────────────────────────────────────────
+// Small, fixed-size digest of migration activity (headline totals + 24h/7d
+// windows) for dashboard cards that don't need the full per-tx /scatter or
+// /tiers payloads. Exact zatoshi integers throughout.
+
+router.get('/api/migration/summary', async (req, res) => {
+  try {
+    const network = resolveNetwork();
+    const data = await cached(`zcash:migration:summary:v1:${network}`, 30, async () => {
+      const nowEpoch = Math.floor(Date.now() / 1000);
+      const since24h = nowEpoch - 86400;
+      const since7d = nowEpoch - 7 * 86400;
+
+      const result = await pool.query(`
+        SELECT
+          COUNT(*) AS total_tx_count,
+          COALESCE(SUM(ABS(value_balance_ironwood)), 0) AS total_volume_zat,
+          COUNT(*) FILTER (WHERE block_time >= $1) AS tx_count_24h,
+          COALESCE(SUM(ABS(value_balance_ironwood)) FILTER (WHERE block_time >= $1), 0) AS volume_zat_24h,
+          COUNT(*) FILTER (WHERE block_time >= $2) AS tx_count_7d,
+          COALESCE(SUM(ABS(value_balance_ironwood)) FILTER (WHERE block_time >= $2), 0) AS volume_zat_7d,
+          MIN(block_height) AS first_height,
+          MAX(block_height) AS last_height
+        FROM transactions
+        WHERE ${MIGRATION_PREDICATE}
+      `, [since24h, since7d]);
+
+      const r = result.rows[0];
+      return {
+        network,
+        totalTxCount: Number(r.total_tx_count) || 0,
+        totalVolumeZat: Number(r.total_volume_zat) || 0,
+        txCount24h: Number(r.tx_count_24h) || 0,
+        volumeZat24h: Number(r.volume_zat_24h) || 0,
+        txCount7d: Number(r.tx_count_7d) || 0,
+        volumeZat7d: Number(r.volume_zat_7d) || 0,
+        firstHeight: r.first_height != null ? Number(r.first_height) : null,
+        lastHeight: r.last_height != null ? Number(r.last_height) : null,
+      };
+    });
+
+    res.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
+    res.json({ success: true, ...data });
+  } catch (err) {
+    logSafeError('migration/summary error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─── GET /api/migration/scatter ──────────────────────────────────────────────
+// Individual migration transactions with privacy classification.
+// Each tx is tagged as "denominated" (common power-of-ten amount within 0.1%
+// tolerance) or "distinctive" (unique amount that weakens privacy).
+
+const COMMON_DENOMINATIONS = [
+  0.001, 0.002, 0.005,
+  0.01, 0.02, 0.05, 0.1, 0.2, 0.5,
+  1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000,
+];
+const DENOM_TOLERANCE = 0.001; // 0.1% tolerance for fee rounding
+
+function classifyAmount(zec) {
+  for (const d of COMMON_DENOMINATIONS) {
+    if (Math.abs(zec - d) / d <= DENOM_TOLERANCE) return { denomination: d, privacy: 'denominated' };
+  }
+  return { denomination: null, privacy: 'distinctive' };
+}
+
+const SCATTER_CHUNK_BLOCKS = 10_000;
+const SCATTER_REORG_SAFETY_BLOCKS = 100;
+const SCATTER_SCHEMA = [
+  'height',
+  'timestamp',
+  'amountZat',
+  'txid',
+  'denominated',
+  'denominationIndex',
+  'ironwoodActions',
+  'orchardActions',
+  'anchorCompliant',
+  'feeZat',
+  'expiryDelta',
+  'familyIndex',
+  'confidenceIndex',
+  'shortLabelIndex',
+];
+
+function parseNonNegativeInteger(value) {
+  if (value === undefined) return null;
+  if (!/^\d+$/.test(String(value))) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function dictionaryIndex(values, value) {
+  if (value == null) return -1;
+  let index = values.indexOf(value);
+  if (index === -1) {
+    values.push(value);
+    index = values.length - 1;
+  }
+  return index;
+}
+
+async function getCanonicalTip() {
+  const result = await pool.query(
+    'SELECT height, hash FROM blocks ORDER BY height DESC LIMIT 1',
+  );
+  const row = result.rows[0];
+  return row
+    ? { height: Number(row.height), hash: row.hash }
+    : { height: 0, hash: null };
+}
+
+async function getGlobalScatterSummary(network) {
+  return cached(`zcash:migration:scatter-summary:v1:${network}`, 60, async () => {
+    const result = await pool.query(`
+      SELECT ABS(value_balance_ironwood) AS amount_zat
+      FROM transactions
+      WHERE ${MIGRATION_PREDICATE}
+    `);
+    let denominatedCount = 0;
+    let distinctiveCount = 0;
+    let denominatedVolumeZat = 0;
+    let distinctiveVolumeZat = 0;
+    for (const row of result.rows) {
+      const amountZat = Number(row.amount_zat);
+      const classification = classifyAmount(amountZat / 1e8);
+      if (classification.privacy === 'denominated') {
+        denominatedCount++;
+        denominatedVolumeZat += amountZat;
+      } else {
+        distinctiveCount++;
+        distinctiveVolumeZat += amountZat;
+      }
+    }
+    return {
+      total: result.rows.length,
+      denominatedCount,
+      distinctiveCount,
+      denominatedVolumeZat: String(denominatedVolumeZat),
+      distinctiveVolumeZat: String(distinctiveVolumeZat),
+    };
+  });
+}
+
+async function loadCompactScatter({ sinceEpoch, fromHeight, toHeight, afterHeight }) {
+  const params = [];
+  const conditions = [];
+  if (sinceEpoch !== null) {
+    params.push(sinceEpoch);
+    conditions.push(`t.block_time >= $${params.length}`);
+  }
+  if (fromHeight !== null) {
+    params.push(fromHeight);
+    conditions.push(`t.block_height >= $${params.length}`);
+  }
+  if (toHeight !== null) {
+    params.push(toHeight);
+    conditions.push(`t.block_height <= $${params.length}`);
+  }
+  if (afterHeight !== null) {
+    params.push(afterHeight);
+    conditions.push(`t.block_height > $${params.length}`);
+  }
+
+  const result = await pool.query(`
+    SELECT
+      t.txid,
+      t.block_height,
+      t.block_time,
+      ABS(t.value_balance_ironwood) AS amount_zat,
+      COALESCE(t.ironwood_actions, 0) AS ironwood_actions,
+      COALESCE(t.orchard_actions, 0) AS orchard_actions,
+      t.orchard_anchor,
+      t.fee,
+      t.expiry_height,
+      t.locktime,
+      CASE WHEN t.orchard_anchor IS NOT NULL AND EXISTS (
+        SELECT 1 FROM blocks b
+        WHERE b.final_orchard_root = t.orchard_anchor
+          AND b.height % 144 = 0
+      ) THEN true ELSE false END AS anchor_compliant
+    FROM transactions t
+    WHERE t.version = 6
+      AND t.has_ironwood = true
+      AND t.value_balance_orchard > 0
+      AND t.value_balance_ironwood < 0
+      AND t.vin_count = 0
+      AND t.vout_count = 0
+      ${conditions.length ? `AND ${conditions.join(' AND ')}` : ''}
+    ORDER BY t.block_height ASC, t.txid ASC
+  `, params);
+
+  const families = [];
+  const confidences = [];
+  const shortLabels = [];
+  const points = result.rows.map((row) => {
+    const amountZat = Number(row.amount_zat);
+    const amountZec = amountZat / 1e8;
+    const amountClass = classifyAmount(amountZec);
+    const ironwoodActions = Number(row.ironwood_actions) || 0;
+    const orchardActions = Number(row.orchard_actions) || 0;
+    const feeZat = Number(row.fee) || 0;
+    const height = Number(row.block_height);
+    const expiryHeight = Number(row.expiry_height) || 0;
+    const expiryDelta = expiryHeight > 0 ? expiryHeight - height : null;
+    const anchorCompliant = row.anchor_compliant === true;
+    const fingerprint = classifyMigration({
+      ironwoodActions,
+      orchardActions,
+      fee: feeZat,
+      expiryDelta,
+      anchorOnGrid: anchorCompliant,
+      amountZec,
+      locktime: Number(row.locktime) || 0,
+    });
+    return [
+      height,
+      row.block_time == null ? null : Number(row.block_time),
+      String(amountZat),
+      row.txid,
+      amountClass.privacy === 'denominated' ? 1 : 0,
+      dictionaryIndex(COMMON_DENOMINATIONS, amountClass.denomination),
+      ironwoodActions,
+      orchardActions,
+      anchorCompliant ? 1 : 0,
+      String(feeZat),
+      expiryDelta,
+      dictionaryIndex(families, fingerprint.family),
+      dictionaryIndex(confidences, fingerprint.confidence),
+      dictionaryIndex(shortLabels, fingerprint.shortLabel),
+    ];
+  });
+
+  return { points, dictionaries: { denominations: COMMON_DENOMINATIONS, families, confidences, shortLabels } };
+}
+
+function setScatterHttpCache(res, immutable) {
+  res.set(
+    'Cache-Control',
+    immutable
+      ? 'public, max-age=31536000, immutable'
+      : 'public, max-age=15, s-maxage=30, stale-while-revalidate=300',
+  );
+  res.set('Vary', 'Accept-Encoding');
+}
+
+function sendEtagJson(req, res, body) {
+  const serializeStartedAt = performance.now();
+  const json = JSON.stringify(body);
+  addRequestTiming('serialize', performance.now() - serializeStartedAt);
+  const etag = `"${createHash('sha256').update(json).digest('base64url')}"`;
+  res.set('ETag', etag);
+  if (req.get('if-none-match') === etag) return res.status(304).end();
+  return res.type('application/json').send(json);
+}
+
+async function cachedScatterLoad(params, load) {
+  if (!listCache?.getOrLoad) {
+    return {
+      value: await load({ measure: async (_name, operation) => operation() }),
+      state: 'BYPASS',
+      cacheDurationMs: 0,
+      loadTimings: [],
+      totalDurationMs: 0,
+      refreshScheduled: false,
+    };
+  }
+  return listCache.getOrLoad({
+    family: 'migration-scatter-compact',
+    params,
+    freshTtlSeconds: params.immutable ? 86400 : 30,
+    staleTtlSeconds: params.immutable ? 604800 : 300,
+    load,
+  });
+}
+
+router.get('/api/migration/scatter/compact', async (req, res) => {
+  try {
+    const network = resolveNetwork();
+    const tip = await getCanonicalTip();
+    const activationHeight = ACTIVATION_HEIGHT[network] || 0;
+    const finalizedThrough = Math.max(
+      activationHeight - 1,
+      tip.height - SCATTER_REORG_SAFETY_BLOCKS,
+    );
+
+    if (req.query.manifest === '1') {
+      const firstChunk = Math.floor(activationHeight / SCATTER_CHUNK_BLOCKS) * SCATTER_CHUNK_BLOCKS;
+      const chunks = [];
+      for (
+        let start = firstChunk;
+        start + SCATTER_CHUNK_BLOCKS - 1 <= finalizedThrough;
+        start += SCATTER_CHUNK_BLOCKS
+      ) {
+        chunks.push({ start, end: start + SCATTER_CHUNK_BLOCKS - 1 });
+      }
+      const summary = await getGlobalScatterSummary(network);
+      setScatterHttpCache(res, false);
+      return sendEtagJson(req, res, {
+        success: true,
+        version: 1,
+        network,
+        schema: SCATTER_SCHEMA,
+        chunkBlocks: SCATTER_CHUNK_BLOCKS,
+        finalizedThrough,
+        chunks,
+        mutableTailStart: chunks.length
+          ? chunks[chunks.length - 1].end + 1
+          : firstChunk,
+        cursor: tip,
+        summary,
+      });
+    }
+
+    const chunkStart = parseNonNegativeInteger(req.query.chunkStart);
+    const afterHeight = parseNonNegativeInteger(req.query.afterHeight);
+    if (req.query.chunkStart !== undefined && chunkStart === null) {
+      return res.status(400).json({ success: false, error: 'Invalid chunkStart' });
+    }
+    if (req.query.afterHeight !== undefined && afterHeight === null) {
+      return res.status(400).json({ success: false, error: 'Invalid afterHeight' });
+    }
+    if (
+      req.query.range !== undefined
+      && !['7d', '30d', 'all'].includes(req.query.range)
+    ) {
+      return res.status(400).json({ success: false, error: 'Invalid range' });
+    }
+    if (
+      req.query.afterHash !== undefined
+      && !/^[0-9a-f]{64}$/i.test(String(req.query.afterHash))
+    ) {
+      return res.status(400).json({ success: false, error: 'Invalid afterHash' });
+    }
+
+    if (afterHeight !== null && req.query.afterHash) {
+      const cursorResult = await pool.query(
+        'SELECT hash FROM blocks WHERE height = $1',
+        [afterHeight],
+      );
+      if (cursorResult.rows[0]?.hash !== req.query.afterHash) {
+        setScatterHttpCache(res, false);
+        return sendEtagJson(req, res, {
+          success: true,
+          version: 1,
+          network,
+          resetRequired: true,
+          cursor: tip,
+          points: [],
+        });
+      }
+    }
+
+    let fromHeight = null;
+    let toHeight = null;
+    let sinceEpoch = null;
+    let immutable = false;
+    let range = req.query.range === '30d' || req.query.range === 'all'
+      ? req.query.range
+      : '7d';
+
+    if (chunkStart !== null) {
+      const chunkEnd = chunkStart + SCATTER_CHUNK_BLOCKS - 1;
+      if (chunkStart % SCATTER_CHUNK_BLOCKS !== 0 || chunkEnd > finalizedThrough) {
+        return res.status(400).json({ success: false, error: 'Chunk is not finalized or aligned' });
+      }
+      fromHeight = chunkStart;
+      toHeight = chunkEnd;
+      immutable = true;
+      range = 'chunk';
+    } else if (afterHeight !== null) {
+      range = 'tail';
+    } else if (range !== 'all') {
+      sinceEpoch = Math.floor(Date.now() / 1000) - (range === '30d' ? 30 : 7) * 86400;
+    }
+
+    const cacheParams = {
+      network,
+      range,
+      fromHeight,
+      toHeight,
+      afterHeight,
+      immutable,
+      // Time-window cache keys roll once per cache interval, not every request.
+      window: sinceEpoch === null ? null : Math.floor(sinceEpoch / 30),
+    };
+    const result = await cachedScatterLoad(cacheParams, async ({ measure }) => {
+      const compact = await measure('database_read', () => loadCompactScatter({
+        sinceEpoch,
+        fromHeight,
+        toHeight,
+        afterHeight,
+      }));
+      const summary = await getGlobalScatterSummary(network);
+      return {
+        success: true,
+        version: 1,
+        network,
+        schema: SCATTER_SCHEMA,
+        range,
+        resetRequired: false,
+        cursor: tip,
+        summary,
+        ...compact,
+      };
+    });
+
+    applyListCacheHeaders(res, result);
+    setScatterHttpCache(res, immutable);
+    return sendEtagJson(req, res, result.value);
+  } catch (error) {
+    logSafeError('migration/scatter/compact error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+router.get('/api/migration/scatter', async (req, res) => {
+  try {
+    const network = resolveNetwork();
+    const data = await cached(`zcash:migration:scatter:${network}`, 60, async () => {
+      // Full classification across ALL migrations for accurate headline stats
+      const allResult = await pool.query(`
+        SELECT ABS(value_balance_ironwood) AS ironwood_in_zat
+        FROM transactions
+        WHERE ${MIGRATION_PREDICATE}
+      `);
+
+      let denominatedCount = 0;
+      let distinctiveCount = 0;
+      let denominatedVolume = 0;
+      let distinctiveVolume = 0;
+
+      allResult.rows.forEach(r => {
+        const zat = Number(r.ironwood_in_zat);
+        const zec = zat / 1e8;
+        const classification = classifyAmount(zec);
+        if (classification.privacy === 'denominated') {
+          denominatedCount++;
+          denominatedVolume += zat;
+        } else {
+          distinctiveCount++;
+          distinctiveVolume += zat;
+        }
+      });
+
+      const plotResult = await pool.query(`
+        SELECT
+          t.txid,
+          t.block_height,
+          t.block_time,
+          ABS(t.value_balance_ironwood) AS ironwood_in_zat,
+          t.value_balance_orchard AS orchard_out_zat,
+          t.is_coinbase,
+          COALESCE(t.ironwood_actions, 0) AS ironwood_actions,
+          COALESCE(t.orchard_actions, 0) AS orchard_actions,
+          t.orchard_anchor,
+          t.fee,
+          t.expiry_height,
+          t.locktime,
+          CASE WHEN t.orchard_anchor IS NOT NULL AND EXISTS (
+            SELECT 1 FROM blocks b
+            WHERE b.final_orchard_root = t.orchard_anchor
+              AND b.height % 144 = 0
+          ) THEN true ELSE false END AS anchor_compliant
+        FROM transactions t
+        WHERE t.version = 6
+          AND t.has_ironwood = true
+          AND t.value_balance_orchard > 0
+          AND t.value_balance_ironwood < 0
+          AND t.vin_count = 0
+          AND t.vout_count = 0
+        ORDER BY t.block_height ASC
+      `);
+
+      const familyCounts = {};
+      const txs = plotResult.rows.map(r => {
+        const zat = Number(r.ironwood_in_zat);
+        const zec = zat / 1e8;
+        const classification = classifyAmount(zec);
+        const iwActions = Number(r.ironwood_actions) || 0;
+        const oActions = Number(r.orchard_actions) || 0;
+        const feeVal = Number(r.fee) || 0;
+        const expiryHeight = Number(r.expiry_height) || 0;
+        const blockHeight = Number(r.block_height);
+        const expiryDelta = expiryHeight > 0 ? expiryHeight - blockHeight : null;
+        const anchorCompliant = r.anchor_compliant ?? false;
+        const locktimeVal = Number(r.locktime) || 0;
+
+        const fingerprint = classifyMigration({
+          ironwoodActions: iwActions,
+          orchardActions: oActions,
+          fee: feeVal,
+          expiryDelta,
+          anchorOnGrid: anchorCompliant,
+          amountZec: zec,
+          locktime: locktimeVal,
+        });
+
+        familyCounts[fingerprint.family] = (familyCounts[fingerprint.family] || 0) + 1;
+
+        return {
+          txid: r.txid,
+          height: blockHeight,
+          timestamp: r.block_time ? Number(r.block_time) : null,
+          amountZat: zat,
+          amountZec: zec,
+          orchardOutZat: Number(r.orchard_out_zat) || 0,
+          isCoinbase: r.is_coinbase,
+          ironwoodActions: iwActions,
+          orchardActions: oActions,
+          paddedBundle: iwActions > 1,
+          anchorCompliant,
+          privacy: classification.privacy,
+          matchedDenomination: classification.denomination,
+          fee: feeVal,
+          expiryDelta,
+          family: fingerprint.family,
+          familyConfidence: fingerprint.confidence,
+          familyLabel: fingerprint.label,
+          familyShortLabel: fingerprint.shortLabel,
+        };
+      });
+
+      const total = denominatedCount + distinctiveCount;
+      return {
+        network,
+        total,
+        denominatedCount,
+        distinctiveCount,
+        denominatedPercent: total > 0 ? Math.round((denominatedCount / total) * 100) : 0,
+        denominatedVolumeZat: denominatedVolume,
+        distinctiveVolumeZat: distinctiveVolume,
+        familyCounts,
+        txs,
+      };
+    });
+
+    res.json({ success: true, ...data });
+  } catch (err) {
+    logSafeError('migration/scatter error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/migration/tiers — volume distribution by size tier over time
+// ---------------------------------------------------------------------------
+const TIER_BOUNDARIES = [1e8, 10e8, 100e8, 1000e8, 5000e8, 10000e8]; // 1, 10, 100, 1K, 5K, 10K ZEC in zat
+const TIER_LABELS = ['Under 1 ZEC', '1–10 ZEC', '10–100 ZEC', '100–1K ZEC', '1K–5K ZEC', '5K–10K ZEC', '10K+ ZEC'];
+
+function classifyTier(zat) {
+  for (let i = 0; i < TIER_BOUNDARIES.length; i++) {
+    if (zat < TIER_BOUNDARIES[i]) return i;
+  }
+  return TIER_BOUNDARIES.length;
+}
+
+router.get('/api/migration/tiers', async (req, res) => {
+  try {
+    const network = resolveNetwork();
+    const data = await cached(`zcash:migration:tiers:${network}`, 30, async () => {
+      const result = await pool.query(`
+        SELECT
+          block_time,
+          block_height,
+          ABS(value_balance_ironwood) AS amount_zat
+        FROM transactions
+        WHERE ${MIGRATION_PREDICATE}
+        ORDER BY block_height ASC
+      `);
+
+      const txs = result.rows.map(r => ({
+        t: Number(r.block_time),
+        h: Number(r.block_height),
+        a: Number(r.amount_zat),
+      }));
+
+      const tiers = TIER_LABELS.map((label, i) => {
+        const tierTxs = txs.filter(tx => classifyTier(tx.a) === i);
+        const volume = tierTxs.reduce((s, tx) => s + tx.a, 0);
+        return { label, count: tierTxs.length, volumeZat: volume };
+      });
+
+      const totalVolume = tiers.reduce((s, t) => s + t.volumeZat, 0);
+
+      return {
+        network,
+        tiers: tiers.map(t => ({
+          ...t,
+          volumePct: totalVolume > 0 ? (t.volumeZat / totalVolume) * 100 : 0,
+        })),
+        totalTxs: txs.length,
+        totalVolumeZat: totalVolume,
+        txs,
+      };
+    });
+
+    res.json({ success: true, ...data });
+  } catch (err) {
+    logSafeError('migration/tiers error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+module.exports = router;

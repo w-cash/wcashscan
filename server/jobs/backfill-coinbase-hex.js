@@ -1,0 +1,188 @@
+#!/usr/bin/env node
+/**
+ * Backfill coinbase_hex for existing blocks.
+ *
+ * Reads blocks that have NULL coinbase_hex in batches,
+ * fetches the coinbase transaction via Zebra RPC,
+ * extracts the scriptSig hex, and writes it back.
+ *
+ * Usage:
+ *   node backfill-coinbase-hex.js                    — backfill all NULL blocks (newest first)
+ *   node backfill-coinbase-hex.js --from 3000000     — start from a specific height
+ *   node backfill-coinbase-hex.js --batch 500        — set batch size
+ */
+
+const { log, loadEnv } = require('../lib/job-utils');
+loadEnv(__dirname);
+
+const http = require('http');
+const { getPool, getReadPool } = require('../lib/db-pool');
+
+// This manual backfill script previously instantiated its own raw `pg.Pool`,
+// bypassing the shared default statement_timeout/query_timeout in
+// lib/db-pool.js entirely (no bound at all) and the read/write pool split.
+// The initial COUNT(*) over `blocks` and the per-batch height scan are pure
+// reads with no write dependency, so they're safe to offload to the
+// replica; the actual coinbase_hex UPDATEs stay on the primary inside their
+// own short explicit transaction. The COUNT(*) full-table aggregate can
+// legitimately run longer than the 30s default on a multi-million-row
+// table, so both pools here get an explicit, longer override.
+const BACKFILL_STATEMENT_TIMEOUT_MS = 120_000;
+const pool = getPool({ max: 3, idleTimeoutMillis: 30000, statement_timeout: BACKFILL_STATEMENT_TIMEOUT_MS });
+const readPool = getReadPool({ max: 3, idleTimeoutMillis: 30000, statement_timeout: BACKFILL_STATEMENT_TIMEOUT_MS });
+
+const ZEBRA_RPC_URL = process.env.ZEBRA_RPC_URL || 'http://127.0.0.1:8232';
+
+function parseArgs() {
+  const args = process.argv.slice(2);
+  let from = null;
+  let batchSize = 200;
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--from' && args[i + 1]) from = parseInt(args[i + 1]);
+    if (args[i] === '--batch' && args[i + 1]) batchSize = parseInt(args[i + 1]);
+  }
+
+  return { from, batchSize };
+}
+
+function callRPC(method, params) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(ZEBRA_RPC_URL);
+    const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method, params });
+
+    const req = http.request({
+      hostname: url.hostname,
+      port: url.port,
+      path: url.pathname,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      timeout: 30000,
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          if (json.error) reject(new Error(json.error.message));
+          else resolve(json.result);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('RPC timeout')); });
+    req.write(body);
+    req.end();
+  });
+}
+
+async function getBlockCoinbaseHex(height) {
+  try {
+    const blockHash = await callRPC('getblockhash', [height]);
+    const block = await callRPC('getblock', [blockHash, 2]);
+    const coinbaseTx = block.tx?.[0];
+    if (!coinbaseTx) return null;
+
+    const coinbaseInput = coinbaseTx.vin?.[0];
+    if (!coinbaseInput || !coinbaseInput.coinbase) return null;
+
+    return coinbaseInput.coinbase;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function run() {
+  const { from, batchSize } = parseArgs();
+
+  const lockResult = await pool.query('SELECT pg_try_advisory_lock(8675309)');
+  if (!lockResult.rows[0].pg_try_advisory_lock) {
+    log('Another backfill instance is running, exiting.');
+    await pool.end();
+    if (readPool !== pool) await readPool.end();
+    return;
+  }
+
+  try {
+    const countResult = await readPool.query(
+      'SELECT COUNT(*) as cnt FROM blocks WHERE coinbase_hex IS NULL'
+    );
+    const totalNull = parseInt(countResult.rows[0].cnt);
+    log(`${totalNull} blocks need coinbase_hex`);
+
+    if (totalNull === 0) {
+      log('Nothing to backfill.');
+      return;
+    }
+
+    let processed = 0;
+    let cursor = from;
+
+    while (true) {
+      let query, params;
+      if (cursor !== null) {
+        query = `SELECT height FROM blocks WHERE coinbase_hex IS NULL AND height <= $1
+                 ORDER BY height DESC LIMIT $2`;
+        params = [cursor, batchSize];
+      } else {
+        query = `SELECT height FROM blocks WHERE coinbase_hex IS NULL
+                 ORDER BY height DESC LIMIT $1`;
+        params = [batchSize];
+      }
+
+      const batch = await readPool.query(query, params);
+      if (batch.rows.length === 0) break;
+
+      const updates = [];
+      for (const row of batch.rows) {
+        const h = parseInt(row.height);
+        const hex = await getBlockCoinbaseHex(h);
+        if (hex) {
+          updates.push({ height: h, hex });
+        }
+      }
+
+      if (updates.length > 0) {
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          for (const u of updates) {
+            await client.query(
+              'UPDATE blocks SET coinbase_hex = $1 WHERE height = $2',
+              [u.hex, u.height]
+            );
+          }
+          await client.query('COMMIT');
+        } catch (e) {
+          await client.query('ROLLBACK');
+          throw e;
+        } finally {
+          client.release();
+        }
+      }
+
+      processed += batch.rows.length;
+      const lowestHeight = parseInt(batch.rows[batch.rows.length - 1].height);
+      cursor = lowestHeight - 1;
+
+      const pct = ((processed / totalNull) * 100).toFixed(1);
+      log(`Processed ${processed}/${totalNull} (${pct}%) — last height: ${lowestHeight}`);
+
+      if (cursor < 0) break;
+    }
+
+    log(`Done. Processed ${processed} blocks.`);
+  } finally {
+    await pool.query('SELECT pg_advisory_unlock(8675309)');
+    await pool.end();
+    if (readPool !== pool) await readPool.end();
+  }
+}
+
+run().catch(e => {
+  console.error('Fatal error:', e);
+  process.exit(1);
+});

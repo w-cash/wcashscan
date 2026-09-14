@@ -1,0 +1,178 @@
+/**
+ * Pulse Routes — anomaly feed
+ *
+ * GET /api/pulse         — latest anomalies (paginated)
+ * GET /api/pulse/summary — counts by severity for homepage widget
+ */
+
+const express = require('express');
+const router = express.Router();
+const { parseSafeListPagination, offsetExceededError } = require('../lib/pagination');
+const { logSafeError } = require('../lib/safe-log');
+
+// metric_anomalies is bounded by the `days<=365` window already enforced
+// below, so this table can never be as large as blocks/transactions — but
+// the shared cap is applied anyway for defense-in-depth consistency.
+const MAX_PULSE_OFFSET = 50_000;
+
+let pool, redisClient;
+
+router.use((req, res, next) => {
+  pool = req.app.locals.pool;
+  redisClient = req.app.locals.redisClient;
+  next();
+});
+
+async function cached(key, ttlSeconds, fn) {
+  try {
+    if (redisClient?.isOpen) {
+      const hit = await redisClient.get(key);
+      if (hit) return JSON.parse(hit);
+    }
+  } catch {}
+  const data = await fn();
+  try {
+    if (redisClient?.isOpen) {
+      await redisClient.setEx(key, ttlSeconds, JSON.stringify(data));
+    }
+  } catch {}
+  return data;
+}
+
+function classifySeverity(absZ) {
+  if (absZ >= 4.0) return 'extreme';
+  if (absZ >= 3.0) return 'strong';
+  return 'mild';
+}
+
+// ─── Paginated feed ───────────────────────────────────────────────────────────
+
+router.get('/api/pulse', async (req, res) => {
+  try {
+    const { limit, offset, requestedOffset, offsetExceeded } = parseSafeListPagination(req.query, {
+      defaultLimit: 50,
+      maxLimit: 200,
+      maxOffset: MAX_PULSE_OFFSET,
+    });
+
+    if (offsetExceeded) {
+      return res.status(400).json(offsetExceededError({ requestedOffset, maxOffset: MAX_PULSE_OFFSET }));
+    }
+
+    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 365);
+    const metric = req.query.metric || null;
+
+    const cacheKey = `zcash:pulse:feed:v2:${days}:${limit}:${offset}:${metric || 'all'}`;
+
+    const data = await cached(cacheKey, 300, async () => {
+      let query = `
+        SELECT date, metric, value, zscore, direction, description, detail, created_at
+        FROM metric_anomalies
+        WHERE date >= CURRENT_DATE - $1::int
+      `;
+      const params = [days];
+
+      if (metric) {
+        query += ` AND metric = $${params.length + 1}`;
+        params.push(metric);
+      }
+
+      query += ` ORDER BY date DESC, ABS(zscore) DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+      params.push(limit, offset);
+
+      const { rows } = await pool.query(query, params);
+
+      // Period-wide severity counts + top metric so the UI header reflects the
+      // whole window, not just the current page of results.
+      const statsQuery = `
+        SELECT
+          COUNT(*) AS total,
+          COUNT(*) FILTER (WHERE ABS(zscore) >= 4.0) AS extreme,
+          COUNT(*) FILTER (WHERE ABS(zscore) >= 3.0 AND ABS(zscore) < 4.0) AS strong,
+          COUNT(*) FILTER (WHERE ABS(zscore) < 3.0) AS mild
+        FROM metric_anomalies
+        WHERE date >= CURRENT_DATE - $1::int
+        ${metric ? 'AND metric = $2' : ''}
+      `;
+      const statsParams = metric ? [days, metric] : [days];
+      const { rows: statsRows } = await pool.query(statsQuery, statsParams);
+
+      const { rows: topRows } = await pool.query(`
+        SELECT metric, COUNT(*) AS c
+        FROM metric_anomalies
+        WHERE date >= CURRENT_DATE - $1::int
+        GROUP BY metric ORDER BY c DESC LIMIT 1
+      `, [days]);
+
+      return {
+        events: rows.map(r => ({
+          date: r.date,
+          metric: r.metric,
+          value: Number(r.value),
+          zscore: Number(r.zscore),
+          direction: r.direction,
+          description: r.description,
+          detail: r.detail,
+          severity: classifySeverity(Math.abs(Number(r.zscore))),
+          createdAt: r.created_at,
+        })),
+        total: Number(statsRows[0].total),
+        severityCounts: {
+          extreme: Number(statsRows[0].extreme),
+          strong: Number(statsRows[0].strong),
+          mild: Number(statsRows[0].mild),
+        },
+        topMetric: topRows[0] ? { metric: topRows[0].metric, count: Number(topRows[0].c) } : null,
+        limit,
+        offset,
+      };
+    });
+
+    res.json({ success: true, ...data });
+  } catch (err) {
+    logSafeError('pulse error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─── Summary for homepage widget ──────────────────────────────────────────────
+
+router.get('/api/pulse/summary', async (req, res) => {
+  try {
+    const data = await cached('zcash:pulse:summary', 300, async () => {
+      const { rows } = await pool.query(`
+        SELECT metric, zscore, direction, description, date
+        FROM metric_anomalies
+        WHERE date >= CURRENT_DATE - 7
+        ORDER BY date DESC, ABS(zscore) DESC
+      `);
+
+      const bySeverity = { extreme: 0, strong: 0, mild: 0 };
+      const recent = [];
+
+      for (const r of rows) {
+        const sev = classifySeverity(Math.abs(Number(r.zscore)));
+        bySeverity[sev]++;
+        if (recent.length < 5) {
+          recent.push({
+            date: r.date,
+            metric: r.metric,
+            zscore: Number(r.zscore),
+            direction: r.direction,
+            description: r.description,
+            severity: sev,
+          });
+        }
+      }
+
+      return { totalLast7d: rows.length, bySeverity, recent };
+    });
+
+    res.json({ success: true, ...data });
+  } catch (err) {
+    logSafeError('pulse/summary error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+module.exports = router;

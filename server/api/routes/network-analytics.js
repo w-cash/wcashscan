@@ -1,0 +1,647 @@
+const { logSafeError } = require('../lib/safe-log');
+/**
+ * Network analytics routes — halving, mining history, pool trends, emission, chain size.
+ * Requires chain_snapshots table for size history (see docs/network-analytics-setup.md).
+ */
+
+const MAX_SUPPLY_ZEC = 21_000_000;
+const HALVING_CACHE_KEY = 'zcash:halving_info';
+const HALVING_CACHE_TTL = 86400; // 24h
+
+async function getFromRedisCache(redisClient, key) {
+  try {
+    if (!redisClient?.isOpen) return null;
+    const data = await redisClient.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function setRedisCache(redisClient, key, data, ttlSeconds) {
+  try {
+    if (!redisClient?.isOpen) return false;
+    await redisClient.setEx(key, ttlSeconds, JSON.stringify(data));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function periodToInterval(period) {
+  const map = {
+    '7d': '7 days',
+    '30d': '30 days',
+    '90d': '90 days',
+    '1y': '365 days',
+    all: '4000 days',
+  };
+  return map[period] || '90 days';
+}
+
+/** True when per-pool columns hold real chain-state history (not flat ratio estimates). */
+async function hasVerifiedPerPoolBreakdown(pool) {
+  const result = await pool.query(`
+    SELECT orchard_pool_size, pool_size
+    FROM privacy_trends_daily
+    WHERE orchard_pool_size > 0 AND pool_size > 0
+      AND date >= CURRENT_DATE - INTERVAL '365 days'
+  `);
+  if (result.rows.length < 7) return false;
+
+  const ratios = result.rows.map((r) => {
+    const orchard = Number(r.orchard_pool_size) || 0;
+    const shielded = Number(r.pool_size) || 0;
+    return shielded > 0 ? orchard / shielded : 0;
+  });
+
+  return Math.max(...ratios) - Math.min(...ratios) > 0.01;
+}
+
+/** Shielded supply % = shielded ZEC / total chain supply. Never use tx-adoption %. */
+function computeShieldedSupplyPct({ shieldedZat, chainSupplyZat, sproutZat, saplingZat, orchardZat, transparentZat }) {
+  if (chainSupplyZat > 0 && shieldedZat > 0) {
+    return (shieldedZat / chainSupplyZat) * 100;
+  }
+  const poolTotalZat = sproutZat + saplingZat + orchardZat + transparentZat;
+  if (poolTotalZat > 0 && shieldedZat > 0) {
+    return (shieldedZat / poolTotalZat) * 100;
+  }
+  // pool_size is tracked but chain_supply not backfilled — omit (do not guess from shielded pool)
+  return null;
+}
+
+function rollingAverage(values, window) {
+  if (values.length === 0) return [];
+  const out = [];
+  for (let i = 0; i < values.length; i++) {
+    const start = Math.max(0, i - window + 1);
+    const slice = values.slice(start, i + 1);
+    const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
+    out.push(avg);
+  }
+  return out;
+}
+
+async function discoverNextHalving(callZebraRPC, currentHeight) {
+  const current = await callZebraRPC('getblocksubsidy', [currentHeight]);
+  const currentTotal = current?.totalblocksubsidy;
+  if (!currentTotal) throw new Error('Could not read current block subsidy');
+
+  const coarseStep = 50000;
+  const maxScan = 2_000_000;
+  let coarseHit = null;
+
+  for (let h = currentHeight + coarseStep; h <= currentHeight + maxScan; h += coarseStep) {
+    const sub = await callZebraRPC('getblocksubsidy', [h]);
+    if (sub?.totalblocksubsidy != null && sub.totalblocksubsidy < currentTotal) {
+      coarseHit = h;
+      break;
+    }
+  }
+
+  if (!coarseHit) {
+    throw new Error(`No subsidy reduction found within ${maxScan.toLocaleString()} blocks`);
+  }
+
+  let lo = Math.max(currentHeight + 1, coarseHit - coarseStep);
+  let hi = coarseHit;
+  while (lo < hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    const sub = await callZebraRPC('getblocksubsidy', [mid]);
+    if (sub?.totalblocksubsidy < currentTotal) hi = mid;
+    else lo = mid + 1;
+  }
+
+  const nextSubsidy = await callZebraRPC('getblocksubsidy', [lo]);
+  // Find the prior subsidy transition, then binary-search its exact height.
+  let sameSubsidyHeight = currentHeight;
+  let priorEraHeight = null;
+  while (sameSubsidyHeight > 0) {
+    const probeHeight = Math.max(0, sameSubsidyHeight - coarseStep);
+    const subsidy = await callZebraRPC('getblocksubsidy', [probeHeight]);
+    if (subsidy?.totalblocksubsidy !== currentTotal) {
+      priorEraHeight = probeHeight;
+      break;
+    }
+    if (probeHeight === 0) break;
+    sameSubsidyHeight = probeHeight;
+  }
+
+  let eraStart = 1;
+  if (priorEraHeight != null) {
+    let startLo = priorEraHeight + 1;
+    let startHi = sameSubsidyHeight;
+    while (startLo < startHi) {
+      const mid = Math.floor((startLo + startHi) / 2);
+      const subsidy = await callZebraRPC('getblocksubsidy', [mid]);
+      if (subsidy?.totalblocksubsidy === currentTotal) startHi = mid;
+      else startLo = mid + 1;
+    }
+    eraStart = startLo;
+  }
+  const eraLength = lo - eraStart;
+  const progress = eraLength > 0 ? ((currentHeight - eraStart) / eraLength) * 100 : 0;
+
+  return {
+    halvingBlock: lo,
+    blocksRemaining: lo - currentHeight,
+    eraStartBlock: eraStart,
+    eraProgress: Math.min(Math.max(progress, 0), 100),
+    currentSubsidy: currentTotal,
+    nextSubsidy: nextSubsidy?.totalblocksubsidy ?? null,
+    minerReward: current.miner ?? currentTotal,
+    nextMinerReward: nextSubsidy?.miner ?? null,
+    fundingStreams: current.fundingstreamstotal ?? 0,
+    lockbox: current.lockboxtotal ?? 0,
+  };
+}
+
+async function tableExists(pool, tableName) {
+  const r = await pool.query(
+    `SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1`,
+    [tableName]
+  );
+  return r.rows.length > 0;
+}
+
+async function columnExists(pool, tableName, columnName) {
+  const r = await pool.query(
+    `SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1 AND column_name = $2`,
+    [tableName, columnName]
+  );
+  return r.rows.length > 0;
+}
+
+/** Chain supply never decreases — enforce before charting. */
+function enforceMonotonicSupply(points) {
+  if (points.length === 0) return points;
+  const out = [{ ...points[0] }];
+  for (let i = 1; i < points.length; i++) {
+    const prev = out[i - 1].circulating;
+    const curr = points[i].circulating;
+    out.push({
+      ...points[i],
+      circulating: curr != null && curr >= prev ? curr : prev,
+    });
+  }
+  return out;
+}
+
+/** Fill missing calendar days so charts don't show vertical steps across gaps. */
+function densifyDailySupply(points) {
+  if (points.length < 2) return points;
+  const sorted = [...points].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+  const out = [{ ...sorted[0] }];
+
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = sorted[i - 1];
+    const curr = sorted[i];
+    const prevDate = new Date(prev.date);
+    const currDate = new Date(curr.date);
+    const dayGap = Math.round((currDate.getTime() - prevDate.getTime()) / 86400000);
+
+    if (dayGap > 1) {
+      const supplyStep = (curr.circulating - prev.circulating) / dayGap;
+      for (let d = 1; d < dayGap; d++) {
+        const dt = new Date(prevDate);
+        dt.setUTCDate(dt.getUTCDate() + d);
+        out.push({
+          date: dt.toISOString(),
+          circulating: prev.circulating + supplyStep * d,
+          height: prev.height,
+        });
+      }
+    }
+    out.push({ ...curr });
+  }
+  return out;
+}
+
+function registerNetworkAnalyticsRoutes(router) {
+  router.get('/api/network/halving', async (req, res) => {
+    try {
+      const callZebraRPC = req.app.locals.callZebraRPC;
+      const redisClient = req.app.locals.redisClient;
+      const cached = await getFromRedisCache(redisClient, HALVING_CACHE_KEY);
+      if (cached && cached.halvingBlock != null) return res.json({ success: true, ...cached, cached: true });
+
+      // Use Zebra for both height and subsidy so backfills cannot mix a stale
+      // database height with live-chain subsidy values.
+      const currentHeight = Number(await callZebraRPC('getblockcount'));
+      if (!Number.isSafeInteger(currentHeight) || currentHeight < 1) {
+        throw new Error('Could not read current Zebra height');
+      }
+      const halving = await discoverNextHalving(callZebraRPC, currentHeight);
+
+      const avgBlockTime = 75;
+      const estimatedSeconds = halving.blocksRemaining != null ? halving.blocksRemaining * avgBlockTime : null;
+      const payload = {
+        ...halving,
+        currentHeight,
+        estimatedSeconds,
+        estimatedDate: estimatedSeconds
+          ? new Date(Date.now() + estimatedSeconds * 1000).toISOString()
+          : null,
+      };
+
+      // Only cache if we have real halving data (avoid persisting broken null state)
+      if (setRedisCache && payload.halvingBlock != null) {
+        await setRedisCache(redisClient, HALVING_CACHE_KEY, payload, HALVING_CACHE_TTL);
+      }
+      res.json({ success: true, ...payload, cached: false });
+    } catch (error) {
+      logSafeError('❌ [HALVING] Error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch halving info' });
+    }
+  });
+
+  router.get('/api/network/mining-metrics', async (req, res) => {
+    try {
+      const pool = req.app.locals.pool;
+      const window = Math.min(Math.max(parseInt(req.query.window, 10) || 20, 5), 100);
+      const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 120, 20), 500);
+
+      const result = await pool.query(
+        `SELECT height, difficulty, timestamp, transaction_count, total_fees
+         FROM blocks
+         ORDER BY height DESC
+         LIMIT $1`,
+        [limit]
+      );
+
+      const rows = result.rows.reverse();
+      const intervals = rows.map((r, i) => {
+        if (i === 0) return 75;
+        const prev = rows[i - 1];
+        const delta = parseInt(r.timestamp, 10) - parseInt(prev.timestamp, 10);
+        return delta > 0 && delta < 600 ? delta : 75;
+      });
+
+      const difficulties = rows.map((r) => parseFloat(r.difficulty) || 0);
+      // Same 2^13 Equihash constant as /api/network/stats — see comment there.
+      const solrates = difficulties.map((d, i) => (d * 8192) / intervals[i]);
+      const fees = rows.map((r) => (parseInt(r.total_fees, 10) || 0) / 1e8);
+      const txCounts = rows.map((r) => parseInt(r.transaction_count, 10) || 0);
+
+      const rollDiff = rollingAverage(difficulties, window);
+      const rollSolrate = rollingAverage(solrates, window);
+      const rollBlockTime = rollingAverage(intervals, window);
+      const rollFees = rollingAverage(fees, window);
+      const rollTx = rollingAverage(txCounts, window);
+
+      const points = rows.map((r, i) => ({
+        height: parseInt(r.height, 10),
+        difficulty: rollDiff[i],
+        solrate: rollSolrate[i],
+        blockTime: rollBlockTime[i],
+        txFees: rollFees[i],
+        txCount: rollTx[i],
+      }));
+
+      const latest = points[points.length - 1] || {};
+
+      res.json({
+        success: true,
+        window,
+        latest: {
+          solrate: latest.solrate ?? 0,
+          difficulty: latest.difficulty ?? 0,
+          blockTime: latest.blockTime ?? 75,
+          txFees: latest.txFees ?? 0,
+          txCount: latest.txCount ?? 0,
+        },
+        points,
+      });
+    } catch (error) {
+      logSafeError('❌ [MINING-METRICS] Error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch mining metrics' });
+    }
+  });
+
+  // Long-range network hashrate trend (daily buckets, robust to per-block difficulty
+  // noise). Complements /api/network/mining-metrics, which is short-range/per-block.
+  router.get('/api/network/hashrate-history', async (req, res) => {
+    try {
+      const pool = req.app.locals.pool;
+      const redisClient = req.app.locals.redisClient;
+      const period = req.query.period || '90d';
+      const cacheKey = `network:hashrate-history:${period}`;
+
+      const cached = await getFromRedisCache(redisClient, cacheKey);
+      if (cached) return res.json({ ...cached, cached: true });
+
+      const interval = periodToInterval(period);
+      const dateFilter =
+        period === 'all'
+          ? `timestamp >= 0`
+          : `timestamp >= EXTRACT(EPOCH FROM NOW() - INTERVAL '${interval}')`;
+
+      const result = await pool.query(`
+        SELECT
+          date_trunc('day', to_timestamp(timestamp)) as day,
+          AVG(difficulty) as avg_difficulty,
+          COUNT(*) as block_count,
+          MIN(timestamp) as first_ts,
+          MAX(timestamp) as last_ts
+        FROM blocks
+        WHERE ${dateFilter}
+        GROUP BY day
+        ORDER BY day ASC
+      `);
+
+      // Realized rate over the bucket: blockCount / actual-elapsed-seconds, not a fixed
+      // 86400 — the "today" bucket is always partial (the day isn't over yet), so
+      // dividing its handful-of-blocks by a full day's seconds would make the most
+      // recent point look like a cliff-edge crash even though nothing changed.
+      const points = result.rows.map((r) => {
+        const avgDifficulty = parseFloat(r.avg_difficulty) || 0;
+        const blockCount = parseInt(r.block_count, 10) || 0;
+        const firstTs = parseInt(r.first_ts, 10) || 0;
+        const lastTs = parseInt(r.last_ts, 10) || 0;
+        const elapsedSeconds = lastTs - firstTs;
+        const hashrate = blockCount > 1 && elapsedSeconds > 0
+          ? (avgDifficulty * 8192 * (blockCount - 1)) / elapsedSeconds
+          : (avgDifficulty * 8192) / 75; // single-block bucket: fall back to target block time
+        return {
+          date: r.day.toISOString().slice(0, 10),
+          avgDifficulty,
+          blockCount,
+          hashrate,
+        };
+      });
+
+      const response = { success: true, period, points };
+      await setRedisCache(redisClient, cacheKey, response, 600); // 10 min
+      res.json(response);
+    } catch (error) {
+      logSafeError('❌ [HASHRATE-HISTORY] Error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch hashrate history' });
+    }
+  });
+
+  router.get('/api/network/pool-history', async (req, res) => {
+    try {
+      const pool = req.app.locals.pool;
+      const period = req.query.period || '1y';
+      const format = req.query.format || 'zec'; // 'zec' (default) or 'zatoshi'
+      const useZat = format === 'zatoshi';
+      const interval = periodToInterval(period);
+      const hasPoolCols = await columnExists(pool, 'privacy_trends_daily', 'orchard_pool_size');
+      const hasIronwoodCol = hasPoolCols && await columnExists(pool, 'privacy_trends_daily', 'ironwood_pool_size');
+
+      const cols = hasPoolCols
+        ? `date, pool_size, shielded_percentage, chain_supply,
+           sprout_pool_size, sapling_pool_size, orchard_pool_size,
+           ${hasIronwoodCol ? 'ironwood_pool_size,' : ''} transparent_pool_size`
+        : `date, pool_size, shielded_percentage`;
+
+      const dateFilter =
+        period === 'all'
+          ? `date >= '2016-10-28'`
+          : `date >= CURRENT_DATE - INTERVAL '${interval}'`;
+
+      const result = await pool.query(
+        `SELECT ${cols}
+         FROM privacy_trends_daily
+         WHERE ${dateFilter}
+         ORDER BY date ASC`
+      );
+
+      const ZAT = 1e8;
+      const points = result.rows.map((r) => {
+        const sproutZat = hasPoolCols ? (parseInt(r.sprout_pool_size, 10) || 0) : 0;
+        const saplingZat = hasPoolCols ? (parseInt(r.sapling_pool_size, 10) || 0) : 0;
+        const orchardZat = hasPoolCols ? (parseInt(r.orchard_pool_size, 10) || 0) : 0;
+        const ironwoodZat = hasIronwoodCol ? (parseInt(r.ironwood_pool_size, 10) || 0) : 0;
+        const transparentZat = hasPoolCols ? (parseInt(r.transparent_pool_size, 10) || 0) : 0;
+        const shieldedZat = parseInt(r.pool_size, 10) || 0;
+        const chainSupplyZat = hasPoolCols ? (parseInt(r.chain_supply, 10) || 0) : 0;
+
+        if (useZat) {
+          return {
+            date: r.date,
+            shieldedZat: shieldedZat.toString(),
+            sproutZat: sproutZat.toString(),
+            saplingZat: saplingZat.toString(),
+            orchardZat: orchardZat.toString(),
+            ironwoodZat: ironwoodZat.toString(),
+            transparentZat: transparentZat.toString(),
+            chainSupplyZat: chainSupplyZat > 0 ? chainSupplyZat.toString() : null,
+            shieldedSupplyPct: computeShieldedSupplyPct({
+              shieldedZat,
+              chainSupplyZat,
+              sproutZat,
+              saplingZat,
+              orchardZat,
+              transparentZat,
+            }),
+            hasPoolBreakdown: hasPoolCols,
+          };
+        }
+
+        const shielded = shieldedZat / ZAT;
+        const chainSupply = chainSupplyZat / ZAT;
+
+        return {
+          date: r.date,
+          shielded,
+          sprout: sproutZat / ZAT,
+          sapling: saplingZat / ZAT,
+          orchard: orchardZat / ZAT,
+          ironwood: ironwoodZat / ZAT,
+          transparent: transparentZat / ZAT,
+          chainSupply: chainSupply > 0 ? chainSupply : null,
+          shieldedSupplyPct: computeShieldedSupplyPct({
+            shieldedZat,
+            chainSupplyZat,
+            sproutZat,
+            saplingZat,
+            orchardZat,
+            transparentZat,
+          }),
+          hasPoolBreakdown: hasPoolCols,
+        };
+      });
+
+      const verifiedPerPool = hasPoolCols ? await hasVerifiedPerPoolBreakdown(pool) : false;
+
+      const coverageStart = points.length > 0 ? String(points[0].date).slice(0, 10) : null;
+      const coverageEnd = points.length > 0 ? String(points[points.length - 1].date).slice(0, 10) : null;
+
+      res.json({
+        success: true,
+        period,
+        format,
+        points,
+        timelineStart: '2016-10-28',
+        coverageStart,
+        coverageEnd,
+        hasPoolBreakdown: hasPoolCols,
+        hasVerifiedPerPoolBreakdown: verifiedPerPool,
+      });
+    } catch (error) {
+      logSafeError('❌ [POOL-HISTORY] Error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch pool history' });
+    }
+  });
+
+  router.get('/api/network/emission', async (req, res) => {
+    try {
+      const pool = req.app.locals.pool;
+      const callZebraRPC = req.app.locals.callZebraRPC;
+      const period = req.query.period || '1y';
+      const interval = periodToInterval(period);
+
+      let supplyPoints = [];
+      if (await tableExists(pool, 'chain_snapshots')) {
+        const snap = await pool.query(
+          `SELECT snapshot_time, chain_supply_zat, block_height
+           FROM chain_snapshots
+           WHERE snapshot_time >= NOW() - INTERVAL '${interval}'
+           ORDER BY snapshot_time ASC`
+        );
+        supplyPoints = snap.rows.map((r) => ({
+          date: r.snapshot_time,
+          circulating: (parseInt(r.chain_supply_zat, 10) || 0) / 1e8,
+          height: parseInt(r.block_height, 10),
+        }));
+      }
+
+      const trends = await pool.query(
+        `SELECT date, pool_size, chain_supply
+         FROM privacy_trends_daily
+         WHERE date >= CURRENT_DATE - INTERVAL '${interval}'
+         ORDER BY date ASC`
+      );
+
+      // Fall back to daily privacy trends when snapshots are new or sparse
+      if (supplyPoints.length < 2) {
+        const fromTrends = trends.rows
+          .filter((r) => (parseInt(r.chain_supply, 10) || 0) > 0)
+          .map((r) => ({
+            date: r.date,
+            circulating: parseInt(r.chain_supply, 10) / 1e8,
+          }));
+        if (fromTrends.length > supplyPoints.length) {
+          supplyPoints = fromTrends;
+        }
+      }
+
+      supplyPoints = enforceMonotonicSupply(
+        densifyDailySupply(
+          supplyPoints.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        )
+      );
+
+      const dailyEmission = [];
+      for (let i = 1; i < trends.rows.length; i++) {
+        const prev = parseInt(trends.rows[i - 1].chain_supply, 10) || 0;
+        const curr = parseInt(trends.rows[i].chain_supply, 10) || 0;
+        if (prev > 0 && curr > prev) {
+          dailyEmission.push({
+            date: trends.rows[i].date,
+            emission: (curr - prev) / 1e8,
+          });
+        }
+      }
+
+      const latestSupply = supplyPoints.length > 0
+        ? supplyPoints[supplyPoints.length - 1].circulating
+        : (parseInt(trends.rows[trends.rows.length - 1]?.chain_supply, 10) || 0) / 1e8;
+
+      const subsidy = await callZebraRPC('getblocksubsidy').catch(() => null);
+      const dailyEstimate = subsidy?.totalblocksubsidy != null ? subsidy.totalblocksubsidy * 1152 : null;
+
+      res.json({
+        success: true,
+        maxSupply: MAX_SUPPLY_ZEC,
+        circulating: latestSupply,
+        remaining: Math.max(0, MAX_SUPPLY_ZEC - latestSupply),
+        circulatingPct: latestSupply > 0 ? (latestSupply / MAX_SUPPLY_ZEC) * 100 : 0,
+        dailyEmissionEstimate: dailyEstimate,
+        supplyHistory: supplyPoints,
+        dailyEmission,
+        hasChainSnapshots: await tableExists(pool, 'chain_snapshots'),
+        supplyHistorySource: supplyPoints.length >= 2 ? 'history' : supplyPoints.length === 1 ? 'partial' : 'none',
+      });
+    } catch (error) {
+      logSafeError('❌ [EMISSION] Error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch emission data' });
+    }
+  });
+
+  router.get('/api/network/chain-size-history', async (req, res) => {
+    try {
+      const pool = req.app.locals.pool;
+      if (!(await tableExists(pool, 'chain_snapshots'))) {
+        return res.json({ success: true, points: [], available: false });
+      }
+
+      const period = req.query.period || '90d';
+      const interval = periodToInterval(period);
+
+      const result = await pool.query(
+        `SELECT snapshot_time, chain_size_bytes, block_height
+         FROM chain_snapshots
+         WHERE snapshot_time >= NOW() - INTERVAL '${interval}'
+         ORDER BY snapshot_time ASC`
+      );
+
+      res.json({
+        success: true,
+        available: true,
+        period,
+        points: result.rows.map((r) => ({
+          time: r.snapshot_time,
+          sizeBytes: parseInt(r.chain_size_bytes, 10) || 0,
+          sizeGB: (parseInt(r.chain_size_bytes, 10) || 0) / (1024 ** 3),
+          height: parseInt(r.block_height, 10),
+        })),
+      });
+    } catch (error) {
+      logSafeError('❌ [CHAIN-SIZE] Error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch chain size history' });
+    }
+  });
+
+  router.get('/api/network/blocks/recent', async (req, res) => {
+    try {
+      const pool = req.app.locals.pool;
+      const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 15, 1), 50);
+
+      const result = await pool.query(
+        `SELECT
+          b.height, b.hash, b.timestamp, b.transaction_count, b.size,
+          b.miner_address, b.total_fees,
+          c.total_output AS coinbase_zat
+         FROM blocks b
+         LEFT JOIN transactions c ON c.block_height = b.height AND c.is_coinbase = true
+         ORDER BY b.height DESC
+         LIMIT $1`,
+        [limit]
+      );
+
+      res.json({
+        success: true,
+        blocks: result.rows.map((r) => ({
+          height: parseInt(r.height, 10),
+          hash: r.hash,
+          timestamp: parseInt(r.timestamp, 10),
+          txCount: parseInt(r.transaction_count, 10) || 0,
+          size: parseInt(r.size, 10) || 0,
+          minerAddress: r.miner_address,
+          fees: (parseInt(r.total_fees, 10) || 0) / 1e8,
+          minerReward: (parseInt(r.coinbase_zat, 10) || 0) / 1e8,
+        })),
+      });
+    } catch (error) {
+      logSafeError('❌ [RECENT-BLOCKS] Error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch recent blocks' });
+    }
+  });
+}
+
+module.exports = { registerNetworkAnalyticsRoutes, discoverNextHalving };
