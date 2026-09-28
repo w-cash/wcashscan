@@ -55,3 +55,754 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
 .closing{border-color:#22374d}.closing>.eyebrow{color:#63cf59}.closing-wordmark{color:#7cff6b;opacity:.07}.site-footer{border-color:#24384d}.footer-top{border-color:#24384d}.footer-top>p,.footer-bottom{color:#7e8c9c}.footer-top>.text-link{color:#7cff6b}
 @media(max-width:900px){.instrument-layout{grid-template-columns:1fr}.instrument-nav{background:#040c17;border-color:#1e334b}.instrument-logo{display:none}.platform-picker button.selected{box-shadow:inset 0 -3px #43a637}.zero-tax{border-color:#294059}}
 @media(max-width:700px){body::before{background-size:32px 32px}.brand-mark{width:36px;height:36px}.launch-heading h1{letter-spacing:-2.4px}.wallet-experience{box-shadow:0 22px 55px #0009}.banknote>img{opacity:.15}.platform-panel{background:radial-gradient(circle at 50% 35%,#0d2c2a,#06172d 70%)}}
+
+/* Wallet source alignment: Roboto, native semantic colors, and native text scale. */
+@font-face {
+  font-family: "Roboto";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: local("Roboto"), local("Roboto-Regular"), url("/assets/fonts/roboto-latin-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Roboto";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: local("Roboto Medium"), local("Roboto-Medium"), url("/assets/fonts/roboto-latin-500.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Roboto";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: local("Roboto Bold"), local("Roboto-Bold"), url("/assets/fonts/roboto-latin-700.woff2") format("woff2");
+}
+
+:root {
+  --wallet-bg-canvas: #060b12;
+  --wallet-bg-surface: #05101e;
+  --wallet-bg-chrome: #040c17;
+  --wallet-bg-desktop: #06172d;
+  --wallet-fg-default: #c0cbdc;
+  --wallet-fg-muted: #7c8494;
+  --wallet-accent: #43a637;
+  --wallet-accent-disabled: #23692f;
+  --wallet-border: #05234c;
+  --wallet-logo-lime: #7cff6b;
+  --wallet-logo-ink: #08210d;
+  --paper: var(--wallet-bg-canvas);
+  --ink: var(--wallet-fg-default);
+  --muted: var(--wallet-fg-muted);
+  --line: var(--wallet-border);
+  --lime: var(--wallet-accent);
+  --dark: var(--wallet-bg-chrome);
+  --white: var(--wallet-fg-default);
+  --serif: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --accent: var(--wallet-accent);
+}
+
+html {
+  background: var(--wallet-bg-chrome);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+}
+
+body {
+  color: var(--wallet-fg-default);
+  background: radial-gradient(circle at 74% 9%, var(--wallet-bg-desktop) 0, var(--wallet-bg-canvas) 38%, var(--wallet-bg-chrome) 100%);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.serif,
+em {
+  font-family: inherit;
+  font-style: normal;
+}
+
+.brand {
+  color: var(--wallet-fg-default);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -.25px;
+}
+
+.brand-light,
+.desktop-nav,
+.launch-subline,
+.launch-bottom,
+.experience-topline,
+.instrument-nav-bottom,
+.instrument-footer,
+.demo-form-intro,
+.demo-mini-balance,
+.review-footnote,
+.activity-view-heading > span,
+.activity-table-head,
+.brand-manifesto > div,
+.story-copy > p:not(.eyebrow),
+.zero-tax p,
+.network-principles p,
+.section-heading > p,
+.platform-picker button > span > span,
+.download-panel-top,
+.platform-panel > p:not(.download-fineprint),
+.download-fineprint,
+.download-note,
+.faq-intro > p:not(.eyebrow),
+.faq-list details > p,
+.footer-top > p,
+.footer-bottom {
+  color: var(--wallet-fg-muted);
+}
+
+.desktop-nav {
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.desktop-nav a:hover,
+.instrument-footer > a,
+.launch-bottom > a,
+.text-link,
+.download-note a,
+.faq-list details > p > a,
+.footer-top > .text-link {
+  color: var(--wallet-accent);
+}
+
+.button,
+.demo-primary {
+  min-height: 48px;
+  border: 1px solid var(--wallet-accent);
+  border-radius: 4px;
+  background: var(--wallet-accent);
+  color: var(--wallet-bg-chrome);
+  font-size: 16px;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.button:hover,
+.demo-primary:hover {
+  background: var(--wallet-logo-lime);
+  color: var(--wallet-logo-ink);
+}
+
+.demo-secondary {
+  min-height: 48px;
+  border: 2px solid var(--wallet-accent);
+  border-radius: 4px;
+  background: var(--wallet-bg-surface);
+  color: var(--wallet-accent);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.demo-secondary:hover {
+  background: var(--wallet-bg-desktop);
+  color: var(--wallet-logo-lime);
+}
+
+.menu-toggle,
+.faq-list summary {
+  color: var(--wallet-fg-default);
+}
+
+.site-header,
+.mobile-nav,
+.experience-topline,
+.instrument-nav,
+.instrument-footer,
+.downloads {
+  background: var(--wallet-bg-chrome);
+}
+
+.site-header,
+.wallet-experience,
+.experience-topline,
+.instrument-nav,
+.overview-actions,
+.instrument-footer,
+.brand-manifesto,
+.wcash-story,
+.network-principles,
+.downloads,
+.download-card,
+.platform-picker,
+.faq,
+.faq-list details,
+.closing,
+.site-footer,
+.footer-top {
+  border-color: var(--wallet-border);
+}
+
+.launch-heading > .eyebrow,
+.eyebrow,
+.demo-section-label,
+.note-kicker > span:last-child,
+.note-balance,
+.demo-mini-balance > strong,
+.review-edit,
+.activity-privacy,
+.activity-sum,
+.zero-figure,
+.zero-label,
+.section-heading h2 > .serif,
+.faq-plus::before,
+.faq-plus::after,
+.closing-wordmark {
+  color: var(--wallet-accent);
+}
+
+.launch-heading > .eyebrow,
+.eyebrow,
+.demo-section-label,
+.zero-label,
+.download-panel-top,
+.activity-table-head {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.25px;
+}
+
+.launch-heading h1 {
+  margin: 15px 0 20px;
+  color: var(--wallet-fg-default);
+  font: 500 clamp(3.5rem, 6vw, 5.75rem)/1.04 "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  letter-spacing: -2.4px;
+}
+
+.launch-heading h1 > em,
+.instrument-main h2 > em,
+.brand-manifesto h2 > em,
+.story-copy h2 > .serif,
+.closing h2 > .serif {
+  color: var(--wallet-accent);
+  font-weight: 700;
+}
+
+.launch-subline {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.launch-subline > span {
+  color: var(--wallet-accent);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.wallet-experience {
+  border-color: var(--wallet-border);
+  border-radius: 6px;
+  background: var(--wallet-bg-desktop);
+  box-shadow: 0 32px 80px #0009;
+}
+
+.experience-topline {
+  color: var(--wallet-fg-muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .8px;
+}
+
+.experience-topline > button {
+  color: var(--wallet-fg-default);
+  font-size: 12px;
+}
+
+.demo-pill {
+  border-color: var(--wallet-accent);
+  background: var(--wallet-bg-surface);
+  color: var(--wallet-accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.instrument-nav > button {
+  border-radius: 4px;
+  color: var(--wallet-fg-default);
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.instrument-nav > button.active {
+  border-color: var(--wallet-accent);
+  background: var(--wallet-bg-surface);
+  color: var(--wallet-accent);
+}
+
+.instrument-nav > button:hover {
+  background: var(--wallet-bg-desktop);
+  color: var(--wallet-logo-lime);
+}
+
+.instrument-nav-bottom,
+.instrument-footer,
+.launch-bottom {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.instrument-main {
+  background: var(--wallet-bg-desktop);
+}
+
+.banknote,
+.review-receipt,
+.demo-form-layout select,
+.demo-form-layout input[type=number],
+.demo-memo-field > input {
+  border-color: var(--wallet-fg-muted);
+  background: var(--wallet-bg-chrome);
+  color: var(--wallet-fg-default);
+}
+
+.banknote {
+  border-radius: 4px;
+}
+
+.note-content {
+  color: var(--wallet-fg-default);
+}
+
+.note-kicker,
+.note-footer,
+.privacy-slider-row,
+.overview-actions > p,
+.demo-form-layout form > label:not(.send-shield-option),
+.demo-memo-field > label,
+.review-receipt > div,
+.receive-warning,
+.activity-view-heading > span,
+.activity-table-head,
+.demo-activity-row small {
+  color: var(--wallet-fg-muted);
+}
+
+.note-kicker {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.note-balance-label,
+.note-spendable,
+.privacy-slider-row,
+.overview-actions > p,
+.demo-form-layout form > label:not(.send-shield-option),
+.demo-memo-field > label,
+.send-shield-option,
+.review-receipt > div,
+.review-edit,
+.demo-activity-row {
+  font-size: 14px;
+}
+
+.note-balance {
+  font-size: clamp(3.5rem, 5vw, 4.5rem);
+  font-weight: 400;
+}
+
+.note-balance > small {
+  color: var(--wallet-accent);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.note-spendable > span,
+.review-receipt > div > strong {
+  color: var(--wallet-fg-default);
+  font-weight: 700;
+}
+
+.note-footer {
+  font-size: 12px;
+  letter-spacing: .4px;
+}
+
+.note-footer > span:first-child {
+  color: var(--wallet-accent);
+}
+
+.public-overlay {
+  background: var(--wallet-accent);
+}
+
+.public-overlay-content > span,
+.public-overlay-content > strong,
+.public-overlay-content > p,
+.public-overlay-content > .icon {
+  color: var(--wallet-logo-ink);
+}
+
+.public-overlay-content > strong {
+  font-weight: 700;
+}
+
+.privacy-divider,
+.privacy-slider-row input {
+  accent-color: var(--wallet-accent);
+}
+
+.privacy-divider > span {
+  border-color: var(--wallet-accent);
+  background: var(--wallet-bg-chrome);
+  color: var(--wallet-accent);
+}
+
+.instrument-main h2 {
+  color: var(--wallet-fg-default);
+  font: 500 48px/1.08 "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  letter-spacing: -1px;
+}
+
+.demo-form-intro,
+.story-copy > p:not(.eyebrow),
+.network-principles p,
+.section-heading > p,
+.platform-panel > p:not(.download-fineprint),
+.faq-intro > p:not(.eyebrow),
+.faq-list details > p {
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.demo-form-layout select,
+.demo-form-layout input[type=number],
+.demo-memo-field > input {
+  min-height: 48px;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.send-shield-option {
+  border-color: var(--wallet-accent);
+  border-radius: 4px;
+  background: var(--wallet-bg-surface);
+  color: var(--wallet-accent);
+}
+
+.send-shield-option small,
+.demo-memo-field > label > span,
+.demo-memo-field > small {
+  color: var(--wallet-fg-muted);
+  font-size: 12px;
+}
+
+.demo-form-error {
+  color: #ffb972;
+}
+
+.review-receipt > div {
+  border-color: var(--wallet-border);
+}
+
+.review-receipt > div > strong {
+  font-size: 16px;
+}
+
+.review-footnote,
+.receive-warning,
+.receive-card > p,
+.activity-view-heading > span,
+.activity-table-head,
+.demo-activity-row small,
+.download-fineprint,
+.download-note,
+.footer-bottom {
+  font-size: 12px;
+}
+
+.success-symbol,
+.activity-tx-icon {
+  background: var(--wallet-bg-surface);
+  color: var(--wallet-accent);
+}
+
+.demo-success > p:not(.demo-section-label),
+.demo-success > span:not(.success-symbol) {
+  color: var(--wallet-fg-muted);
+}
+
+.receive-warning {
+  border-color: var(--wallet-accent);
+}
+
+.receive-card {
+  border-color: var(--wallet-accent);
+  background: var(--wallet-bg-chrome);
+}
+
+.receive-card code,
+.receive-card > p {
+  color: var(--wallet-accent);
+}
+
+.activity-table-head,
+.demo-activity-row {
+  border-color: var(--wallet-border);
+}
+
+.principle-strip {
+  background: var(--wallet-accent);
+  color: var(--wallet-bg-chrome);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.principle-strip > b {
+  color: var(--wallet-logo-ink);
+}
+
+.brand-manifesto h2,
+.story-copy h2,
+.section-heading h2,
+.faq h2,
+.closing h2,
+.platform-panel h3 {
+  color: var(--wallet-fg-default);
+  font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  font-weight: 500;
+}
+
+.brand-manifesto h2 {
+  font-size: clamp(3.5rem, 6vw, 5.75rem);
+  line-height: 1.04;
+}
+
+.brand-manifesto > div {
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.story-copy h2 {
+  font-size: clamp(3rem, 4.8vw, 4.75rem);
+  line-height: 1.08;
+}
+
+.zero-figure {
+  font-size: clamp(10rem, 18vw, 17rem);
+  font-weight: 400;
+}
+
+.zero-tax p {
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.network-principles h3,
+.mining-diagram {
+  color: var(--wallet-fg-default);
+  font-size: 16px;
+}
+
+.mining-branches > span,
+.selected-platform-icon {
+  border-color: var(--wallet-fg-muted);
+}
+
+.mining-branches > span:last-child {
+  border-color: var(--wallet-accent);
+  color: var(--wallet-accent);
+}
+
+.mining-branches small {
+  color: var(--wallet-fg-muted);
+}
+
+.download-card {
+  background: var(--wallet-bg-desktop);
+  box-shadow: 0 24px 64px #0008;
+}
+
+.platform-picker {
+  background: var(--wallet-bg-chrome);
+}
+
+.platform-picker button {
+  border-radius: 4px;
+  color: var(--wallet-fg-default);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.platform-picker button:hover {
+  background: var(--wallet-bg-desktop);
+}
+
+.platform-picker button.selected {
+  background: var(--wallet-bg-surface);
+  color: var(--wallet-accent);
+  box-shadow: inset 3px 0 var(--wallet-accent);
+}
+
+.platform-panel {
+  background: radial-gradient(circle at 50% 38%, var(--wallet-bg-desktop), var(--wallet-bg-surface) 70%);
+}
+
+.selected-platform-icon {
+  background: var(--wallet-bg-chrome);
+  color: var(--wallet-accent);
+}
+
+.platform-panel h3 {
+  font-size: 44px;
+  line-height: 1.1;
+}
+
+.faq-list summary {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.footer-top > p {
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .instrument-nav > button,
+  .platform-picker button {
+    font-size: 14px;
+  }
+
+  .platform-picker button.selected {
+    box-shadow: inset 0 -3px var(--wallet-accent);
+  }
+}
+
+@media (max-width: 700px) {
+  .launch-heading h1 {
+    font-size: clamp(3.25rem, 15vw, 4.5rem);
+    letter-spacing: -1.5px;
+  }
+
+  .experience-topline,
+  .experience-topline > button,
+  .demo-pill,
+  .instrument-footer,
+  .launch-bottom {
+    font-size: 11px;
+  }
+
+  .instrument-nav > button,
+  .demo-primary,
+  .demo-secondary,
+  .privacy-slider-row,
+  .overview-actions > p {
+    font-size: 14px;
+  }
+
+  .instrument-main h2,
+  .platform-panel h3 {
+    font-size: 40px;
+  }
+
+  .principle-strip {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 420px) {
+  .header-download {
+    gap: 12px;
+    padding-inline: 14px;
+    font-size: 14px;
+  }
+
+  .experience-topline,
+  .experience-topline > button,
+  .demo-pill {
+    font-size: 10px;
+    letter-spacing: .4px;
+  }
+
+  .instrument-nav > button {
+    gap: 4px;
+    padding-inline: 2px;
+    font-size: 12px;
+  }
+
+  .launch-heading > .eyebrow,
+  .eyebrow,
+  .demo-section-label,
+  .zero-label,
+  .download-panel-top,
+  .activity-table-head {
+    font-size: 11px;
+  }
+
+  .note-balance {
+    font-size: 42px;
+  }
+
+  .brand-manifesto h2,
+  .section-heading h2,
+  .faq h2 {
+    font-size: 48px;
+  }
+
+  .story-copy h2 {
+    font-size: 44px;
+  }
+
+  .closing h2 {
+    font-size: 56px;
+  }
+}
+
+.skip-link,
+.platform-panel > .button,
+.platform-panel > .button > span {
+  color: var(--wallet-bg-chrome);
+}
+
+.note-balance-label,
+.note-spendable {
+  color: var(--wallet-fg-muted);
+}
+
+.mining-work,
+.mining-branches > span {
+  color: var(--wallet-fg-default);
+}
+
+.mining-work > .icon,
+.mining-branches small {
+  color: var(--wallet-fg-muted);
+}
+
+.faq {
+  background: var(--wallet-bg-canvas);
+}
+
+.faq > .faq-intro > .eyebrow,
+.closing > .eyebrow {
+  color: var(--wallet-accent);
+}
+
+.faq h2 > .serif {
+  color: var(--wallet-accent);
+  font-weight: 700;
+}
+
+.closing {
+  background: var(--wallet-bg-surface);
+}
+
+.closing h2 {
+  color: var(--wallet-fg-default);
+}
