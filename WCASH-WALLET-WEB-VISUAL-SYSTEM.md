@@ -67,6 +67,10 @@ Primary green buttons use dark text. Muted text appears only on dark backgrounds
 - The website demo represents the desktop wallet, so its controls use the desktop 4px radius and the mobile 48px touch height.
 - Cards and framing keep the existing website dimensions and positions. Their borders use the wallet theme rather than the earlier cobalt palette.
 
-## Website change boundary
+## Website composition
 
-The website update changes typography, color roles, contrast, borders, corner radii, and type weight. It preserves the section order, grid structure, spacing, control positions, content, and interactions.
+The approved public flow is the launch and interactive wallet demo, the four-part green principles bar, and then the five-platform download section. The manifesto, Wcash network story, FAQ, closing, and footer follow. The principles bar uses four plain labels without decorative star separators.
+
+The closing uses the exact wallet mark inside a restrained circular security motif. It contains “Zingo’s wallet foundation. Your Wcash. Your keys.” near the bottom of the page and must not return to an oversized `w.cash` wordmark.
+
+Typography, colors, borders, geometry, control positions inside the interactive demo, and demo interactions remain aligned with the wallet sources documented above.
