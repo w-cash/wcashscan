@@ -1,5 +1,9 @@
 const $ = selector => document.querySelector(selector);
 const $$ = selector => Array.from(document.querySelectorAll(selector));
+$$('svg.icon').forEach(icon => {
+  icon.setAttribute('aria-hidden', 'true');
+  icon.setAttribute('focusable', 'false');
+});
 const menu = $('.menu-toggle');
 const mobileNav = $('#mobile-nav');
 const mobileLayout = matchMedia('(max-width: 900px)');
