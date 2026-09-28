@@ -33,7 +33,7 @@ const allowedViews = ['overview', 'send', 'receive', 'activity'];
 const money = cents => (cents / 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 let demo = {balanceCents: 248000, view: 'overview', transactions: initialTransactions.map(x => ({...x})), pending: null, publicView: 0};
 function demoState() {
-  return {demo: true, realFundsMoved: false, walletFoundation: 'Zingo', view: demo.view, balance: demo.balanceCents / 100, spendableBalance: demo.balanceCents / 100, currency: 'WCASH', publicViewPercent: demo.publicView, pending: demo.pending ? {...demo.pending, amount: demo.pending.cents / 100} : null, activity: demo.transactions.map(x => ({label: x.label, amount: x.cents / 100, privacy: x.shielded ? 'shielded' : 'transparent', memo: x.memo || ''}))};
+  return {demo: true, realFundsMoved: false, walletFoundation: 'Zingo', view: demo.view, balance: demo.balanceCents / 100, spendableBalance: demo.balanceCents / 100, currency: 'WEC', publicViewPercent: demo.publicView, pending: demo.pending ? {...demo.pending, amount: demo.pending.cents / 100} : null, activity: demo.transactions.map(x => ({label: x.label, amount: x.cents / 100, privacy: x.shielded ? 'shielded' : 'transparent', memo: x.memo || ''}))};
 }
 function navigateDemo(view, focus = false) {
   if (![...allowedViews, 'review', 'success'].includes(view)) throw new Error('Unknown demo view.');
@@ -56,8 +56,8 @@ function navigateDemo(view, focus = false) {
 }
 function renderDemo() {
   $('#demo-balance').textContent = money(demo.balanceCents);
-  $('#note-spendable').textContent = `${money(demo.balanceCents)} WCASH`;
-  $('#send-available').textContent = `${money(demo.balanceCents)} WCASH`;
+  $('#note-spendable').textContent = `${money(demo.balanceCents)} WEC`;
+  $('#send-available').textContent = `${money(demo.balanceCents)} WEC`;
   $('#demo-amount').max = (demo.balanceCents / 100).toFixed(2);
   const rows = $('#demo-activity-rows');
   rows.replaceChildren();
@@ -113,7 +113,7 @@ function stageDemoTransfer({amount, recipient, shielded, memo = ''}) {
   updateRecipientPrivacy();
   $('#demo-memo').value = memo;
   $('#review-recipient').textContent = `${recipient} · demo`;
-  $('#review-amount').textContent = `${money(cents)} WCASH`;
+  $('#review-amount').textContent = `${money(cents)} WEC`;
   $('#review-privacy').textContent = shielded ? 'Private' : 'Deshielded';
   $('#review-memo-row').hidden = !memo;
   $('#review-memo').textContent = memo;
@@ -128,7 +128,7 @@ function completeDemoTransfer() {
   demo.balanceCents -= transfer.cents;
   demo.transactions.unshift({label: `To ${transfer.recipient}`, detail: 'Just now · simulated', cents: -transfer.cents, shielded: transfer.shielded, memo: transfer.memo});
   demo.pending = null;
-  $('#success-description').textContent = `${money(transfer.cents)} WCASH to ${transfer.recipient}, simulated.`;
+  $('#success-description').textContent = `${money(transfer.cents)} WEC to ${transfer.recipient}, simulated.`;
   renderDemo(); navigateDemo('success', true);
   return demoState();
 }
