@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; img-src 'self' data:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'sha256-Qp+cPPHaQhBO5LxeLL6A4W7SoUnN9qhfd+8X1sPxmZs='; connect-src 'none'; form-action 'self'; upgrade-insecure-requests">
+  <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#060b12">
   <meta name="robots" content="index, follow">
@@ -29,8 +31,8 @@
   <link rel="preload" href="/assets/fonts/roboto-latin-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/roboto-latin-500.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/roboto-latin-700.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/styles.css?v=10">
-  <script src="/app.js?v=3" defer></script>
+  <link rel="stylesheet" href="/styles.css?v=11">
+  <script src="/app.js?v=4" defer></script>
   <noscript><style>@media(max-width:900px){.menu-toggle{display:none}.mobile-nav[hidden]{display:grid!important;position:absolute;top:77px;left:0;right:0;padding:13px 20px 22px;border:1px solid #05234c;background:#040c17;box-shadow:0 20px 30px #0008}.mobile-nav[hidden]>a{padding:12px 0;color:#c0cbdc;font:400 15px/1.5 Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}}</style></noscript>
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://wcashwallet.com/#organization","name":"Wcash Wallet","url":"https://wcashwallet.com/","logo":{"@type":"ImageObject","url":"https://wcashwallet.com/assets/wcash-mark.png","width":512,"height":512}},{"@type":"WebSite","@id":"https://wcashwallet.com/#website","name":"Wcash Wallet","url":"https://wcashwallet.com/","publisher":{"@id":"https://wcashwallet.com/#organization"}},{"@type":"SoftwareApplication","@id":"https://wcashwallet.com/#wallet","name":"Wcash Wallet","url":"https://wcashwallet.com/","applicationCategory":"FinanceApplication","operatingSystem":"iOS, Android, macOS, Windows, Linux","description":"A Zingo-based self-custody wallet interface for WEC.","image":"https://wcashwallet.com/assets/wcash-mark.png","publisher":{"@id":"https://wcashwallet.com/#organization"},"isPartOf":{"@id":"https://wcashwallet.com/#website"}}]}</script>
 </head>
@@ -103,8 +105,8 @@
           <div class="download-panel-top"><span>YOUR WEC, AT HOME.</span><img class="download-brand" src="/assets/wcash-mark.svg" alt="" width="38" height="38"></div>
           <div class="selected-platform-icon"><svg class="icon" aria-hidden="true"><use id="selected-platform-symbol" href="#i-apple"/></svg></div>
           <h3 id="platform-title">Wcash for macOS</h3><p id="platform-description">A little more privacy for your everyday desktop.</p>
-          <a id="platform-download" class="button" href="https://wcashwallet.com" target="_blank" rel="noopener noreferrer"><span>Download for macOS</span><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-download"/></svg></a>
-          <p class="download-fineprint">Your wallet. Your keys. Your Wcash.</p>
+          <a id="platform-download" class="button" href="https://github.com/w-cash/wallet-desktop/releases/download/wcash-desktop-2.0.25-181/Wcash-Wallet-MAINNET-UNSIGNED-2.0.25-181-mac-arm64.zip" target="_blank" rel="noopener noreferrer"><span>Download for macOS</span><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-download"/></svg></a>
+          <p id="platform-download-note" class="download-fineprint">Unsigned ARM64 prerelease. macOS may show an unverified-developer warning.</p>
         </div>
       </div>
     </section>
@@ -124,7 +126,7 @@
         <details><summary>Is every transaction private?<span class="faq-plus" aria-hidden="true"></span></summary><p>Privacy depends on the transaction and the recipient’s address. A supported shielded transfer can conceal the on-chain sender, recipient, and amount. A transparent recipient exposes their receiving address and amount. Transfers between pools can reveal information too. Check the recipient and privacy state before sending.</p></details>
         <details><summary>What does “no dev tax” mean?<span class="faq-plus" aria-hidden="true"></span></summary><p>The protocol does not divert a share of block rewards to a development fund. This is a rule about mining rewards, not a promise of free transactions. Network transaction fees still apply.</p></details>
         <details><summary>Who controls my wallet?<span class="faq-plus" aria-hidden="true"></span></summary><p>You do. A self-custody wallet puts the keys in your hands. Keep your recovery phrase offline in a safe place, and never share it. Anyone with that phrase can control the wallet; losing it can mean losing access to your funds.</p></details>
-        <details><summary>Which devices can I use?<span class="faq-plus" aria-hidden="true"></span></summary><p>The wallet experience is designed for iOS, Android, macOS, Windows, and Linux. Choose your platform in the download section. This local website preview assumes all five platforms; the download links are placeholders until releases are available.</p></details>
+        <details><summary>Which devices can I use?<span class="faq-plus" aria-hidden="true"></span></summary><p>Prerelease packages are available for iOS, Android, macOS, Windows, and Linux. The download panel explains the signing and architecture of each package before you download it.</p></details>
       </div>
     </section>
     <section class="closing section-shell" aria-labelledby="closing-title"><div class="closing-lockup"><span class="closing-mark" aria-hidden="true"><img src="/assets/wcash-mark.svg" alt="" width="64" height="64"></span><p class="eyebrow">A LITTLE MORE PRIVACY. A LOT MORE YOU.</p><h2 id="closing-title">Welcome to<br><span class="serif">your private life.</span></h2><p class="closing-foundation">Zingo’s wallet foundation.<strong>Your Wcash. Your keys.</strong></p><a class="button" href="#download">Get Wcash Wallet <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-diagonal"/></svg></a></div><div class="closing-rail"><span>Self-custody</span><span>Shielded transfers</span><span>Five platforms</span></div></section>
