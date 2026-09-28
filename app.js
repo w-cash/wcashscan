@@ -176,13 +176,42 @@ note.addEventListener('pointermove', event => {
 note.addEventListener('pointerleave', () => { note.style.setProperty('--rx','0deg'); note.style.setProperty('--ry','0deg'); });
 resetDemo();
 
-// Replace only these URLs when official installers are available.
 const platforms = {
-  ios: {name:'iOS', icon:'apple', description:'Your private money, always close. Made for iPhone.', url:'https://wcashwallet.com'},
-  android: {name:'Android', icon:'android', description:'Your Wcash, in your pocket. Made for Android.', url:'https://wcashwallet.com'},
-  macos: {name:'macOS', icon:'apple', description:'A little more privacy for your everyday desktop.', url:'https://wcashwallet.com'},
-  windows: {name:'Windows', icon:'windows', description:'A clear view of your Wcash. Made for your PC.', url:'https://wcashwallet.com'},
-  linux: {name:'Linux', icon:'linux', description:'Your system. Your wallet. A home for Wcash on Linux.', url:'https://wcashwallet.com'}
+  ios: {
+    name: 'iOS',
+    icon: 'apple',
+    description: 'Your private money, always close. Made for iPhone.',
+    note: 'Unsigned ARM64 device compile archive. Not an App Store or TestFlight build.',
+    url: 'https://github.com/w-cash/wallet-mobile/releases/download/wcash-2.0.23-317/Wcash-Wallet-mainnet-2.0.23-317-f136a09d7b49-ios-arm64-device-compile-unsigned.zip'
+  },
+  android: {
+    name: 'Android',
+    icon: 'android',
+    description: 'Your Wcash, in your pocket. Made for Android.',
+    note: 'ARM64 prerelease signed with the public Android debug certificate.',
+    url: 'https://github.com/w-cash/wallet-mobile/releases/download/wcash-2.0.23-317/Wcash-Wallet-mainnet-2.0.23-317-f136a09d7b49-android-arm64-prodDebug.apk'
+  },
+  macos: {
+    name: 'macOS',
+    icon: 'apple',
+    description: 'A little more privacy for your everyday desktop.',
+    note: 'Unsigned ARM64 prerelease. macOS may show an unverified-developer warning.',
+    url: 'https://github.com/w-cash/wallet-desktop/releases/download/wcash-desktop-2.0.25-181/Wcash-Wallet-MAINNET-UNSIGNED-2.0.25-181-mac-arm64.zip'
+  },
+  windows: {
+    name: 'Windows',
+    icon: 'windows',
+    description: 'A clear view of your Wcash. Made for your PC.',
+    note: 'Unsigned x64 prerelease. An ARM64 package is available on GitHub.',
+    url: 'https://github.com/w-cash/wallet-desktop/releases/download/wcash-desktop-2.0.25-181/Wcash-Wallet-MAINNET-UNSIGNED-2.0.25-181-win-x64.zip'
+  },
+  linux: {
+    name: 'Linux',
+    icon: 'linux',
+    description: 'Your system. Your wallet. A home for Wcash on Linux.',
+    note: 'Unsigned x86_64 AppImage prerelease. A Debian package is available on GitHub.',
+    url: 'https://github.com/w-cash/wallet-desktop/releases/download/wcash-desktop-2.0.25-181/Wcash-Wallet-MAINNET-UNSIGNED-2.0.25-181-linux-x86_64.AppImage'
+  }
 };
 const platformTabs = $$('[data-platform]');
 const narrowLayout = matchMedia('(max-width: 700px)');
@@ -198,6 +227,7 @@ function selectPlatform(key, focus = false) {
   $('#platform-panel').setAttribute('aria-labelledby',`tab-${key}`);
   $('#platform-title').textContent=`Wcash for ${platform.name}`;
   $('#platform-description').textContent=platform.description;
+  $('#platform-download-note').textContent=platform.note;
   $('#selected-platform-symbol').setAttribute('href',`#i-${platform.icon}`);
   $('#platform-download').href=platform.url;
   $('#platform-download span').textContent=`Download for ${platform.name}`;
