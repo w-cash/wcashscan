@@ -182,8 +182,8 @@ export default function NodesClient() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <PageHeader
         eyebrow="Network"
-        title={<>Zcash Nodes</>}
-        subtitle="Verified reachable nodes discovered via network crawl"
+        title={<>W.cash Nodes</>}
+        subtitle="Reachable W.cash peers observed through the configured Wolf node"
         actions={
           <Link href="/network" className="text-xs text-muted hover:text-secondary font-mono transition-colors">
             &larr; Network Overview

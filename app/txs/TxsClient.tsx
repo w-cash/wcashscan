@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { parseTransactionListItems, type TransactionListItem as Transaction } from '@/lib/transaction-list';
 import { formatRelativeTime } from '@/lib/utils';
-import { formatZecPrecise, zatToZec } from '@/lib/format-numbers';
+import { formatTwcPrecise, zatToTwc } from '@/lib/format-numbers';
 import { getApiUrl } from '@/lib/api-config';
 import { Pagination } from '@/components/Pagination';
 import { ShieldFlowBadge } from '@/components/ShieldFlowBadge';
@@ -21,7 +21,7 @@ import {
 
 type TxType = 'all' | 'shielded' | 'transparent' | 'coinbase';
 type FlowFilter = 'all' | 'shield' | 'deshield' | 'fully_shielded';
-type PoolFilter = 'all' | 'ironwood' | 'sapling' | 'orchard' | 'mixed';
+type PoolFilter = 'all' | 'ironwood';
 type ViewTab = 'recent' | 'trends';
 
 
@@ -31,7 +31,7 @@ interface ShieldedFlow {
   blockHeight: number;
   blockTime: number;
   flowType: string;
-  amountZec: number | null;
+  amountTwc: number | null;
   actions?: number;
   pool: string;
   addresses: string[];
@@ -39,25 +39,23 @@ interface ShieldedFlow {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function knownAmountZec(tx: Transaction): number | null {
-  const sap = Number(tx.value_balance_sapling) || 0;
-  const orc = Number(tx.value_balance_orchard) || 0;
+function knownAmountTwc(tx: Transaction): number | null {
   const irn = Number(tx.value_balance_ironwood) || 0;
   const transparentOutZat = Number(tx.total_output) || 0;
 
   if (tx.vin_count === 0 && tx.vout_count === 0) {
-    const source = orc > 0 ? 'orchard' : sap > 0 ? 'sapling' : irn > 0 ? 'ironwood' : null;
+    const source = irn > 0 ? 'ironwood' : null;
     if (source) {
-      const destZat = irn < 0 ? Math.abs(irn) : orc < 0 ? Math.abs(orc) : sap < 0 ? Math.abs(sap) : 0;
-      if (destZat > 0) return zatToZec(destZat);
+      const destZat = irn < 0 ? Math.abs(irn) : 0;
+      if (destZat > 0) return zatToTwc(destZat);
     }
   }
 
-  const valueBalanceZat = sap + orc + irn;
+  const valueBalanceZat = irn;
   const shieldedDepositZat = valueBalanceZat < 0 ? Math.abs(valueBalanceZat) : 0;
   const totalZat = transparentOutZat + shieldedDepositZat;
-  if (totalZat > 0) return zatToZec(totalZat);
-  if (tx.is_coinbase) return zatToZec(totalZat);
+  if (totalZat > 0) return zatToTwc(totalZat);
+  if (tx.is_coinbase) return zatToTwc(totalZat);
   return null;
 }
 
@@ -66,13 +64,7 @@ function getTxBadge(tx: Transaction) {
     ? 'coinbase'
     : tx.has_ironwood
       ? 'ironwood'
-      : tx.has_orchard && tx.has_sapling
-        ? 'orchard_sapling'
-        : tx.has_orchard
-          ? 'orchard'
-          : tx.has_sapling
-            ? 'sapling'
-            : 'transparent';
+      : 'transparent';
   return <TxTypeBadge category={category} />;
 }
 
@@ -89,12 +81,10 @@ function getFlowBadge(tx: Transaction) {
     flowType: tx.flow_type,
     vinCount: tx.vin_count,
     voutCount: tx.vout_count,
-    valueBalanceSapling: Number(tx.value_balance_sapling),
-    valueBalanceOrchard: Number(tx.value_balance_orchard),
     valueBalanceIronwood: Number(tx.value_balance_ironwood),
   });
 
-  if (!tx.has_orchard && !tx.has_sapling && !tx.has_ironwood && !tx.flow_type) {
+  if (!tx.has_ironwood && !tx.flow_type) {
     return (
       <span className="inline-flex items-center text-muted" title="Transparent">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -113,7 +103,7 @@ function getShieldedFlowBadge(flowType: string) {
 }
 
 function getPoolBadge(pool: string) {
-  if (pool === 'ironwood' || pool === 'orchard' || pool === 'sapling' || pool === 'mixed') {
+  if (pool === 'ironwood') {
     return <TxTypeBadge category={pool} />;
   }
   return <TxTypeBadge category="transparent" label={pool.toUpperCase()} />;
@@ -144,9 +134,9 @@ const txColumns: DataTableColumn<Transaction>[] = [
     align: 'right',
     skeletonWidth: 'w-16',
     cell: (tx) => {
-      const amount = knownAmountZec(tx);
+      const amount = knownAmountTwc(tx);
       if (amount === null) return <RedactedAmount className="!text-xs" />;
-      return <span className="font-mono text-xs text-primary font-semibold tabular-nums whitespace-nowrap">{formatZecPrecise(amount)} <span className="text-muted font-normal">ZEC</span></span>;
+      return <span className="font-mono text-xs text-primary font-semibold tabular-nums whitespace-nowrap">{formatTwcPrecise(amount)} <span className="text-muted font-normal">TWC</span></span>;
     },
   },
   {
@@ -209,8 +199,8 @@ const shieldedColumns: DataTableColumn<ShieldedFlow>[] = [
     align: 'right',
     cell: (flow) => (
       <span className="font-mono text-xs text-primary">
-        {flow.amountZec != null
-          ? <span className="font-semibold tabular-nums whitespace-nowrap">{flow.amountZec.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} <span className="text-muted font-normal">ZEC</span></span>
+        {flow.amountTwc != null
+          ? <span className="font-semibold tabular-nums whitespace-nowrap">{flow.amountTwc.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} <span className="text-muted font-normal">TWC</span></span>
           : <RedactedAmount className="!text-xs" />
         }
       </span>
@@ -340,7 +330,7 @@ function useTransactionsList({
 function useShieldedFlowsList({
   flowFilter,
   poolFilter,
-  minZec,
+  minTwc,
   initialFlows,
   initialPagination,
   initialPage,
@@ -351,7 +341,7 @@ function useShieldedFlowsList({
 }: {
   flowFilter: FlowFilter;
   poolFilter: PoolFilter;
-  minZec: number;
+  minTwc: number;
   initialFlows: ShieldedFlow[];
   initialPagination: Partial<ShieldedPaginationState> | null;
   initialPage: number;
@@ -360,7 +350,7 @@ function useShieldedFlowsList({
   initialDirection: 'next' | 'prev';
   initialUnavailable: boolean;
 }) {
-  const previousFilters = useRef({ flow: flowFilter, pool: poolFilter, minZec });
+  const previousFilters = useRef({ flow: flowFilter, pool: poolFilter, minTwc });
 
   const {
     items: flows,
@@ -385,7 +375,7 @@ function useShieldedFlowsList({
         flow_type: flowFilter,
         pool: poolFilter,
       };
-      if (minZec > 0) params.min_zec = String(minZec);
+      if (minTwc > 0) params.min_twc = String(minTwc);
       return params;
     },
     getItemsFromResponse: (json) => (json.flows as ShieldedFlow[]) || [],
@@ -405,7 +395,7 @@ function useShieldedFlowsList({
       params.set('type', 'shielded');
       if (flowFilter !== 'all') params.set('flow_type', flowFilter);
       if (poolFilter !== 'all') params.set('pool', poolFilter);
-      if (minZec > 0) params.set('min_zec', String(minZec));
+      if (minTwc > 0) params.set('min_twc', String(minTwc));
       if (targetPage > 1 && cursor !== null) {
         params.set('cursor', String(cursor));
         params.set('cursor_id', String(cursorId ?? 0));
@@ -426,11 +416,11 @@ function useShieldedFlowsList({
 
   useEffect(() => {
     const prev = previousFilters.current;
-    if (prev.flow === flowFilter && prev.pool === poolFilter && prev.minZec === minZec) return;
-    previousFilters.current = { flow: flowFilter, pool: poolFilter, minZec };
+    if (prev.flow === flowFilter && prev.pool === poolFilter && prev.minTwc === minTwc) return;
+    previousFilters.current = { flow: flowFilter, pool: poolFilter, minTwc };
     setPage(1);
     fetchPage({ cursor: null, secondaryCursor: null, targetPage: 1 });
-  }, [flowFilter, poolFilter, minZec, fetchPage, setPage]);
+  }, [flowFilter, poolFilter, minTwc, fetchPage, setPage]);
 
   return {
     flows, page, pagination, loading, dataAvailable,
@@ -647,16 +637,13 @@ const FLOW_FILTERS: { id: FlowFilter; label: string }[] = [
 const POOL_FILTERS: { id: PoolFilter; label: string }[] = [
   { id: 'all', label: 'All Pools' },
   { id: 'ironwood', label: 'Ironwood' },
-  { id: 'orchard', label: 'Orchard' },
-  { id: 'sapling', label: 'Sapling' },
-  { id: 'mixed', label: 'Mixed' },
 ];
 
 const AMOUNT_PRESETS = [
   { value: 0, label: 'Any' },
-  { value: 10, label: '> 10 ZEC' },
-  { value: 100, label: '> 100 ZEC' },
-  { value: 1000, label: '> 1K ZEC' },
+  { value: 10, label: '> 10 TWC' },
+  { value: 100, label: '> 100 TWC' },
+  { value: 1000, label: '> 1K TWC' },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -669,7 +656,7 @@ export interface TxsClientProps {
   initialType?: TxType;
   initialFlowFilter?: FlowFilter;
   initialPoolFilter?: PoolFilter;
-  initialMinZec?: number;
+  initialMinTwc?: number;
   initialCursor?: number | null;
   initialCursorIdx?: number | null;
   initialCursorId?: number | null;
@@ -685,7 +672,7 @@ export default function TxsClient({
   initialType = 'all',
   initialFlowFilter = 'all',
   initialPoolFilter = 'all',
-  initialMinZec = 0,
+  initialMinTwc = 0,
   initialCursor = null,
   initialCursorIdx = null,
   initialCursorId = null,
@@ -695,7 +682,7 @@ export default function TxsClient({
   const [typeFilter, setTypeFilter] = useState<TxType>(initialType);
   const [flowFilter, setFlowFilter] = useState<FlowFilter>(initialFlowFilter);
   const [poolFilter, setPoolFilter] = useState<PoolFilter>(initialPoolFilter);
-  const [minZec, setMinZec] = useState<number>(initialMinZec);
+  const [minTwc, setMinTwc] = useState<number>(initialMinTwc);
   const [viewTab, setViewTab] = useState<ViewTab>('recent');
 
   const isShielded = typeFilter === 'shielded';
@@ -742,8 +729,8 @@ export default function TxsClient({
         const poolVal = data.shieldedPool?.currentSize;
         poolSize = poolVal != null
           ? Number(poolVal) >= 1_000_000
-            ? `${(Number(poolVal) / 1_000_000).toFixed(2)}M ZEC`
-            : `${Math.round(Number(poolVal)).toLocaleString()} ZEC`
+            ? `${(Number(poolVal) / 1_000_000).toFixed(2)}M TWC`
+            : `${Math.round(Number(poolVal)).toLocaleString()} TWC`
           : null;
         setShieldedSummary({ shieldedPct: pct, avgPerDay, poolSize });
       }
@@ -766,7 +753,7 @@ export default function TxsClient({
   const shieldedList = useShieldedFlowsList({
     flowFilter,
     poolFilter,
-    minZec,
+    minTwc,
     initialFlows: isShielded ? initialFlows : [],
     initialPagination: isShielded ? initialPagination : null,
     initialPage: isShielded ? initialPage : 1,
@@ -785,7 +772,7 @@ export default function TxsClient({
     if (prevType.current === 'shielded' && typeFilter !== 'shielded') {
       setFlowFilter('all');
       setPoolFilter('all');
-      setMinZec(0);
+      setMinTwc(0);
     }
     prevType.current = typeFilter;
   }, [typeFilter]);
@@ -796,8 +783,8 @@ export default function TxsClient({
   ];
 
   const pageTitle = activePage > 1
-    ? `Zcash Transactions - Page ${activePage}`
-    : 'Latest Zcash Transactions';
+    ? `W.cash Transactions - Page ${activePage}`
+    : 'Latest W.cash Transactions';
 
   const eyebrow = 'ALL_TRANSACTIONS';
 
@@ -845,7 +832,7 @@ export default function TxsClient({
             <MetricCard size="compact"
               label="Total Transactions"
               value={activeList.pagination.total > 0 ? activeList.pagination.total.toLocaleString() : '—'}
-              hint="All confirmed Zcash txs"
+              hint="All confirmed W.cash txs"
             />
             <MetricCard size="compact"
               label="Transactions (24h)"
@@ -898,7 +885,7 @@ export default function TxsClient({
           </FilterGroup>
           <FilterGroup inline>
             {AMOUNT_PRESETS.map(p => (
-              <FilterButton key={p.value} active={minZec === p.value} onClick={() => setMinZec(p.value)}>
+              <FilterButton key={p.value} active={minTwc === p.value} onClick={() => setMinTwc(p.value)}>
                 {p.label}
               </FilterButton>
             ))}

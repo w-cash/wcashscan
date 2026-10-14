@@ -1,12 +1,12 @@
 import { getBaseUrl, buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'Zcash Shielded Pool Statistics | CipherScan',
-  description: 'Track ZEC across the Ironwood, Orchard, Sapling, Sprout, and transparent pools, with shielded supply and flow history.',
+  title: 'W.cash Value Pools | WcashExplorer',
+  description: 'Track W.cash transparent and Ironwood supply, with public flow history and snapshot coverage.',
   path: '/pools',
   networks: ['mainnet'],
   index: true,
-  imageAlt: 'CipherScan Zcash shielded pool statistics',
+  imageAlt: 'WcashExplorer W.cash value pool statistics',
 });
 
 export default function PoolsLayout({ children }: { children: React.ReactNode }) {
@@ -16,10 +16,10 @@ export default function PoolsLayout({ children }: { children: React.ReactNode })
     '@type': 'WebPage',
     '@id': `${url}#webpage`,
     url,
-    name: 'Zcash Shielded Pool Statistics',
-    description: 'Public supply (transparent balances and other issued value), shielded and unmined ZEC against the 21 million cap, with pool history and public flows.',
+    name: 'W.cash Value Pool Statistics',
+    description: 'Transparent and Ironwood W.cash supply against the 21 million TWC ceiling, with public flow history.',
     isPartOf: { '@id': `${getBaseUrl()}/#website` },
-    publisher: { '@id': 'https://cipherscan.app/#organization' },
+    publisher: { '@id': `${getBaseUrl()}/#organization` },
   };
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }} />

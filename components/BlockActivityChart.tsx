@@ -23,12 +23,8 @@ const DEFAULT_BLOCKS = 60;
  * where each bar's HEIGHT scales with the block's byte size (log-scaled
  * so small coinbase-only blocks are still visible next to full blocks).
  *
- * Color-coded by finality state: green (finalized), cyan (pending), orange
- * (being voted on right now). Hover for details, click to open block detail.
- *
- * Works for any Zcash chain because it only needs /api/blocks — we just
- * recommend showing it for Crosslink where the classic geo node map is
- * less useful (small peer pool).
+ * The chart uses ordinary W.cash proof-of-work canonicality. It deliberately
+ * has no BFT/Crosslink finality dependency; reorg details live on /reorgs.
  */
 export function BlockActivityChart({
   limit = DEFAULT_BLOCKS,
@@ -43,30 +39,16 @@ export function BlockActivityChart({
 }) {
   const [blocks, setBlocks] = useState<BlockRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [finalizedHeight, setFinalizedHeight] = useState<number | null>(null);
-  const [votedHash, setVotedHash] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
       const api = getApiUrl();
-      const [blocksRes, crossRes, bftRes] = await Promise.all([
-        fetch(`${api}/api/blocks?limit=${limit}`),
-        fetch(`${api}/api/crosslink`).catch(() => null),
-        fetch(`${api}/api/crosslink/bft-tip`).catch(() => null),
-      ]);
+      const blocksRes = await fetch(`${api}/api/blocks?limit=${limit}`);
 
       if (blocksRes.ok) {
         const data = await blocksRes.json();
         setBlocks(data.blocks || []);
-      }
-      if (crossRes && crossRes.ok) {
-        const j = await crossRes.json();
-        if (j.success) setFinalizedHeight(j.finalizedHeight);
-      }
-      if (bftRes && bftRes.ok) {
-        const j = await bftRes.json();
-        if (j.success) setVotedHash(j.votedBlockHash || null);
       }
     } catch (err) {
       console.error('BlockActivityChart fetch error:', err);
@@ -156,17 +138,12 @@ export function BlockActivityChart({
             {/* Bars */}
             <div className="ml-12 flex items-end gap-[2px] sm:gap-[3px] h-44 overflow-x-auto no-scrollbar border-b border-cipher-border-alpha/50 pb-0.5">
               {ordered.map((b) => {
-                const isFinalized =
-                  finalizedHeight !== null ? b.height <= finalizedHeight : false;
-                const isVoting = b.hash === votedHash;
                 const h = barHeight(b.size || 0);
                 return (
                   <BlockBar
                     key={b.hash}
                     block={b}
                     heightPct={h}
-                    isFinalized={isFinalized}
-                    isVoting={isVoting}
                     isHovered={hovered === b.hash}
                     onHoverChange={(hov) => setHovered(hov ? b.hash : null)}
                   />
@@ -229,19 +206,9 @@ export function BlockActivityChart({
                       Status
                     </div>
                     <div
-                      className={`font-mono text-sm ${
-                        hoveredBlock.hash === votedHash
-                          ? 'text-cipher-orange'
-                          : finalizedHeight !== null && hoveredBlock.height <= finalizedHeight
-                          ? 'text-cipher-green'
-                          : 'text-cipher-cyan'
-                      }`}
+                      className="font-mono text-sm text-cipher-cyan"
                     >
-                      {hoveredBlock.hash === votedHash
-                        ? 'voting'
-                        : finalizedHeight !== null && hoveredBlock.height <= finalizedHeight
-                        ? 'finalized'
-                        : 'pending'}
+                      canonical
                     </div>
                   </div>
                 </Link>
@@ -254,9 +221,7 @@ export function BlockActivityChart({
 
             {/* Legend */}
             <div className="mt-3 flex items-center justify-center gap-4 text-[10px] font-mono text-muted">
-              <LegendSwatch color="bg-cipher-green/80" label="finalized" />
-              <LegendSwatch color="bg-cipher-orange/80" label="voting now" />
-              <LegendSwatch color="bg-cipher-cyan/70" label="pending" />
+              <LegendSwatch color="bg-cipher-cyan/70" label="canonical W.cash block" />
             </div>
           </div>
         )}
@@ -268,30 +233,22 @@ export function BlockActivityChart({
 function BlockBar({
   block,
   heightPct,
-  isFinalized,
-  isVoting,
   isHovered,
   onHoverChange,
 }: {
   block: BlockRow;
   heightPct: number;
-  isFinalized: boolean;
-  isVoting: boolean;
   isHovered: boolean;
   onHoverChange: (hovered: boolean) => void;
 }) {
-  const color = isVoting
-    ? 'bg-cipher-orange/80 hover:bg-cipher-orange border-cipher-orange'
-    : isFinalized
-    ? 'bg-cipher-green/70 hover:bg-cipher-green/90 border-cipher-green'
-    : 'bg-cipher-cyan/60 hover:bg-cipher-cyan/80 border-cipher-cyan';
+  const color = 'bg-cipher-cyan/60 hover:bg-cipher-cyan/80 border-cipher-cyan';
 
   return (
     <Link
       href={`/block/${block.height}`}
       className={`relative shrink-0 w-[6px] sm:w-[8px] rounded-t-sm border-t ${color} transition-[height,transform,box-shadow] ${
         isHovered ? 'ring-2 ring-white/20 scale-110' : ''
-      } ${isVoting ? 'animate-pulse' : ''}`}
+      }`}
       style={{ height: `${heightPct}%` }}
       onMouseEnter={() => onHoverChange(true)}
       onMouseLeave={() => onHoverChange(false)}

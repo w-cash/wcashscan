@@ -67,13 +67,13 @@ export async function generateMetadata({ searchParams }: BlocksPageProps): Promi
   const pageSuffix = request.page > 1 ? ` - Page ${request.page}` : '';
 
   return buildPageMetadata({
-    title: `Latest Zcash Blocks${pageSuffix} | CipherScan`,
+    title: `Latest W.cash Blocks${pageSuffix} | WcashExplorer`,
     description: request.page > 1
-      ? `Browse Zcash block archive page ${request.page}, including block heights, hashes, transaction counts, sizes, miners, and timestamps.`
-      : 'Browse the latest Zcash blocks with transaction counts, sizes, mining rewards, and timestamps. Real-time block explorer data.',
+      ? `Browse W.cash block archive page ${request.page}, including block heights, hashes, transaction counts, sizes, miners, and timestamps.`
+      : 'Browse the latest W.cash blocks with transaction counts, sizes, mining rewards, and timestamps.',
     path: isForwardArchive ? getArchiveCanonicalPath(request) : '/blocks',
     index: isForwardArchive && request.page === 1,
-    keywords: ['zcash blocks', 'zcash block explorer', 'zcash latest blocks', 'ZEC blocks', 'zcash block height'],
+    keywords: ['W.cash blocks', 'WcashExplorer', 'TWC blocks', 'W.cash block height'],
   });
 }
 
@@ -183,7 +183,7 @@ export default async function BlocksPage({
         '@type': 'CollectionPage',
         '@id': `${collectionUrl}#collection`,
         url: collectionUrl,
-        name: request.page > 1 ? `Zcash block archive page ${request.page}` : 'Latest Zcash blocks',
+        name: request.page > 1 ? `W.cash block archive page ${request.page}` : 'Latest W.cash blocks',
         isPartOf: { '@id': `${getBaseUrl()}/#website` },
         mainEntity: {
           '@type': 'ItemList',
@@ -191,7 +191,7 @@ export default async function BlocksPage({
             '@type': 'ListItem',
             position: index + 1,
             url: `${getBaseUrl()}/block/${Number(block.height)}`,
-            name: `Zcash block #${Number(block.height).toLocaleString('en-US')}`,
+            name: `W.cash block #${Number(block.height).toLocaleString('en-US')}`,
           })),
         },
       }
@@ -220,20 +220,20 @@ export default async function BlocksPage({
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         <div className="border-t border-cipher-border pt-8 max-w-3xl">
           <h2 className="text-sm font-bold font-mono text-secondary mb-3 uppercase tracking-wider">
-            About Zcash Blocks
+            About W.cash Blocks
           </h2>
           <div className="space-y-3 text-sm text-muted leading-relaxed">
             <p>
-              Zcash produces a new block roughly every 75 seconds. Each block bundles
-              transparent and shielded transactions, a coinbase reward for the miner, and a
-              commitment to the current state of the shielded pools. CipherScan indexes every
-              block directly from a Zebra full node, so heights, hashes, sizes, and intervals
-              on this page reflect the canonical chain in real time.
+              W.cash produces a new block roughly every 75 seconds. Each block bundles
+              transparent and Ironwood transactions, a coinbase reward for the miner, and
+              commitments to the current chain state. WcashExplorer indexes every block from a
+              W.cash Wolf node, so heights, hashes, sizes, and intervals reflect the
+              canonical W.cash chain.
             </p>
             <p>
               The interval column tracks the spacing between consecutive blocks — useful for
               spotting hashrate swings or unusually slow blocks. Click any height or hash to
-              inspect the full block: its transactions, miner, difficulty, and shielded
+              inspect the full block, its transactions, miner, difficulty, and Ironwood
               activity.
             </p>
           </div>

@@ -45,7 +45,7 @@ export function AddressHeader({
               from: tx.from || null,
               to: tx.to || null,
               isCoinbase: tx.isCoinbase || false,
-              isShielded: tx.isShielded || false,
+              isIronwood: tx.isIronwood || false,
               isShielding: tx.isShielding || false,
               isDeshielding: tx.isDeshielding || false,
             })),
@@ -54,7 +54,7 @@ export function AddressHeader({
           filename={`address-${address.slice(0, 12)}`}
           type="both"
           label="Export"
-          csvHeaders={['TXID', 'Block', 'Timestamp', 'Type', 'Amount (ZEC)']}
+          csvHeaders={['TXID', 'Block', 'Timestamp', 'Type', 'Amount (TWC)']}
           csvMapper={(tx: Transaction) => [
             tx.txid,
             String(tx.blockHeight || ''),

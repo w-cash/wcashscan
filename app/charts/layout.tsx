@@ -1,9 +1,9 @@
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'Zcash Charts & On-Chain Analytics | CipherScan',
-  description: 'Explore Zcash charts for shielded pool growth, privacy adoption, mining distribution, fees, and network activity.',
-  keywords: ['zcash charts', 'zcash analytics', 'zcash metrics', 'ZEC price chart', 'zcash mining', 'zcash privacy stats', 'shielded pool chart'],
+  title: 'W.cash Charts & On-Chain Analytics | WcashExplorer',
+  description: 'Explore W.cash charts for Ironwood activity, mining distribution, fees, supply, and network health.',
+  keywords: ['W.cash charts', 'W.cash analytics', 'W.cash metrics', 'W.cash mining', 'W.cash privacy stats', 'Ironwood chart'],
   path: '/charts',
   networks: ['mainnet'],
 });

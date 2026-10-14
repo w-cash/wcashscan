@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
         {
           source: '/txs',
           destination: '/txs/latest',
-          missing: ['cursor', 'cursor_idx', 'cursor_id', 'direction', 'page', 'type', 'flow_type', 'pool', 'min_zec'].map((key) => ({
+          missing: ['cursor', 'cursor_idx', 'cursor_id', 'direction', 'page', 'type', 'flow_type', 'pool', 'min_twc', 'min_zec'].map((key) => ({
             type: 'query' as const,
             key,
           })),
@@ -46,12 +46,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/swap',
-        destination: 'https://cipherswap.app/',
+        destination: '/tools',
         permanent: true,
       },
       {
         source: '/flows',
-        destination: '/crosschain',
+        destination: '/pools',
         permanent: true,
       },
       {

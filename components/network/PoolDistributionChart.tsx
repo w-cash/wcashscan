@@ -15,7 +15,7 @@ import {
 } from 'recharts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getChartColors } from '@/lib/chart-theme';
-import { formatZecCompact } from '@/lib/format-numbers';
+import { formatTwcCompact } from '@/lib/format-numbers';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { ShareableCard } from '@/components/ShareableCard';
 import { formatChartDate, tooltipDate } from '@/lib/chart-dates';
@@ -31,30 +31,27 @@ const Y_AXIS_WIDTH = 64;
 
 const VIEW_META: Record<View, { label: string; shortLabel: string; description: string }> = {
   rate: {
-    label: 'Shielded %',
-    shortLabel: 'Shielded %',
+    label: 'Ironwood %',
+    shortLabel: 'Ironwood %',
     description:
-      'Share of circulating supply held in shielded pools over time. For absolute balances use Public / private or Per pool.',
+      'Share of circulating supply held in the W.cash Ironwood pool over time. For absolute balances use Transparent / Ironwood or Per pool.',
   },
   composition: {
-    label: 'Public / private',
-    shortLabel: 'Public / private',
+    label: 'Transparent / Ironwood',
+    shortLabel: 'Transparent / Ironwood',
     description:
-      'Shielded vs transparent supply in ZEC. Unmined supply is excluded — only issued pools on chain.',
+      'Ironwood vs transparent supply in TWC. Unmined supply is excluded — only issued W.cash balances are shown.',
   },
   pools: {
     label: 'Per pool',
     shortLabel: 'Per pool',
-    description: 'How each value pool grew or shrank — Sprout through Ironwood — from daily chain state.',
+    description: 'How the Ironwood and transparent balances grew or shrank from daily W.cash chain state.',
   },
 };
 
 interface PoolPoint {
   date: string;
   shielded: number;
-  sprout: number;
-  sapling: number;
-  orchard: number;
   ironwood: number;
   transparent: number;
   shieldedSupplyPct: number | null;
@@ -119,14 +116,14 @@ function RateTooltip({
       {rate != null ? (
         <p className="mb-1 tabular-nums">
           <span className="text-cipher-cyan font-bold">{rate.toFixed(2)}%</span>
-          <span className="text-muted"> shielded</span>
+          <span className="text-muted"> Ironwood</span>
         </p>
       ) : null}
-      <p className="tabular-nums text-secondary">{formatZecCompact(shielded)} ZEC shielded</p>
-      <p className="tabular-nums text-muted">{formatZecCompact(transparent)} ZEC transparent</p>
+      <p className="tabular-nums text-secondary">{formatTwcCompact(shielded)} TWC in Ironwood</p>
+      <p className="tabular-nums text-muted">{formatTwcCompact(transparent)} TWC transparent</p>
       {total > 0 ? (
         <p className="mt-1 border-t border-glass-6 pt-1 tabular-nums text-muted">
-          {formatZecCompact(total)} ZEC tracked
+          {formatTwcCompact(total)} TWC tracked
         </p>
       ) : null}
     </div>
@@ -160,7 +157,7 @@ function CompositionTooltip({
         <p key={String(entry.name)} className="tabular-nums text-secondary">
           <span style={{ color: entry.color }}>{entry.name}</span>
           {': '}
-          {formatZecCompact(Number(entry.value ?? 0))} ZEC
+          {formatTwcCompact(Number(entry.value ?? 0))} TWC
         </p>
       ))}
     </div>
@@ -196,7 +193,7 @@ function PoolsTooltip({
           <p key={String(entry.name)} className="tabular-nums text-secondary">
             <span style={{ color: entry.color }}>{entry.name}</span>
             {': '}
-            {formatZecCompact(Number(entry.value ?? 0))} ZEC
+            {formatTwcCompact(Number(entry.value ?? 0))} TWC
           </p>
         ))}
     </div>
@@ -223,8 +220,7 @@ export function PoolDistributionChart({ initialData }: { initialData?: PoolHisto
   const points = apiRes?.points ?? EMPTY_POINTS;
   const hasPerPoolHistory = !!apiRes?.hasVerifiedPerPoolBreakdown;
 
-  const canShowPools =
-    hasPerPoolHistory || points.some((p) => p.orchard > 0 || (p as PoolPoint).ironwood > 0);
+  const canShowPools = hasPerPoolHistory || points.some((p) => p.ironwood > 0);
 
   useEffect(() => {
     if (!loading && view === 'pools' && !canShowPools) {
@@ -245,7 +241,7 @@ export function PoolDistributionChart({ initialData }: { initialData?: PoolHisto
   const rateYMin = pctValues.length ? Math.max(0, Math.floor(Math.min(...pctValues) - 2)) : 0;
   const rateYMax = pctValues.length ? Math.min(100, Math.ceil(Math.max(...pctValues) + 2)) : 40;
 
-  const maxSupplyZec = useMemo(() => {
+  const maxSupplyTwc = useMemo(() => {
     let max = 0;
     for (const p of chartData) {
       const total = (p.shielded || 0) + (p.transparent || 0);
@@ -264,7 +260,7 @@ export function PoolDistributionChart({ initialData }: { initialData?: PoolHisto
 
   const meta = VIEW_META[view];
   const axisFill = colors.axis;
-  const shareText = `Zcash supply history (${meta.shortLabel}, ${period.toUpperCase()}) on CipherScan.\n\nhttps://cipherscan.app/pools#supply`;
+  const shareText = `W.cash supply history (${meta.shortLabel}, ${period.toUpperCase()}) on WcashExplorer.`;
 
   const controls = (
     <div className="mb-4 flex flex-wrap items-center justify-end gap-2" data-html2canvas-ignore="true">
@@ -308,7 +304,7 @@ export function PoolDistributionChart({ initialData }: { initialData?: PoolHisto
       No supply history for this range.
     </div>
   ) : view === 'pools' && canShowPools ? (
-    <SupplyChartFrame yLabel="ZEC in pools">
+    <SupplyChartFrame yLabel="TWC in pools">
       <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height={CHART_HEIGHT}>
         <AreaChart data={chartData} margin={CHART_MARGIN}>
           <CartesianGrid strokeDasharray="2 6" stroke={colors.grid} opacity={0.5} />
@@ -323,8 +319,8 @@ export function PoolDistributionChart({ initialData }: { initialData?: PoolHisto
           <YAxis
             stroke={colors.axis}
             tick={{ fill: colors.axis, fontSize: 10 }}
-            tickFormatter={(v) => formatZecCompact(v)}
-            domain={[0, maxSupplyZec]}
+            tickFormatter={(v) => formatTwcCompact(v)}
+            domain={[0, maxSupplyTwc]}
             width={Y_AXIS_WIDTH}
           />
         <Tooltip content={<PoolsTooltip colors={colors} />} />
@@ -342,15 +338,12 @@ export function PoolDistributionChart({ initialData }: { initialData?: PoolHisto
           }}
         />
         <Area type="monotone" dataKey="ironwood" stackId="1" stroke={colors.ironwood} fill={colors.ironwood} fillOpacity={0.65} name="Ironwood" hide={hiddenSeries.has('ironwood')} />
-        <Area type="monotone" dataKey="orchard" stackId="1" stroke={colors.orchard} fill={colors.orchard} fillOpacity={0.6} name="Orchard" hide={hiddenSeries.has('orchard')} />
-        <Area type="monotone" dataKey="sapling" stackId="1" stroke={colors.sapling} fill={colors.sapling} fillOpacity={0.6} name="Sapling" hide={hiddenSeries.has('sapling')} />
-        <Area type="monotone" dataKey="sprout" stackId="1" stroke={colors.sprout} fill={colors.sprout} fillOpacity={0.5} name="Sprout" hide={hiddenSeries.has('sprout')} />
         <Area type="monotone" dataKey="transparent" stackId="1" stroke={colors.transparent} fill={colors.transparent} fillOpacity={0.35} name="Transparent" hide={hiddenSeries.has('transparent')} />
       </AreaChart>
     </ResponsiveContainer>
     </SupplyChartFrame>
   ) : view === 'composition' ? (
-    <SupplyChartFrame yLabel="Chain supply (ZEC)">
+    <SupplyChartFrame yLabel="Chain supply (TWC)">
       <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height={CHART_HEIGHT}>
         <AreaChart data={chartData} margin={CHART_MARGIN}>
           <CartesianGrid strokeDasharray="2 6" stroke={colors.grid} opacity={0.5} />
@@ -365,19 +358,19 @@ export function PoolDistributionChart({ initialData }: { initialData?: PoolHisto
           <YAxis
             stroke={colors.axis}
             tick={{ fill: colors.axis, fontSize: 10 }}
-            tickFormatter={(v) => formatZecCompact(v)}
-            domain={[0, maxSupplyZec]}
+            tickFormatter={(v) => formatTwcCompact(v)}
+            domain={[0, maxSupplyTwc]}
             width={Y_AXIS_WIDTH}
           />
         <Tooltip content={<CompositionTooltip colors={colors} />} />
         <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-        <Area type="monotone" dataKey="shielded" stackId="1" stroke={colors.shielded} fill={colors.shielded} fillOpacity={0.55} name="Shielded" />
+        <Area type="monotone" dataKey="shielded" stackId="1" stroke={colors.shielded} fill={colors.shielded} fillOpacity={0.55} name="Ironwood" />
         <Area type="monotone" dataKey="transparent" stackId="1" stroke={colors.transparent} fill={colors.transparent} fillOpacity={0.35} name="Transparent" />
       </AreaChart>
     </ResponsiveContainer>
     </SupplyChartFrame>
   ) : (
-    <SupplyChartFrame yLabel="Shielded %">
+    <SupplyChartFrame yLabel="Ironwood %">
       <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height={CHART_HEIGHT}>
         <LineChart data={chartData} margin={CHART_MARGIN}>
           <CartesianGrid strokeDasharray="2 6" stroke={colors.grid} opacity={0.5} />
@@ -417,7 +410,7 @@ export function PoolDistributionChart({ initialData }: { initialData?: PoolHisto
       sourceHeight={0}
       isLive
       shareText={shareText}
-      fileName="cipherscan-supply-history.png"
+      fileName="wcashscan-supply-history.png"
       watermark={true}
       className=""
       footerNote={`${meta.shortLabel} · ${period.toUpperCase()}`}

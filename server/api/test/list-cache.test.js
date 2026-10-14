@@ -213,7 +213,7 @@ test('stableSerialize and cacheKey are deterministic and reject non-JSON values'
   const digest = createHash('sha256').update(serialized).digest('hex');
   assert.equal(
     cache.cacheKey('rich list!', left),
-    `cipherscan:list:v${CACHE_VERSION}:main_net_1:rich_list_:${digest}`,
+    `wcashscan:list:v${CACHE_VERSION}:main_net_1:rich_list_:${digest}`,
   );
   assert.equal(cache.cacheKey('rich list!', left), cache.cacheKey('rich list!', right));
   assert.notEqual(cache.cacheKey('blocks', left), cache.cacheKey('txs', left));
@@ -560,7 +560,7 @@ test('load timings and response headers expose cache state and measured phases',
   );
   const headers = new Map();
   applyListCacheHeaders({ set(name, value) { headers.set(name, value); } }, sample);
-  assert.equal(headers.get('X-CipherScan-Cache'), 'STALE');
+  assert.equal(headers.get('X-WcashScan-Cache'), 'STALE');
   assert.equal(headers.get('Server-Timing'), formatServerTiming(sample));
 });
 

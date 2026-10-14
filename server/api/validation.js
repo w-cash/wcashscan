@@ -164,7 +164,10 @@ const schemas = {
     query: z.object({
       limit: z.coerce.number().int().min(1).max(1000).default(100),
       offset: z.coerce.number().int().min(0).default(0),
-      cursor: z.string().regex(/^t[a-zA-Z0-9]+$/, 'cursor must be a valid t-address').optional(),
+      // Cursor values are opaque stored W.cash address keys. The route uses
+      // them only for lexical pagination; full address validation happens on
+      // address lookup routes and in the indexer.
+      cursor: z.string().min(1).max(200).regex(/^[A-Za-z0-9]+$/, 'cursor must be a W.cash address key').optional(),
       sort: z.enum(['balance', 'address']).default('balance'),
       min_balance: z.coerce.number().int().min(0).default(0),
     }).refine(

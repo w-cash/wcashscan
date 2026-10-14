@@ -12,8 +12,8 @@ coverage
 # Rust / WASM build outputs (the runtime WASM lives under public/)
 wasm/target
 wasm/pkg
-# The backend has its own build context (server/api/Dockerfile)
-server
+# The Wcash API image uses the repository root as its build context so it can
+# receive the shared Wcash profile and the backend libraries.
 # Local env / secrets
 .env
 .env.*

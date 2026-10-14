@@ -5,10 +5,9 @@ import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { SearchBar } from '@/components/SearchBar';
-import { DonateButton } from '@/components/DonateButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useTheme } from '@/contexts/ThemeContext';
-import { NETWORK_LABEL, NETWORK_COLOR, isMainnet, isCrosslink, MAINNET_URL, TESTNET_URL, CROSSLINK_URL } from '@/lib/config';
+import { NETWORK_LABEL, NETWORK_COLOR, isMainnet, MAINNET_URL, TESTNET_URL } from '@/lib/config';
 
 interface MenuItem {
   href: string;
@@ -74,55 +73,36 @@ export function NavBar() {
     return () => observer.disconnect();
   }, [pathname]);
 
-  // Build category arrays (network-aware)
+  // WcashScan exposes the same explorer surface on both builds. The mainnet
+  // build is a preview until a W.cash mainnet endpoint is configured.
   const exploreItems: MenuItem[] = [
     { href: '/blocks', label: 'Blocks', desc: 'Latest blocks' },
     { href: '/txs', label: 'Transactions', desc: 'Recent transactions' },
     { href: '/network', label: 'Network', desc: 'Hashrate, peers & difficulty' },
     { href: '/network/nodes', label: 'Network Nodes', desc: 'Node map, topology & health' },
     { href: '/charts', label: 'Charts', desc: 'All metrics in one place' },
-    ...(isCrosslink
-      ? [
-          { href: '/chain', label: 'Chain View', desc: 'PoW + PoS chain visualizer' },
-          { href: '/validators', label: 'Validators', desc: 'Finalizer roster & staking' },
-          { href: '/bootstrap', label: 'Node Bootstrap', desc: 'Skip genesis resync' },
-        ]
-      : [
-          { href: '/mining', label: 'Mining', desc: 'Pool distribution & miner behavior' },
-        ]),
-    ...(isCrosslink ? [] : [{ href: '/rich-list', label: 'Rich List', desc: 'Top addresses by balance' }]),
+    { href: '/mining', label: 'Mining', desc: 'Pool distribution & miner behavior' },
+    { href: '/rich-list', label: 'Rich List', desc: 'Top addresses by balance' },
     { href: '/reorgs', label: 'Forks & Reorgs', desc: 'Chain forks & orphaned blocks' },
-    ...(isCrosslink ? [{ href: '/fork-monitor', label: 'Fork Monitor', desc: 'Chain forks & node health' }] : []),
   ];
 
-  const analyticsItems: MenuItem[] = isCrosslink
-    ? []
-    : [
-        { href: '/privacy', label: 'Privacy Score', desc: 'Network privacy health' },
-        { href: '/pools', label: 'Shielded Pools', desc: 'Supply & shield/deshield flows' },
-        { href: '/turnstile', label: 'Turnstile', desc: 'Where deshielded ZEC goes' },
-        { href: '/ironwood', label: 'Zcash Ironwood', desc: 'NU6.3 upgrade & migration tracker' },
-        { href: '/valuation', label: 'Valuation', desc: 'MVRV, realized price & on-chain metrics' },
-        { href: '/pulse', label: 'Network Pulse', desc: 'Auto-detected on-chain anomalies' },
-        { href: '/privacy-risks', label: 'Risk Scanner', desc: 'Detect risky patterns' },
-        { href: '/privacy/wallets', label: 'Wallet Analysis', desc: 'Fingerprints & anonymity sets' },
-        ...(isMainnet ? [{ href: '/zodl', label: 'Miner ZODL', desc: 'How pools move or hold rewards' }] : []),
-        ...(isMainnet ? [{ href: '/usage-clock', label: 'Usage Clock', desc: 'Activity rhythm vs geography' }] : []),
-        ...(isMainnet ? [{ href: '/crosschain', label: 'Cross-Chain', desc: 'Cross-chain swap analytics' }] : []),
-        ...(isMainnet ? [{ href: '/governance/nu7', label: 'NU7 Vote', desc: 'Coinholder poll tracker' }] : []),
-      ];
+  const analyticsItems: MenuItem[] = [
+    { href: '/privacy', label: 'Privacy Score', desc: 'Network privacy health' },
+    { href: '/pools', label: 'Shielded Pools', desc: 'Supply & shield/deshield flows' },
+    { href: '/ironwood', label: 'Ironwood', desc: 'Native W.cash value pool' },
+    { href: '/privacy-risks', label: 'Risk Scanner', desc: 'Detect risky patterns' },
+    { href: '/privacy/wallets', label: 'Wallet Analysis', desc: 'Unavailable until W.cash heuristics are validated' },
+  ];
 
   const toolsItems: MenuItem[] = [
-    { href: '/tools', label: 'Dev Tools', desc: 'All tools & API reference' },
-    { href: '/decrypt', label: 'Decrypt Memo', desc: 'Decode shielded messages' },
-    { href: '/tools/blend-check', label: 'Blend Check', desc: 'See if your amount blends in' },
+    { href: '/tools', label: 'Dev Tools', desc: 'Safe W.cash utilities' },
+    { href: '/tools/unit-converter', label: 'Unit Converter', desc: 'TWC and zatoshi units' },
   ];
 
   const resourcesItems: MenuItem[] = [
     { href: '/docs', label: 'API Docs', desc: 'Developer reference' },
-    { href: '/learn', label: 'Learn Zcash', desc: 'Beginner guide' },
-    ...(isCrosslink ? [{ href: '/learn/crosslink', label: 'Learn Crosslink', desc: 'PoW+PoS finality & staking' }] : []),
-    { href: '/newsletter', label: 'Newsletter', desc: 'Weekly Zcash intelligence' },
+    { href: '/learn', label: 'Learn W.cash', desc: 'Privacy and explorer guide' },
+    { href: '/newsletter', label: 'Newsletter', desc: 'W.cash project updates' },
     { href: '/about', label: 'About', desc: 'Our story & mission' },
   ];
 
@@ -157,7 +137,7 @@ export function NavBar() {
             <Link href="/" className="flex items-center space-x-2 group flex-shrink-0">
               <Image
                 src="/logo.png"
-                alt="CipherScan Logo"
+                alt="WcashExplorer Logo"
                 width={24}
                 height={24}
                 quality={100}
@@ -166,7 +146,7 @@ export function NavBar() {
               />
               <div>
                 <span className="text-base sm:text-lg font-bold font-mono text-cipher-cyan-bright">
-                  CIPHERSCAN
+                  WCASHEXPLORER
                 </span>
                 <p className={`text-[10px] sm:text-[11px] font-mono ${NETWORK_COLOR} leading-tight`}>[ {NETWORK_LABEL} ]</p>
               </div>
@@ -216,20 +196,6 @@ export function NavBar() {
 
             {/* Right: utilities */}
             <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* Buy ZEC — mainnet only, desktop */}
-              {isMainnet && (
-                <a
-                  href="https://cipherswap.app/"
-                  target="_blank"
-                  rel="noopener"
-                  title="Buy ZEC on CipherSwap"
-                  className="hidden md:flex items-center gap-1 text-xs font-mono font-bold text-cipher-yellow hover:opacity-80 transition-opacity duration-150 px-2 py-1"
-                >
-                  <span className="text-cipher-yellow/50">&gt;</span>
-                  Buy ZEC
-                </a>
-              )}
-
               {/* Network switcher — globe icon dropdown, desktop only */}
               <div className="hidden md:block relative">
                 <button
@@ -237,7 +203,7 @@ export function NavBar() {
                   className={`p-2 rounded-md transition-colors duration-150 ${
                     openDropdown === 'network' ? 'text-primary bg-cipher-hover' : 'text-muted hover:text-primary'
                   }`}
-                  title={isMainnet ? 'Mainnet' : isCrosslink ? 'Crosslink' : 'Testnet'}
+                  title={isMainnet ? 'Mainnet preview' : 'Testnet'}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 21a9 9 0 100-18 9 9 0 000 18z" />
@@ -259,27 +225,18 @@ export function NavBar() {
                     <a
                       href={TESTNET_URL}
                       className={`block px-3 py-2 rounded-md text-[12px] font-mono transition-colors ${
-                        !isMainnet && !isCrosslink ? 'text-primary bg-cipher-hover' : 'text-secondary dropdown-item'
+                        !isMainnet ? 'text-primary bg-cipher-hover' : 'text-secondary dropdown-item'
                       }`}
                     >
                       Testnet
-                    </a>
-                    <a
-                      href={CROSSLINK_URL}
-                      className={`block px-3 py-2 rounded-md text-[12px] font-mono transition-colors ${
-                        isCrosslink ? 'text-primary bg-cipher-hover' : 'text-secondary dropdown-item'
-                      }`}
-                    >
-                      Crosslink
                     </a>
                   </div>
                 )}
               </div>
 
-              {/* Theme + Donate — desktop only */}
+              {/* Theme — desktop only */}
               <div className="hidden md:flex items-center gap-1">
                 <ThemeToggle />
-                <DonateButton compact />
               </div>
 
               {/* Mobile: hamburger */}
@@ -317,7 +274,7 @@ export function NavBar() {
           <div className="absolute inset-y-0 right-0 w-full max-w-sm flex flex-col mobile-drawer shadow-2xl animate-slide-in-right">
             {/* Header */}
             <div className="flex items-center justify-between h-16 px-4 border-b navbar-border flex-shrink-0">
-              <span className="text-sm font-bold font-mono text-cipher-cyan-bright">CIPHERSCAN</span>
+              <span className="text-sm font-bold font-mono text-cipher-cyan-bright">WCASHEXPLORER</span>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2 rounded-md text-muted hover:text-primary transition"
@@ -367,22 +324,6 @@ export function NavBar() {
               ))}
 
 
-              {/* Buy ZEC — mainnet only */}
-              {isMainnet && (
-                <div className="px-3 pt-3">
-                  <a
-                    href="https://cipherswap.app/"
-                    target="_blank"
-                    rel="noopener"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-lg font-mono text-sm font-bold text-cipher-yellow border border-cipher-yellow/30 hover:bg-cipher-yellow/10 transition"
-                  >
-                    <span className="text-cipher-yellow/50">&gt;</span>
-                    Buy ZEC
-                  </a>
-                </div>
-              )}
-
               {/* Footer — network switcher + utilities */}
               <div className="pt-4 mt-2 border-t navbar-border">
                 <div className="flex flex-col gap-3 px-3">
@@ -399,24 +340,15 @@ export function NavBar() {
                     <a
                       href={TESTNET_URL}
                       className={`text-[11px] font-mono px-2.5 py-1.5 rounded-md transition ${
-                        !isMainnet && !isCrosslink ? 'bg-cipher-hover text-primary' : 'text-muted hover:text-primary'
+                        !isMainnet ? 'bg-cipher-hover text-primary' : 'text-muted hover:text-primary'
                       }`}
                     >
                       Testnet
                     </a>
-                    <a
-                      href={CROSSLINK_URL}
-                      className={`text-[11px] font-mono px-2.5 py-1.5 rounded-md transition ${
-                        isCrosslink ? 'bg-cipher-hover text-primary' : 'text-muted hover:text-primary'
-                      }`}
-                    >
-                      Crosslink
-                    </a>
                   </div>
 
-                  {/* Theme + Donate */}
+                  {/* Theme */}
                   <div className="flex items-center justify-end gap-2">
-                    <DonateButton compact />
                     <ThemeToggle />
                   </div>
                 </div>

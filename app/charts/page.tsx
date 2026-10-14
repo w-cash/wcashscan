@@ -3,170 +3,113 @@ import { getApiUrl } from '@/lib/api-config';
 
 const API_BASE = getApiUrl();
 
-async function fetchChartData() {
-  const endpoints = [
-    `${API_BASE}/api/pools/flows?period=30d`,
-    `${API_BASE}/api/pools/turnstile?since=${encodeURIComponent(new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10))}`,
-    `${API_BASE}/api/mining/hashrate-share?period=30d`,
-    `${API_BASE}/api/analytics/anonymity-set?period=30d`,
-    `${API_BASE}/api/analytics/shielding-distribution?period=30d`,
-    `${API_BASE}/api/network/fee-distribution?period=30d`,
-    `${API_BASE}/api/mining/pool-distribution?period=7d`,
-    `${API_BASE}/api/mining/miner-behavior?period=30d`,
-    `${API_BASE}/api/network/hashrate-history?period=90d`,
-  ];
-
-  const results = await Promise.all(
-    endpoints.map(url =>
-      fetch(url, { next: { revalidate: 300 } })
-        .then(r => r.json())
-        .catch(() => null)
-    )
-  );
-
-  const [flows, turnstile, hashrate, anonymity, shielding, fees, poolDist, minerBeh, hashrateHistory] = results;
-  const map: Record<string, any[]> = {};
-
-  // /api/pools/flows → { points: [{ date, shield, deshield, net, shieldTx, deshieldTx }] }
-  if (flows?.points?.length) {
-    const fData = flows.points.slice(-30);
-    map['flow-volume'] = fData.map((d: any) => ({
-      label: d.date ? new Date(d.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '',
-      netFlow: Math.round(d.net ?? 0),
-    }));
-    map['pool-balances'] = fData.map((d: any) => ({
-      label: d.date ? new Date(d.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '',
-      orchard: Math.round(d.shield ?? 0),
-    }));
-    map['pool-growth'] = fData.map((d: any) => ({
-      label: d.date ? new Date(d.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '',
-      totalShielded: Math.round(d.shield ?? 0),
-    }));
-    map['daily-activity'] = fData.map((d: any) => ({
-      label: d.date ? new Date(d.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '',
-      shielded: d.shieldTx ?? 0,
-    }));
-    map['turnstile'] = (turnstile?.timeseries ?? []).slice(-30).map((d: { date?: string; held?: number; reshielded?: number }) => ({
-      label: d.date ? new Date(d.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '',
-      held: Math.round((d.held ?? 0) + (d.reshielded ?? 0)),
-    }));
-    // Derive shielded % from shield tx vs total
-    map['privacy-adoption'] = fData.map((d: any) => {
-      const total = (d.shieldTx ?? 0) + (d.deshieldTx ?? 0);
-      return {
-        label: d.date ? new Date(d.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '',
-        shieldedPct: total > 0 ? Math.round((d.shieldTx / total) * 100) : 0,
-      };
-    });
-  }
-
-  // /api/mining/hashrate-share → { series: [{ date, totalBlocks, pools: { name: share, ... } }] }
-  if (hashrate?.series?.length) {
-    map['hashrate-share'] = hashrate.series.slice(-30).map((d: any) => {
-      const pools = d.pools || {};
-      const topShare = Math.max(...Object.values(pools).map((v: any) => Number(v) || 0));
-      return {
-        label: d.date ? new Date(d.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '',
-        share: Math.round(topShare * 100),
-      };
-    });
-  }
-
-  // /api/analytics/anonymity-set → { thresholds: [{ thresholdZec, shieldCount, deshieldCount }] }
-  if (anonymity?.thresholds?.length) {
-    map['anonymity-set'] = anonymity.thresholds.map((d: any) => ({
-      label: d.thresholdZec >= 1 ? `${d.thresholdZec}` : `${d.thresholdZec}`,
-      shieldCount: d.shieldCount ?? 0,
-    }));
-  }
-
-  // /api/analytics/shielding-distribution → { buckets: [{ label, shieldCount, deshieldCount }] }
-  if (shielding?.buckets?.length) {
-    map['shielding-dist'] = shielding.buckets.map((d: any) => ({
-      label: d.label ?? '',
-      count: d.shieldCount ?? 0,
-    }));
-  }
-
-  // /api/network/fee-distribution → { daily: [{ date, p10, p25, median, p75, p90, avgFee }] }
-  if (fees?.daily?.length) {
-    map['fee-dist'] = fees.daily.slice(-30).map((d: any) => ({
-      label: d.date ? new Date(d.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '',
-      median: (d.median ?? 0) / 100000,
-    }));
-  }
-
-  // /api/mining/pool-distribution → { pools: [{ name, blocks, share }] }
-  if (poolDist?.pools?.length) {
-    map['mining-dist'] = poolDist.pools.slice(0, 8).map((d: any) => ({
-      label: (d.name ?? '').slice(0, 10),
-      blocks: d.blocks ?? 0,
-    }));
-  }
-
-  // /api/mining/miner-behavior → { series: [{ date, earnedZat, spentZat, heldZat, pools: {...} }] }
-  if (minerBeh?.series?.length) {
-    // Aggregate per-pool totals from latest day
-    const latest = minerBeh.series[minerBeh.series.length - 1];
-    const pools = latest?.pools || {};
-    map['miner-behavior'] = Object.entries(pools).slice(0, 8).map(([name, d]: [string, any]) => ({
-      label: name.slice(0, 10),
-      earned: Math.round(Number(d.earned ?? 0) / 1e8),
-    }));
-  }
-
-  // Known curves (no API needed)
-  map['supply-emission'] = Array.from({ length: 20 }, (_, i) => ({
-    label: `${2016 + i}`,
-    supply: Math.min(21_000_000, 500_000 + i * 850_000),
-  }));
-
-  map['mining-metrics'] = Array.from({ length: 20 }, (_, i) => ({
-    label: `${i + 1}`,
-    value: +(15 + Math.sin(i / 3) * 3 + i * 0.2).toFixed(1),
-  }));
-
-  // /api/network/hashrate-history → { points: [{ date, avgDifficulty, blockCount, hashrate }] }
-  if (hashrateHistory?.points?.length) {
-    map['network-hashrate'] = hashrateHistory.points.slice(-30).map((d: any) => ({
-      label: d.date ? new Date(d.date).toLocaleDateString('en', { month: 'short', day: 'numeric' }) : '',
-      hashrate: Math.round((d.hashrate ?? 0) / 1e9), // GSol/s, compact for mini-chart y-axis
-    }));
-  }
-
-  map['chain-size'] = Array.from({ length: 20 }, (_, i) => ({
-    label: `${2020 + Math.floor(i / 4)}`,
-    sizeGb: +(30 + i * 2.5).toFixed(1),
-  }));
-
-  map['protocol-stats'] = Array.from({ length: 12 }, (_, i) => ({
-    label: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
-    commitments: 800000 + i * 120000,
-  }));
-
-  return map;
-}
-
-async function fetchRiskCounts() {
+async function fetchJson(path: string): Promise<any | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/privacy/risks?limit=1&period=7d`, { next: { revalidate: 300 } });
-    const d = await res.json();
-    const stats = d.stats || {};
-    return {
-      high: stats.highRisk || 0,
-      medium: stats.mediumRisk || 0,
-      low: stats.lowRisk || 0,
-      total: stats.total || 0,
-    };
+    const response = await fetch(`${API_BASE}${path}`, { next: { revalidate: 300 } });
+    if (!response.ok) return null;
+    return await response.json();
   } catch {
     return null;
   }
 }
 
-export default async function ChartsPage() {
-  const [chartData, riskCounts] = await Promise.all([
-    fetchChartData(),
-    fetchRiskCounts(),
+function label(value: string | Date | undefined): string {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+}
+
+function number(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+async function fetchChartData() {
+  const [privacy, pools, flows, hashrateShare, anonymity, shielding, fees, mining, behavior, hashrateHistory, emission, chainSize, protocol] = await Promise.all([
+    fetchJson('/api/privacy-stats?days=30'),
+    fetchJson('/api/network/pool-history?period=all'),
+    fetchJson('/api/pools/flows?period=30d&pool=ironwood'),
+    fetchJson('/api/mining/hashrate-share?period=30d'),
+    fetchJson('/api/analytics/anonymity-set?period=30d'),
+    fetchJson('/api/analytics/shielding-distribution?period=30d'),
+    fetchJson('/api/network/fee-distribution?period=30d'),
+    fetchJson('/api/mining/pool-distribution?period=30d'),
+    fetchJson('/api/mining/miner-behavior?period=30d'),
+    fetchJson('/api/mining/hashrate-history?period=30d'),
+    fetchJson('/api/network/emission?period=1y'),
+    fetchJson('/api/network/chain-size-history?period=1y'),
+    fetchJson('/api/network/protocol-stats'),
   ]);
-  return <ChartsClient initialData={chartData} riskCounts={riskCounts} />;
+
+  const data: Record<string, any[]> = {};
+  const trends = Array.isArray(privacy?.trends?.daily) ? privacy.trends.daily.slice(-30) : [];
+  if (trends.length) {
+    data['privacy-adoption'] = trends.map((point: any) => ({ label: label(point.date), shieldedPct: number(point.shieldedPercentage) }));
+    data['daily-activity'] = trends.map((point: any) => ({ label: label(point.date), shielded: number(point.shielded), transparent: number(point.transparent) }));
+  }
+
+  const poolPoints = Array.isArray(pools?.points) ? pools.points : [];
+  if (poolPoints.length) {
+    data['pool-growth'] = poolPoints.map((point: any) => ({ label: label(point.date), ironwood: number(point.ironwood) }));
+    data['pool-balances'] = poolPoints.map((point: any) => ({ label: label(point.date), ironwood: number(point.ironwood), transparent: number(point.transparent) }));
+  }
+
+  const flowPoints = Array.isArray(flows?.points) ? flows.points.slice(-30) : [];
+  if (flowPoints.length) {
+    data['flow-volume'] = flowPoints.map((point: any) => ({ label: label(point.date), shield: number(point.shield), deshield: number(point.deshield), net: number(point.net) }));
+  }
+
+  if (Array.isArray(anonymity?.thresholds)) {
+    data['anonymity-set'] = anonymity.thresholds.map((point: any) => ({ label: `${number(point.thresholdTwc)} TWC`, shieldCount: number(point.shieldCount), deshieldCount: number(point.deshieldCount) }));
+  }
+  if (Array.isArray(shielding?.buckets)) {
+    data['shielding-dist'] = shielding.buckets.map((point: any) => ({ label: point.label || '', count: number(point.shieldCount) + number(point.deshieldCount) }));
+  }
+  if (Array.isArray(fees?.daily)) {
+    data['fee-dist'] = fees.daily.slice(-30).map((point: any) => ({ label: label(point.date), median: number(point.median) / 1e8 }));
+  }
+  if (Array.isArray(mining?.pools)) {
+    data['mining-dist'] = mining.pools.slice(0, 10).map((point: any) => ({ label: point.name || 'Unknown', blocks: number(point.blocks) }));
+  }
+  if (Array.isArray(hashrateShare?.series)) {
+    data['hashrate-share'] = hashrateShare.series.slice(-30).map((point: any) => ({
+      label: label(point.date),
+      share: Math.max(...Object.values(point.pools || {}).map(number), 0) * 100,
+    }));
+  }
+  if (Array.isArray(behavior?.series)) {
+    data['miner-behavior'] = behavior.series.slice(-30).map((point: any) => ({ label: label(point.date), moved: number(point.movedZat) / 1e8, held: number(point.heldZat) / 1e8 }));
+  }
+  if (Array.isArray(hashrateHistory?.points)) {
+    data['network-hashrate'] = hashrateHistory.points.slice(-30).map((point: any) => ({ label: label(point.date), hashrate: number(point.solutionRate) }));
+  }
+  if (Array.isArray(emission?.supplyHistory)) {
+    data['supply-emission'] = emission.supplyHistory.map((point: any) => ({ label: label(point.date), supply: number(point.circulating) }));
+  }
+  if (Array.isArray(chainSize?.points)) {
+    data['chain-size'] = chainSize.points.map((point: any) => ({ label: label(point.time), sizeGb: number(point.sizeGB) }));
+  }
+  if (Array.isArray(protocol?.history)) {
+    data['protocol-stats'] = protocol.history.map((point: any) => ({ label: label(point.date), actions: number(point.ironwoodActions) }));
+  }
+
+  return data;
+}
+
+async function fetchActivitySummary() {
+  const [pulse, risks] = await Promise.all([fetchJson('/api/pulse/summary?days=7'), fetchJson('/api/privacy/risks?limit=1&period=7d')]);
+  const stats = risks?.stats || {};
+  return {
+    up: number(pulse?.up),
+    down: number(pulse?.down),
+    high: number(stats.highRisk),
+    medium: number(stats.mediumRisk),
+    low: number(stats.lowRisk),
+    total: number(stats.total),
+  };
+}
+
+export default async function ChartsPage() {
+  const [chartData, activitySummary] = await Promise.all([fetchChartData(), fetchActivitySummary()]);
+  return <ChartsClient initialData={chartData} activitySummary={activitySummary} />;
 }

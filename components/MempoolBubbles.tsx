@@ -10,9 +10,7 @@ interface MempoolTransaction {
   time: number;
   vin: number;
   vout: number;
-  vShieldedSpend: number;
-  vShieldedOutput: number;
-  orchardActions?: number;
+  ironwoodActions?: number;
 }
 
 type BubbleState = 'entering' | 'alive' | 'popping' | 'dead';
@@ -120,7 +118,7 @@ function buildColors(theme: ReturnType<typeof readThemeColors>): Record<'transpa
 const TYPE_LABEL = {
   transparent: 'T',
   mixed: 'M',
-  shielded: 'S',
+  shielded: 'I',
 } as const;
 
 function sizeToRadius(size: number): number {
@@ -918,15 +916,10 @@ export const MempoolBubbles = forwardRef<MempoolBubblesHandle, MempoolBubblesPro
                   <span className="text-muted">Ironwood</span>
                   <span className="text-cipher-yellow font-mono">{(hoveredTx as any).ironwoodActions} actions</span>
                 </div>
-              ) : hoveredTx.orchardActions ? (
+              ) : hoveredTx.ironwoodActions ? (
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-muted">Orchard</span>
-                  <span className="text-cipher-purple font-mono">{hoveredTx.orchardActions} actions</span>
-                </div>
-              ) : hoveredTx.vShieldedSpend > 0 || hoveredTx.vShieldedOutput > 0 ? (
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-muted">Sapling</span>
-                  <span className="text-cipher-purple font-mono">{hoveredTx.vShieldedSpend}s → {hoveredTx.vShieldedOutput}o</span>
+                  <span className="text-muted">Ironwood</span>
+                  <span className="text-cipher-yellow font-mono">{hoveredTx.ironwoodActions} actions</span>
                 </div>
               ) : null}
             </div>
@@ -954,7 +947,7 @@ export const MempoolBubbles = forwardRef<MempoolBubblesHandle, MempoolBubblesPro
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full bg-cipher-purple/50 border border-cipher-purple/80" />
-            <span>S · Shielded</span>
+            <span>I · Ironwood</span>
           </div>
         </div>
       )}
@@ -980,13 +973,13 @@ export const MempoolBubbles = forwardRef<MempoolBubblesHandle, MempoolBubblesPro
             style={{ opacity: cursorVisible ? 0.7 : 0.25 }}
           >
             <div className="text-[11px] text-white/50 tracking-widest uppercase mb-1">
-              CipherScan {typeof window !== 'undefined' && window.location.hostname.includes('testnet') ? 'Testnet' : 'Mainnet'}
+              WcashExplorer {typeof window !== 'undefined' && window.location.hostname.includes('testnet') ? 'Testnet' : 'Mainnet preview'}
             </div>
             {stats && (
               <div className="text-[10px] tracking-wider">
                 <span className="text-white/50">{stats.total} pending</span>
                 <span className="text-white/20 mx-1.5">·</span>
-                <span className="text-cipher-purple/60">{stats.shieldedPct}% shielded</span>
+                <span className="text-cipher-purple/60">{stats.shieldedPct}% Ironwood-active</span>
               </div>
             )}
           </div>
@@ -998,7 +991,7 @@ export const MempoolBubbles = forwardRef<MempoolBubblesHandle, MempoolBubblesPro
           >
             <span className="text-cipher-cyan/70">T</span>
             <span className="text-cipher-orange/70">M</span>
-            <span className="text-cipher-purple/70">S</span>
+            <span className="text-cipher-purple/70">I</span>
           </div>
         </>
       )}

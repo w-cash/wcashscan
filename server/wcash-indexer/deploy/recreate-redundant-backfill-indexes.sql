@@ -1,0 +1,81 @@
+-- Manifest of indexes dropped during the 2026-07-16 NVMe-failure rebuild to
+-- reduce WAL overhead during backfill, with a resolved disposition for each
+-- as of 2026-08-15. `idx_tx_inputs_address`, `idx_tx_inputs_prev_tx`, and
+-- `idx_tx_outputs_address` were already recreated (present since the
+-- rebuild); this file only lists the other 8.
+--
+-- Resolution method (revised 2026-08-15, see below): EXPLAIN (ANALYZE,
+-- BUFFERS) against production for the actual query, cross-referenced with
+-- real call sites in zcash-explorer, THEN confirmed against
+-- pg_stat_user_indexes deltas from actually running the real production
+-- jobs standalone (not just a hand-crafted stand-in query) before treating
+-- anything as "recreate this."
+--
+-- === Confirmed REDUNDANT — intentionally NOT recreated ===
+-- Each of these queries already used a different existing index with no
+-- sequential scan, so recreating the index would add write overhead with no
+-- read benefit. Do not recreate without new evidence of a slow query plan.
+--
+-- idx_shielded_flows_txid: shielded_flows lookups by txid already use the
+--   `shielded_flows_txid_flow_unique` unique index. 0.3ms, no seq scan.
+-- idx_transactions_block_tx (block_height, tx_index): block-scoped tx
+--   listing already uses `idx_transactions_height_index_txid`. 0.04ms.
+-- idx_tx_inputs_txid: covered by transaction_inputs' primary key (leading
+--   column txid); recreating would duplicate the PK index.
+-- idx_tx_outputs_txid: covered by transaction_outputs' primary key (leading
+--   column txid), same reasoning. Verified via EXPLAIN: 0.14ms, Index Scan
+--   on transaction_outputs_pkey.
+--
+-- === Recreated 2026-08-15, then DROPPED again same day after verification ===
+-- Built with CREATE INDEX CONCURRENTLY based on a hand-crafted query that
+-- was assumed to represent a real access pattern ("symmetric with the
+-- proven idx_tx_outputs_spent case" / "must be hit on every address page
+-- view") WITHOUT first grepping zcash-explorer for an actual call site.
+-- That assumption was wrong: address balance/UTXO display reads the
+-- pre-maintained `addresses.balance` column (see cipherscan-rust's
+-- update_addresses_for_block / apply_address_deltas_for_new_block), not a
+-- live query against transaction_outputs/transaction_inputs, and no code
+-- path was found ordering either table by created_at. Confirmed unused via
+-- pg_stat_user_indexes: idx_scan stayed at 1 (address_unspent) and 2
+-- (inputs_addr_created) — completely flat — across two full, real
+-- production job runs (compute-mvrv.js, compute-utxo-age.js run
+-- standalone, not simulated). idx_tx_outputs_addr_created showed a small
+-- ambiguous uptick (+5 over ~40 min of live traffic) with no corresponding
+-- code evidence and no pg_stat_statements installed to confirm the source;
+-- treated as noise rather than confirmed use, consistent with the other
+-- two built on the same wrong assumption. Do not recreate these three
+-- without first grepping for a real call site AND confirming via
+-- pg_stat_user_indexes deltas from an actual production query, not a
+-- hand-crafted stand-in:
+--   idx_tx_outputs_address_unspent (address, spent) WHERE spent = false
+--   idx_tx_outputs_addr_created (address, created_at DESC)
+--   idx_tx_inputs_addr_created (address, created_at DESC)
+--
+-- === Confirmed VALUABLE — recreated 2026-08-15, KEPT ===
+-- idx_tx_outputs_spent (partial, WHERE spent = false — smaller and matches
+--   every real call site, which all filter on the unspent side): verified
+--   via EXPLAIN against the real compute-mvrv.js query (not a stand-in) —
+--   the planner uses "Parallel Index Scan using idx_tx_outputs_spent" — and
+--   confirmed via pg_stat_user_indexes jumping from idx_scan=9 to 14 with
+--   tup_read 55M -> 82M after running compute-mvrv.js and
+--   compute-utxo-age.js standalone in production. Hit by
+--   server/signals/compute-mvrv.js (MVRV realized cap, daily via
+--   daily-v3.sh at 21:00) and server/jobs/compute-utxo-age.js (HODL waves,
+--   daily via cron at 05:00) — daily, not hourly (an earlier version of
+--   this note incorrectly said "every run" implying hourly; corrected).
+--   In isolation (WHERE spent = false alone, no joins), this took the
+--   query from a 16.6s Parallel Seq Scan (85GB table, 6.6M buffer reads) to
+--   a 2.5s Parallel Index Only Scan (289k buffer reads). The full
+--   production compute-mvrv.js query (with its JOIN to transactions and
+--   zec_price_daily) is still ~20s end to end — the index fixed the seq
+--   scan on transaction_outputs, but the remaining cost is a per-row
+--   Nested Loop join to transactions for each of the ~6.9M unspent
+--   outputs, which this index does not address. That join cost would need
+--   a different fix (e.g. denormalizing block_time onto transaction_outputs
+--   or restructuring the query) — not attempted here since these are daily
+--   background jobs, not user-facing latency.
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_tx_outputs_spent
+    ON public.transaction_outputs USING btree (spent) WHERE (spent = false);
+
+-- After creating, run ANALYZE so the planner picks it up immediately:
+--   ANALYZE transaction_outputs;

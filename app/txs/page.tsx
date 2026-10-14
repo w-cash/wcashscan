@@ -21,24 +21,24 @@ export async function generateMetadata({ searchParams }: TransactionsPageProps):
 
   if (request.type === 'shielded') {
     return buildPageMetadata({
-      title: `Zcash Shielded Transactions${pageSuffix} | CipherScan`,
+      title: `W.cash Ironwood Transactions${pageSuffix} | WcashExplorer`,
       description: request.page > 1
-        ? `Browse Zcash shielded transaction archive page ${request.page}, including shielding and unshielding flows across privacy pools.`
-        : 'Browse shielded Zcash transactions and track shielding and unshielding flows across Ironwood, Orchard, and Sapling privacy pools.',
+        ? `Browse W.cash Ironwood transaction archive page ${request.page}, including public-to-private and private-to-public flow observations.`
+        : 'Browse W.cash Ironwood transactions and track public-to-private and private-to-public flow observations.',
       path: isStableArchive ? getArchiveCanonicalPath(request) : '/txs?type=shielded',
       index: isStableArchive && request.page === 1,
-      keywords: ['zcash shielded transactions', 'zcash orchard', 'zcash sapling', 'shielded ZEC', 'zcash privacy'],
+      keywords: ['wcash Ironwood transactions', 'TWC privacy', 'wcash explorer'],
     });
   }
 
   return buildPageMetadata({
-    title: `Latest Zcash Transactions${pageSuffix} | CipherScan`,
+    title: `Latest W.cash Transactions${pageSuffix} | WcashExplorer`,
     description: request.page > 1
-      ? `Browse Zcash transaction archive page ${request.page}, with transaction hashes, block heights, transaction types, sizes, and confirmation times.`
-      : 'Browse the latest Zcash transactions including shielded, transparent, and coinbase transactions. Real-time transaction explorer.',
+      ? `Browse W.cash transaction archive page ${request.page}, with transaction hashes, block heights, transaction types, sizes, and confirmation times.`
+      : 'Browse the latest W.cash transactions including Ironwood, transparent, and coinbase transactions.',
     path: isStableArchive ? getArchiveCanonicalPath(request) : '/txs',
     index: isStableArchive && request.page === 1,
-    keywords: ['zcash transactions', 'zcash transaction explorer', 'ZEC transactions', 'zcash shielded transactions', 'zcash tx'],
+    keywords: ['wcash transactions', 'wcash transaction explorer', 'TWC transactions'],
   });
 }
 

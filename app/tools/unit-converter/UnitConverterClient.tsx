@@ -1,242 +1,99 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Card, CardBody } from '@/components/ui/Card';
 
-const ZATOSHIS_PER_ZEC = 100_000_000; // 10^8
+const ZATOSHI_PER_TWC = BigInt(100_000_000);
 
-function formatZatoshi(value: bigint | null): string {
-  if (value === null) return '';
-  return value.toLocaleString('en-US', { useGrouping: true });
+function twcToZatoshi(value: string): bigint | null {
+  const normalized = value.trim().replace(/,/g, '');
+  if (!/^\d+(\.\d{0,8})?$/.test(normalized)) return null;
+  const [whole, fraction = ''] = normalized.split('.');
+  return BigInt(whole) * ZATOSHI_PER_TWC + BigInt(fraction.padEnd(8, '0') || '0');
 }
 
-/** Format ZEC for display; never use scientific notation (e.g. 0.00000001 not 1e-8). */
-function formatZec(value: number | null): string {
-  if (value === null || Number.isNaN(value)) return '';
-  if (value === 0) return '0';
-  const s = value.toFixed(8);
-  return s.replace(/\.?0+$/, '') || '0';
+function zatoshiToTwc(value: string): string {
+  const amount = BigInt(value.replace(/,/g, ''));
+  if (amount < BigInt(0)) throw new Error('negative amount');
+  const whole = amount / ZATOSHI_PER_TWC;
+  const fraction = (amount % ZATOSHI_PER_TWC).toString().padStart(8, '0').replace(/0+$/, '');
+  return fraction ? `${whole}.${fraction}` : whole.toString();
 }
 
-/** One reference row: label, displayed value, value to copy. */
-function CopyableRow({
-  label,
-  valueDisplay,
-  valueToCopy,
-}: {
-  label: string;
-  valueDisplay: string;
-  valueToCopy: string;
-}) {
+function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
-
-  const copy = () => {
-    navigator.clipboard.writeText(valueToCopy);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
-    <div className="flex items-center justify-between gap-4 py-2.5 border-b border-cipher-border last:border-0">
-      <span className="text-xs font-mono text-muted shrink-0">{label}</span>
-      <code className="font-mono text-sm text-secondary text-right break-all min-w-0 flex-1">
-        {valueDisplay}
-      </code>
-      <button
-        type="button"
-        onClick={copy}
-        className="shrink-0 p-1.5 rounded-md text-muted hover:text-primary hover:bg-cipher-hover transition-colors"
-        aria-label={`Copy ${valueToCopy}`}
-      >
-        {copied ? (
-          <svg className="w-4 h-4 text-cipher-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        ) : (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-          </svg>
-        )}
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={() => { navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+      className="rounded-md p-1.5 text-muted hover:bg-cipher-hover hover:text-primary"
+      aria-label={`Copy ${value}`}
+    >{copied ? '✓' : '⧉'}</button>
   );
 }
 
 export default function UnitConverterClient() {
-  const [zecInput, setZecInput] = useState('');
-  const [zatoshiInput, setZatoshiInput] = useState('');
+  const [twc, setTwc] = useState('');
+  const [zatoshi, setZatoshi] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const fromZec = useCallback((zecStr: string): { zec: number | null; zatoshi: bigint | null } => {
-    const trimmed = zecStr.trim().replace(/,/g, '');
-    if (trimmed === '') return { zec: null, zatoshi: null };
-    const zec = parseFloat(trimmed);
-    if (Number.isNaN(zec) || zec < 0) return { zec: null, zatoshi: null };
-    const zatoshi = Math.round(zec * ZATOSHIS_PER_ZEC);
-    return { zec, zatoshi: BigInt(zatoshi) };
-  }, []);
+  const updateTwc = (value: string) => {
+    setTwc(value);
+    const converted = twcToZatoshi(value);
+    setZatoshi(converted == null ? '' : converted.toString());
+    setError(value && converted == null ? 'Use a non-negative TWC amount with at most 8 decimal places.' : null);
+  };
 
-  const fromZatoshi = useCallback((zatoshiStr: string): { zec: number | null; zatoshi: bigint | null } => {
-    const trimmed = zatoshiStr.trim().replace(/,/g, '');
-    if (trimmed === '') return { zec: null, zatoshi: null };
+  const updateZatoshi = (value: string) => {
+    setZatoshi(value);
     try {
-      const zatoshi = BigInt(trimmed);
-      if (zatoshi < BigInt(0)) return { zec: null, zatoshi: null };
-      const zec = Number(zatoshi) / ZATOSHIS_PER_ZEC;
-      return { zec, zatoshi };
+      setTwc(value.trim() ? zatoshiToTwc(value) : '');
+      setError(null);
     } catch {
-      return { zec: null, zatoshi: null };
+      setTwc('');
+      setError(value ? 'Use a non-negative integer zatoshi amount.' : null);
     }
-  }, []);
-
-  const handleZecChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
-    setZecInput(v);
-    const { zatoshi } = fromZec(v);
-    setZatoshiInput(zatoshi !== null ? formatZatoshi(zatoshi) : '');
   };
-
-  const handleZatoshiChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
-    setZatoshiInput(v);
-    const { zec } = fromZatoshi(v);
-    setZecInput(zec !== null ? formatZec(zec) : '');
-  };
-
-  const copyToClipboard = (text: string, setter: (v: boolean) => void) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text.replace(/,/g, ''));
-    setter(true);
-    setTimeout(() => setter(false), 2000);
-  };
-
-  const [copiedZec, setCopiedZec] = useState(false);
-  const [copiedZatoshi, setCopiedZatoshi] = useState(false);
-  const zecResult = fromZec(zecInput);
-  const zatoshiResult = fromZatoshi(zatoshiInput);
-  const zecForCopy = zecInput.trim() ? (zecResult.zec !== null ? formatZec(zecResult.zec) : zecInput.replace(/,/g, '')) : '';
-  const zatoshiForCopy = zatoshiInput.trim() ? (zatoshiResult.zatoshi != null ? zatoshiResult.zatoshi.toString() : zatoshiInput.replace(/,/g, '')) : '';
-
-  const CopyIcon = ({ copied }: { copied: boolean }) =>
-    copied ? (
-      <svg className="w-5 h-5 text-cipher-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-      </svg>
-    ) : (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-      </svg>
-    );
 
   return (
     <div className="max-w-5xl mx-auto">
-      {/* Header — full width */}
       <div className="mb-8">
-        <Link
-          href="/tools"
-          className="text-xs font-mono text-muted hover:text-primary transition-colors mb-4 inline-block"
-        >
-          ← All Tools
-        </Link>
-        <h1 className="text-2xl md:text-3xl font-bold text-primary">ZEC ↔ Zatoshi</h1>
-        <p className="text-sm text-secondary mt-1">
-          1 ZEC = 100,000,000 zatoshis (10<sup>8</sup>). Convert between ZEC and the smallest protocol unit.
-        </p>
+        <Link href="/tools" className="text-xs font-mono text-muted hover:text-primary">← W.cash tools</Link>
+        <h1 className="mt-4 text-2xl md:text-3xl font-bold text-primary">TWC ↔ zatoshi</h1>
+        <p className="mt-1 text-sm text-secondary">1 TWC = 100,000,000 zatoshi. Conversion is local and uses integer arithmetic.</p>
       </div>
-
-      {/* Balanced two columns — equal width, no sticky */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-        {/* Left column: converter + why */}
-        <div className="space-y-6 min-w-0">
-          <Card>
-            <CardBody className="space-y-6">
-              <label htmlFor="zec" className="block text-xs font-mono text-muted uppercase tracking-wider mb-2">
-                ZEC
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="zec"
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0.5"
-                  value={zecInput}
-                  onChange={handleZecChange}
-                  className="input-field flex-1 font-mono text-lg min-w-0"
-                  aria-label="ZEC amount"
-                />
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(zecForCopy, setCopiedZec)}
-                  disabled={!zecForCopy}
-                  className="p-2 rounded-md text-muted hover:text-primary hover:bg-cipher-hover transition-colors disabled:opacity-40 disabled:pointer-events-none self-center shrink-0"
-                  aria-label="Copy ZEC value"
-                >
-                  <CopyIcon copied={copiedZec} />
-                </button>
-              </div>
-
-              <div className="flex justify-center text-muted font-mono text-xl" aria-hidden="true">
-                ⟷
-              </div>
-
-              <label htmlFor="zatoshi" className="block text-xs font-mono text-muted uppercase tracking-wider mb-2">
-                Zatoshi
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="zatoshi"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="50000000"
-                  value={zatoshiInput}
-                  onChange={handleZatoshiChange}
-                  className="input-field flex-1 font-mono text-lg min-w-0"
-                  aria-label="Zatoshi amount"
-                />
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(zatoshiForCopy, setCopiedZatoshi)}
-                  disabled={!zatoshiForCopy}
-                  className="p-2 rounded-md text-muted hover:text-primary hover:bg-cipher-hover transition-colors disabled:opacity-40 disabled:pointer-events-none self-center shrink-0"
-                  aria-label="Copy zatoshi value"
-                >
-                  <CopyIcon copied={copiedZatoshi} />
-                </button>
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardBody>
-              <h2 className="text-sm font-bold text-primary mb-2 font-mono">Why zatoshis?</h2>
-              <p className="text-sm text-secondary leading-relaxed">
-                Zatoshi is the smallest unit of ZEC (1 zatoshi = 10<sup>-8</sup> ZEC). Wallets and protocols
-                often work in zatoshis to avoid floating-point issues. Transaction amounts in the blockchain
-                and in raw transaction hex are expressed in zatoshis.
-              </p>
-            </CardBody>
-          </Card>
-        </div>
-
-        {/* Right column: reference values — same visual weight */}
-        <div className="min-w-0">
-          <Card className="h-full">
-            <CardBody>
-              <h2 className="text-sm font-bold text-primary mb-1 font-mono">Reference values</h2>
-              <p className="text-xs text-muted mb-4">Copy for use in scripts or APIs.</p>
-              <div className="space-y-0">
-                <CopyableRow label="1 ZEC" valueDisplay="100,000,000 zatoshi" valueToCopy="100000000" />
-                <CopyableRow label="1 zatoshi" valueDisplay="0.00000001 ZEC" valueToCopy="0.00000001" />
-                <CopyableRow label="0.0001 ZEC" valueDisplay="10,000 zatoshi" valueToCopy="0.0001" />
-                <CopyableRow label="ZIP-317 fee" valueDisplay="10,000 zatoshi = 0.0001 ZEC" valueToCopy="10000" />
-                <CopyableRow label="100,000 zatoshi" valueDisplay="0.001 ZEC" valueToCopy="100000" />
-                <CopyableRow label="1,000,000 zatoshi" valueDisplay="0.01 ZEC" valueToCopy="1000000" />
-              </div>
-            </CardBody>
-          </Card>
-        </div>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardBody className="space-y-5">
+            <label className="block text-xs font-mono uppercase tracking-wider text-muted" htmlFor="twc-amount">TWC</label>
+            <div className="flex gap-2">
+              <input id="twc-amount" className="input-field flex-1 font-mono" inputMode="decimal" value={twc} onChange={(event) => updateTwc(event.target.value)} placeholder="0.5" />
+              <CopyButton value={twc} />
+            </div>
+            <div className="text-center text-xl text-muted">↕</div>
+            <label className="block text-xs font-mono uppercase tracking-wider text-muted" htmlFor="zatoshi-amount">Zatoshi</label>
+            <div className="flex gap-2">
+              <input id="zatoshi-amount" className="input-field flex-1 font-mono" inputMode="numeric" value={zatoshi} onChange={(event) => updateZatoshi(event.target.value)} placeholder="50000000" />
+              <CopyButton value={zatoshi.replace(/,/g, '')} />
+            </div>
+            {error && <p className="text-xs text-cipher-orange" role="alert">{error}</p>}
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <h2 className="text-sm font-bold font-mono text-primary">Reference values</h2>
+            <div className="mt-4 divide-y divide-cipher-border text-xs font-mono">
+              {[
+                ['1 TWC', '100000000 zatoshi'],
+                ['1 zatoshi', '0.00000001 TWC'],
+                ['0.0001 TWC', '10000 zatoshi'],
+                ['1,000,000 zatoshi', '0.01 TWC'],
+              ].map(([label, value]) => <div key={label} className="flex justify-between gap-3 py-3"><span className="text-muted">{label}</span><span className="text-secondary">{value}</span></div>)}
+            </div>
+            <p className="mt-5 text-xs leading-relaxed text-muted">The explorer labels database amounts as zatoshi when precision matters and TWC when displaying human-readable totals.</p>
+          </CardBody>
+        </Card>
       </div>
     </div>
   );

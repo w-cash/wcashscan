@@ -1,0 +1,3 @@
+7bd5d7334cda09647c98f463252d3fb258d99b9f3ee8f14694d82c98bb211782  scripts/wcash-testnet-e2e.sh
+dacd013251f99e1bc961e295ae6f6d156831ee6b121f0a14883a60c2ccb56910  Cargo.lock
+9762c0bf6fc3bbb44e1e8ded9db4f12bf8dc91b187a0fa87cec7e3176a1056e1  target/release/wcash-wallet

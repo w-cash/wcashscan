@@ -28,7 +28,6 @@ export const CORE_PATHS = [
   '/txs?type=shielded',
   '/mempool',
   '/network',
-  '/network/attestations',
   '/privacy',
   '/privacy-risks',
   '/privacy/wallets',
@@ -37,14 +36,7 @@ export const CORE_PATHS = [
   '/charts',
   '/rich-list',
   '/reorgs',
-  '/crosschain',
   '/ironwood',
-  '/governance/nu7',
-  '/turnstile',
-  '/usage-clock',
-  '/zodl',
-  '/valuation',
-  '/pulse',
 ] as const;
 
 export const CONTENT_PATHS = [
@@ -69,7 +61,6 @@ export const TOOL_PATHS = [
 
 export const STATIC_SITEMAP_SLUGS = ['core', 'content', 'tools'] as const;
 export const DYNAMIC_SITEMAP_SLUGS = [
-  'names',
   'addresses',
   'orphan-blocks',
   'transactions-recent',
@@ -208,7 +199,7 @@ export function getStaticSitemapEntries(
   newsletters: NewsletterIssue[],
 ): SitemapUrlEntry[] | null {
   if (slug === 'core') {
-    return CORE_PATHS.map((path) => ({ url: absoluteUrl(baseUrl, path), ...(path === '/network/attestations' ? { lastModified: '2026-09-09', changeFrequency: 'hourly' as const, priority: 0.6 } : {}) }));
+    return CORE_PATHS.map((path) => ({ url: absoluteUrl(baseUrl, path) }));
   }
 
   if (slug === 'tools') {

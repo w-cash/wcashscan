@@ -91,7 +91,7 @@ function formatServerTiming(result) {
 }
 
 function applyListCacheHeaders(res, result) {
-  res.set('X-CipherScan-Cache', result.state);
+  res.set('X-WcashScan-Cache', result.state);
   res.set('Server-Timing', formatServerTiming(result));
 }
 
@@ -110,7 +110,7 @@ function createListCache({
 } = {}) {
   const refreshes = new Map();
   const misses = new Map();
-  const prefix = `cipherscan:list:v${CACHE_VERSION}:${safeKeyPart(namespace)}`;
+  const prefix = `wcashscan:list:v${CACHE_VERSION}:${safeKeyPart(namespace)}`;
 
   function usableRedis() {
     if (!enabled || !redisClient) return false;

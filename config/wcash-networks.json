@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "profiles": {
+    "wcash-testnet-v5": {
+      "id": "wcash-testnet-v5",
+      "displayName": "W.cash Testnet",
+      "chain": "WcashTestnet",
+      "rpcChain": "test",
+      "ticker": "TWC",
+      "genesisHash": "0271b5b0a10b2838f43cccdec9ca2f72aa72a7c103830082bac8f82f47f0593a",
+      "postGenesisBranchId": "b3cfd27e",
+      "targetSpacingSeconds": 75,
+      "halvingInterval": 1680000,
+      "initialSubsidyZatoshi": "625000000",
+      "lastNonzeroSubsidyHeight": 50400000,
+      "scheduledIssuanceZatoshi": "2099999981520000",
+      "monetaryCeilingZatoshi": "2100000000000000",
+      "addressPrefixes": {
+        "p2pkh": [16, 149],
+        "p2sh": [16, 152],
+        "unified": "wutest1",
+        "tex": "wtextest1"
+      },
+      "valuePools": ["transparent", "ironwood"],
+      "capabilities": {
+        "crosslink": false,
+        "pricing": false,
+        "crosschain": false,
+        "governance": false,
+        "orchard": false,
+        "ironwood": true,
+        "transparent": true,
+        "walletScan": false,
+        "broadcast": false
+      }
+    },
+    "wcash-regtest": {
+      "id": "wcash-regtest",
+      "displayName": "W.cash Regtest",
+      "chain": "WcashRegtest",
+      "rpcChain": "regtest",
+      "ticker": "TWC",
+      "genesisHash": "70bf0bab17eff361a6331bb825b3b7253c8c96ff96407f948161d2912658bb1c",
+      "postGenesisBranchId": "c3a6678a",
+      "targetSpacingSeconds": 75,
+      "halvingInterval": 1680000,
+      "initialSubsidyZatoshi": "625000000",
+      "lastNonzeroSubsidyHeight": 50400000,
+      "scheduledIssuanceZatoshi": "2099999981520000",
+      "monetaryCeilingZatoshi": "2100000000000000",
+      "addressPrefixes": {
+        "p2pkh": [16, 144],
+        "p2sh": [16, 147],
+        "unified": "wuregtest1",
+        "tex": "wtexregtest1"
+      },
+      "valuePools": ["transparent", "ironwood"],
+      "capabilities": {
+        "crosslink": false,
+        "pricing": false,
+        "crosschain": false,
+        "governance": false,
+        "orchard": false,
+        "ironwood": true,
+        "transparent": true,
+        "walletScan": false,
+        "broadcast": false
+      }
+    }
+  }
+}

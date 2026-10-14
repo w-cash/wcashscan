@@ -8,7 +8,7 @@ export function NetworkUpgradeBanner({ data }: { data: BlockData }) {
   if (!upgrade) return null;
 
   const badgeLabel = upgrade.badge || 'ACTIVATED';
-  const linkLabel = upgrade.linkText || 'View migration tracker →';
+  const linkLabel = upgrade.linkText || 'View Ironwood details →';
 
   return (
     <div className="mb-6 rounded-xl border border-cipher-yellow-bright/30 bg-gradient-to-r from-cipher-yellow-bright/5 to-transparent p-4 sm:p-5">

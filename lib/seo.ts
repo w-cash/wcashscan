@@ -15,7 +15,7 @@ export function getNetwork(): SeoNetwork {
 
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
-      'NEXT_PUBLIC_NETWORK must be set to mainnet, testnet, or crosslink-testnet for production builds.',
+      'NEXT_PUBLIC_NETWORK must be set to mainnet or testnet for production builds.',
     );
   }
 
@@ -27,9 +27,10 @@ export function getNetwork(): SeoNetwork {
 export function getBaseUrl(): string {
   const network = getNetwork();
   const urls: Record<SeoNetwork, string> = {
-    mainnet: 'https://cipherscan.app',
-    testnet: 'https://testnet.cipherscan.app',
-    'crosslink-testnet': 'https://crosslink.cipherscan.app',
+    mainnet: process.env.NEXT_PUBLIC_MAINNET_URL || 'http://localhost:3002',
+    testnet: process.env.NEXT_PUBLIC_TESTNET_URL || 'http://localhost:3000',
+    // Retired legacy value; no Wcash deployment should select it.
+    'crosslink-testnet': process.env.NEXT_PUBLIC_TESTNET_URL || 'http://localhost:3000',
   };
   return urls[network];
 }
@@ -61,8 +62,8 @@ export interface BuildPageMetadataOptions {
  * Build a complete, network-aware metadata object for a public page.
  *
  * Next.js replaces nested metadata objects instead of deeply merging them,
- * so every page must emit complete Open Graph and Twitter objects. Crosslink
- * remains noindex even if a caller accidentally opts a page into indexing.
+ * so every page must emit complete Open Graph and Twitter objects. The
+ * Mainnet origin remains noindex while it is a Testnet-data preview.
  */
 export function buildPageMetadata({
   title,
@@ -79,31 +80,31 @@ export function buildPageMetadata({
   const network = getNetwork();
   const canonical = absoluteUrl(path);
   const image = absoluteUrl('/og-image.png?v=2');
-  const isCrosslink = network === 'crosslink-testnet';
+  const isMainnetPreview = network === 'mainnet';
   const allowedOnNetwork = networks ? networks.includes(network) : true;
   // Testnet is a developer utility rather than a second copy of the explorer
   // index. Its homepage is the only default opt-in; any future testnet landing
   // page must make a deliberate, reviewed indexOnTestnet decision.
   const allowedOnTestnet = network !== 'testnet' || indexOnTestnet;
-  const shouldIndex = !isCrosslink
+  const shouldIndex = !isMainnetPreview
     && allowedOnNetwork
     && allowedOnTestnet
     && (index ?? true);
   // noindex pages may still pass discovery and relationship signals through
-  // their normal links. Crosslink remains noindex, follow by product policy.
+  // their normal links. The preview remains noindex, follow by product policy.
   const shouldFollow = true;
   const openGraphBase = {
     title,
     description,
     url: canonical,
-    siteName: 'CipherScan',
+    siteName: 'WcashExplorer',
     locale: 'en_US',
     images: [
       {
         url: image,
         width: 1051,
         height: 520,
-        alt: imageAlt || `${title} — CipherScan`,
+        alt: imageAlt || `${title} — WcashExplorer`,
       },
     ],
   };
@@ -125,7 +126,7 @@ export function buildPageMetadata({
       title,
       description,
       images: [image],
-      creator: '@Kenbak',
+      creator: '@wcash',
     },
     robots: {
       index: shouldIndex,
@@ -267,10 +268,8 @@ export interface TxMeta {
   timestamp: number;
   confirmations: number;
   isCoinbase: boolean;
-  hasShielded: boolean;
-  orchardActions: number;
-  saplingSpendCount: number;
-  saplingOutputCount: number;
+  hasIronwood: boolean;
+  ironwoodActions: number;
   fee: number;
 }
 
@@ -302,10 +301,8 @@ export const getTxResolution = cache(async (txid: string): Promise<TxResolution>
         timestamp: parseInt(data.blockTime) || 0,
         confirmations: indexedStatus === 'confirmed' ? (parseInt(data.confirmations) || 0) : 0,
         isCoinbase: data.isCoinbase || false,
-        hasShielded: data.hasSapling || data.hasOrchard || data.hasIronwood || data.hasShielded || false,
-        orchardActions: data.orchardActions || 0,
-        saplingSpendCount: data.saplingSpendCount || 0,
-        saplingOutputCount: data.saplingOutputCount || 0,
+        hasIronwood: data.hasIronwood || false,
+        ironwoodActions: data.ironwoodActions || 0,
         fee: data.fee || 0,
       };
 
@@ -358,14 +355,8 @@ async function getPendingTxResolution(txid: string): Promise<TxResolution> {
         timestamp: parseInt(pending.firstSeen) || 0,
         confirmations: 0,
         isCoinbase: false,
-        hasShielded: pending.type === 'shielded' || pending.type === 'mixed' ||
-          (pending.saplingSpendCount || 0) > 0 ||
-          (pending.saplingOutputCount || 0) > 0 ||
-          (pending.orchardActions || 0) > 0 ||
-          (pending.ironwoodActions || 0) > 0,
-        orchardActions: pending.orchardActions || 0,
-        saplingSpendCount: pending.saplingSpendCount || 0,
-        saplingOutputCount: pending.saplingOutputCount || 0,
+        hasIronwood: pending.type === 'shielded' || pending.type === 'mixed' || (pending.ironwoodActions || 0) > 0,
+        ironwoodActions: pending.ironwoodActions || 0,
         fee: 0,
       },
     };

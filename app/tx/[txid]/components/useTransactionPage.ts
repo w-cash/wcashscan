@@ -16,7 +16,6 @@ export function useTransactionPage(txid: string) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('summary');
   const [rawData, setRawData] = useState<RawTxData | null>(null);
   const [rawLoading, setRawLoading] = useState(false);
-  const [priceUsd, setPriceUsd] = useState<number | null>(null);
   const [mempoolTx, setMempoolTx] = useState<any>(null);
   const [mempoolChecked, setMempoolChecked] = useState(false);
   const [mempoolConfirming, setMempoolConfirming] = useState(false);
@@ -44,17 +43,6 @@ export function useTransactionPage(txid: string) {
         const response = await fetch(apiUrl);
 
         if (!response.ok) {
-          if (response.status === 404 && /^[a-fA-F0-9]{64}$/.test(txid)) {
-            try {
-              const finalizerRes = await fetch(`${getApiUrl()}/api/finalizer/${txid.toLowerCase()}`);
-              if (finalizerRes.ok) {
-                router.replace(`/finalizer/${txid.toLowerCase()}`);
-                return;
-              }
-            } catch {
-              /* fall through to not-found */
-            }
-          }
           setLookupState(response.status === 404 ? 'missing' : 'unavailable');
           throw new Error(
             response.status === 404 ? 'Transaction not found' : 'Transaction lookup unavailable',
@@ -78,19 +66,6 @@ export function useTransactionPage(txid: string) {
 
     fetchData();
   }, [txid, router]);
-
-  const transactionTimestamp = data?.timestamp;
-
-  useEffect(() => {
-    if (!transactionTimestamp) return;
-    const date = new Date(transactionTimestamp * 1000).toISOString().split('T')[0];
-    fetch(`${getApiUrl()}/api/price/at?date=${date}`)
-      .then((res) => res.json())
-      .then((p) => {
-        if (p.price_usd) setPriceUsd(p.price_usd);
-      })
-      .catch(() => {});
-  }, [transactionTimestamp]);
 
   useEffect(() => {
     if (loading || data || blockFallbackChecked || lookupState !== 'missing') return;
@@ -198,7 +173,6 @@ export function useTransactionPage(txid: string) {
     setRawData,
     rawLoading,
     setRawLoading,
-    priceUsd,
     mempoolTx,
     mempoolChecked,
     mempoolConfirming,

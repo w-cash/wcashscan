@@ -5,12 +5,8 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { HomeFeedCard } from '@/components/HomeFeedCard';
 import { RelativeTimeProvider } from '@/components/RelativeTime';
 import { RecentMempool } from '@/components/RecentMempool';
-import { CrosslinkStats } from '@/components/CrosslinkStats';
-import { CrosslinkChainGraph } from '@/components/CrosslinkChainGraph.lazy';
-import { StakingDayBanner } from '@/components/StakingDayBanner';
-import { PulseWidget } from '@/components/PulseWidget';
 import { getApiUrl } from '@/lib/api-config';
-import { isCrosslink, isTestnet } from '@/lib/config';
+import { isTestnet } from '@/lib/config';
 import { fetchWithDeadline } from '@/lib/server-fetch';
 import { retainLastGoodOrBuildFallback } from '@/lib/isr-fallback';
 
@@ -22,24 +18,16 @@ interface Block {
   timestamp: number;
   transactions: number;
   size: number;
-  finality?: string | null;
 }
 
 interface ShieldedTx {
   txid: string;
   blockHeight: number;
   blockTime: number;
-  hasSapling: boolean;
-  hasOrchard: boolean;
   hasIronwood: boolean;
-  saplingSpendCount: number;
-  saplingOutputCount: number;
-  orchardActions: number;
   ironwoodActions: number;
   vinCount: number;
   voutCount: number;
-  valueBalanceSapling: number;
-  valueBalanceOrchard: number;
   valueBalanceIronwood: number;
   type: 'fully-shielded' | 'partial';
 }
@@ -75,7 +63,7 @@ async function getRecentBlocks(): Promise<Block[]> {
 
 async function getRecentShieldedTxs(): Promise<ShieldedTx[]> {
   try {
-    const response = await fetchWithDeadline(`${API_URL}/api/tx/shielded?limit=5`, {
+    const response = await fetchWithDeadline(`${API_URL}/api/transactions/list?type=shielded&limit=5`, {
       next: { revalidate: 30, tags: ['chain-tip'] },
     });
 
@@ -85,14 +73,22 @@ async function getRecentShieldedTxs(): Promise<ShieldedTx[]> {
     if (!Array.isArray(data.transactions)) {
       throw new Error('Recent shielded transactions payload is malformed');
     }
-    return data.transactions;
+    return data.transactions.map((tx: any) => ({
+      txid: tx.txid,
+      blockHeight: Number(tx.block_height),
+      blockTime: Number(tx.block_time),
+      hasIronwood: Boolean(tx.has_ironwood),
+      ironwoodActions: Number(tx.ironwood_actions || 0),
+      vinCount: Number(tx.vin_count || 0),
+      voutCount: Number(tx.vout_count || 0),
+      valueBalanceIronwood: Number(tx.value_balance_ironwood || 0) / 100000000,
+      type: Number(tx.vin_count || 0) === 0 && Number(tx.vout_count || 0) === 0 ? 'fully-shielded' : 'partial',
+    }));
   } catch (error) {
     console.error('Error fetching shielded txs:', error);
     return retainLastGoodOrBuildFallback([], error, 'homepage recent shielded transactions');
   }
 }
-
-const crosslinkMode = isCrosslink;
 
 export default async function Home() {
   const [initialBlocks, initialShieldedTxs] = await Promise.all([
@@ -106,26 +102,22 @@ export default async function Home() {
       <div className="text-center mb-10 sm:mb-14 relative z-30">
         {/* Tagline - SEO friendly */}
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-primary mb-3 sm:mb-4 animate-fade-in inline-flex items-center justify-center gap-3 tracking-tight text-balance">
-          <Image
-            src="/zec-logo.png"
-            alt="Zcash"
+            <Image
+            src="/logo.png"
+            alt="W.cash"
             width={32}
             height={32}
             priority
             className="w-7 h-7 sm:w-8 sm:h-8"
           />
-          {crosslinkMode
-            ? 'CipherScan: Zcash Crosslink Explorer'
-            : isTestnet
-              ? 'CipherScan: Zcash Testnet Explorer (TAZ)'
-              : 'CipherScan: Zcash Block Explorer'}
+          {isTestnet
+            ? 'WcashExplorer: W.cash Testnet Explorer'
+            : 'WcashExplorer: W.cash Mainnet Preview'}
         </h1>
         <p className="text-sm sm:text-base text-muted/60 mb-7 sm:mb-8 max-w-xl mx-auto text-center leading-relaxed">
-          {crosslinkMode
-            ? 'Explore the Zcash Crosslink hybrid PoW/PoS feature net. Track finality, staking windows, validators, and blocks in real time.'
-            : isTestnet
-              ? 'Search TAZ blocks, transactions, and addresses on the Zcash testnet. Monitor pending transactions and network activity before using mainnet.'
-              : 'Explore blocks, transactions, and addresses on the Zcash blockchain. Track shielded pool activity, privacy scores, and network health — all in real time.'}
+          {isTestnet
+            ? 'Search W.cash Testnet blocks, transactions, transparent addresses, and mining activity in real time.'
+            : 'Mainnet preview using W.cash Testnet data. Explore blocks, transactions, addresses, and network activity.'}
         </p>
 
         {/* Search Section */}
@@ -134,72 +126,20 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Crosslink: Network Stats + Staking Day */}
-      {crosslinkMode && (
-        <div className="relative z-10 space-y-4">
-          <CrosslinkStats />
-          <StakingDayBanner />
-          <div className="grid grid-cols-2 gap-3">
-            <Link
-              href="/learn/crosslink"
-              className="text-xs font-mono text-muted hover:text-primary px-3 py-2.5 rounded-lg border border-white/[0.06] hover:border-cipher-cyan/30 transition text-center"
-            >
-              Learn Crosslink →
-            </Link>
-            <a
-              href="https://github.com/ShieldedLabs/crosslink_monolith/releases/tag/season-1-workshop-1"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-mono text-muted hover:text-primary px-3 py-2.5 rounded-lg border border-white/[0.06] hover:border-cipher-cyan/30 transition text-center"
-            >
-              Join Season 1 →
-            </a>
-          </div>
+      <RelativeTimeProvider initialNow={Date.now()}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 mt-10 sm:mt-12 lg:mt-16">
+          <HomeFeedCard
+            storageKey="wcashscan-home-card-left"
+            defaultType="blocks"
+            initialBlocks={initialBlocks}
+          />
+          <HomeFeedCard
+            storageKey="wcashscan-home-card-right"
+            defaultType="shielded"
+            initialShieldedTxs={initialShieldedTxs}
+          />
         </div>
-      )}
-
-      {crosslinkMode ? (
-        <>
-          {/* Hero — embedded dual-chain graph (covers PoW blocks + BFT links) */}
-          <div className="mt-8 sm:mt-12 lg:mt-14">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm sm:text-base font-bold font-mono text-secondary flex items-center gap-2">
-                <span className="text-muted opacity-50">{'>'}</span>
-                CHAIN_VIEW
-              </h2>
-              <Link
-                href="/chain"
-                className="text-xs font-mono text-muted hover:text-primary transition-colors"
-              >
-                Open full view →
-              </Link>
-            </div>
-            <CrosslinkChainGraph
-              variant="embedded"
-              initialBlocksToShow={15}
-              height="540px"
-            />
-          </div>
-        </>
-      ) : (
-        <RelativeTimeProvider initialNow={Date.now()}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 mt-10 sm:mt-12 lg:mt-16">
-            <HomeFeedCard
-              storageKey="cipherscan-home-card-left"
-              defaultType="blocks"
-              initialBlocks={initialBlocks}
-            />
-            <HomeFeedCard
-              storageKey="cipherscan-home-card-right"
-              defaultType="shielded"
-              initialShieldedTxs={initialShieldedTxs}
-            />
-          </div>
-        </RelativeTimeProvider>
-      )}
-
-      {/* Network Pulse — floating widget */}
-      {!crosslinkMode && <PulseWidget />}
+      </RelativeTimeProvider>
 
       {/* Pending Mempool — fixed, not customizable: always the baseline
           "what's about to confirm" view regardless of what the two cards

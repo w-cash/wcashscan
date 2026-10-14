@@ -42,11 +42,11 @@ export function FeeDistributionChart({ initialData }: { initialData?: FeeDistrib
 
   const chartData = data.map(d => ({
     date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    p10: d.p10 / 100000,
-    p25: d.p25 / 100000,
-    median: d.median / 100000,
-    p75: d.p75 / 100000,
-    p90: d.p90 / 100000,
+    p10: d.p10 / 100000000,
+    p25: d.p25 / 100000000,
+    median: d.median / 100000000,
+    p75: d.p75 / 100000000,
+    p90: d.p90 / 100000000,
     txCount: d.txCount,
   }));
 
@@ -81,8 +81,8 @@ export function FeeDistributionChart({ initialData }: { initialData?: FeeDistrib
       ) : (
         <div>
           <p className="text-xs text-muted mb-3 leading-relaxed">
-            Daily fee percentiles (in mZEC, 1 mZEC = 100,000 zatoshis). The band shows the
-            10th–90th percentile range; the line is the median. Narrow bands mean consensus on fee levels.
+            Daily fee percentiles in TWC. The band shows the 10th–90th percentile
+            range; the line is the median. Empty days are omitted rather than fabricated.
           </p>
           <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height={300}>
             <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
@@ -105,7 +105,7 @@ export function FeeDistributionChart({ initialData }: { initialData?: FeeDistrib
                 stroke={colors.axis}
                 tick={{ fill: colors.axis, fontSize: 11 }}
                 tickFormatter={(v) => `${v.toFixed(2)}`}
-                label={{ value: 'mZEC', angle: -90, position: 'insideLeft', fill: colors.axis, style: { fontSize: 10 } }}
+                label={{ value: 'TWC', angle: -90, position: 'insideLeft', fill: colors.axis, style: { fontSize: 10 } }}
               />
               <Tooltip
                 contentStyle={{
@@ -122,7 +122,7 @@ export function FeeDistributionChart({ initialData }: { initialData?: FeeDistrib
                     p25: '25th percentile',
                     p10: '10th percentile',
                   };
-                  return [`${Number(value).toFixed(3)} mZEC`, labels[String(name)] || String(name)];
+                  return [`${Number(value).toFixed(8)} TWC`, labels[String(name)] || String(name)];
                 }}
               />
               <Legend

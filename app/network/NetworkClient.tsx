@@ -7,7 +7,7 @@ import { useApiQuery } from '@/hooks/useApiQuery';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { PageHeader } from '@/components/ui/SectionHeader';
-import { isCrosslink } from '@/lib/config';
+import { CURRENCY } from '@/lib/config';
 
 import { formatHashrate } from '@/lib/format-numbers';
 import { NetworkSectionNav } from '@/components/network/NetworkSectionNav';
@@ -18,9 +18,6 @@ import type { ProtocolStatsResponse } from '@/components/network/ProtocolStatsCh
 import type { ChainSizeHistoryResponse } from '@/components/network/NetworkHistoryCharts';
 import type { RecentBlocksResponse } from '@/components/network/RecentBlocksTable';
 const NodeMap = lazy(() => import('@/components/NodeMap'));
-const BlockActivityChart = lazy(() =>
-  import('@/components/BlockActivityChart').then((m) => ({ default: m.BlockActivityChart }))
-);
 const HalvingPanel = lazy(() => import('@/components/network/HalvingPanel').then((m) => ({ default: m.HalvingPanel })));
 const SupplyEmissionPanel = lazy(() => import('@/components/network/HalvingPanel').then((m) => ({ default: m.SupplyEmissionPanel })));
 const PoolDistributionChart = lazy(() => import('@/components/network/PoolDistributionChart').then((m) => ({ default: m.PoolDistributionChart })));
@@ -29,56 +26,41 @@ const FeeDistributionChart = lazy(() => import('@/components/network/FeeDistribu
 const ProtocolStatsChart = lazy(() => import('@/components/network/ProtocolStatsChart').then((m) => ({ default: m.ProtocolStatsChart })));
 const RecentBlocksTable = lazy(() => import('@/components/network/RecentBlocksTable').then((m) => ({ default: m.RecentBlocksTable })));
 
-const UPGRADE_URLS: Record<string, string> = {
-  'NU6': 'https://z.cash/upgrade/nu6/',
-  'NU6.1': 'https://z.cash/upgrade/nu6-1/',
-  'NU5': 'https://z.cash/upgrade/nu5/',
-  'Canopy': 'https://z.cash/upgrade/canopy/',
-  'Heartwood': 'https://z.cash/upgrade/heartwood/',
-  'Blossom': 'https://z.cash/upgrade/blossom/',
-  'Sapling': 'https://z.cash/upgrade/sapling/',
-};
-
-function getUpgradeUrl(name: string | null): string | undefined {
-  if (!name) return undefined;
-  return UPGRADE_URLS[name];
-}
-
 // Format hashrate with appropriate unit — see lib/format-numbers.ts
 
 export interface HalvingInfo {
   halvingBlock: number | null;
   blocksRemaining: number | null;
   eraProgress?: number;
-  currentSubsidy: number;
+  currentSubsidy: number | null;
   nextSubsidy: number | null;
-  minerReward: number;
+  minerReward: number | null;
   nextMinerReward: number | null;
   estimatedDate: string | null;
   estimatedSeconds: number | null;
 }
 
 export interface EmissionInfo {
-  circulating: number;
-  remaining: number;
-  circulatingPct: number;
+  available?: boolean;
+  circulating: number | null;
+  remaining: number | null;
+  circulatingPct: number | null;
   dailyEmissionEstimate: number | null;
+  supplyHistory?: { date: string; circulating: number; height?: number }[];
 }
 
 export interface NetworkStats {
   success: boolean;
   mining: {
     networkHashrate: string;
-    networkHashrateRaw: number;
+    networkHashrateRaw: number | null;
     difficulty: number;
-    avgBlockTime: number;
+    avgBlockTime: number | null;
     blocks24h: number;
-    blockReward: number;
-    minerReward: number;
-    fundingStreams: number;
-    lockbox: number;
-    dailyRevenue: number;
-    dailyMinerRevenue: number;
+    blockReward: number | null;
+    minerReward: number | null;
+    dailyRevenue: number | null;
+    dailyMinerRevenue: number | null;
   };
   network: {
     peers: number;
@@ -89,7 +71,7 @@ export interface NetworkStats {
   blockchain: {
     height: number;
     latestBlockTime: number;
-    syncProgress: number;
+    syncProgress: number | null;
     sizeBytes: number;
     sizeGB: number;
     tx24h: number;
@@ -97,15 +79,10 @@ export interface NetworkStats {
   supply?: {
     chainSupply: number;
     transparent: number;
-    sprout: number;
-    sapling: number;
-    orchard: number;
     ironwood: number;
-    lockbox: number;
     totalShielded: number;
     shieldedPercentage: number;
     sizeOnDisk: number;
-    activeUpgrade: string | null;
     chain: string;
   };
   cached?: boolean;
@@ -114,7 +91,7 @@ export interface NetworkStats {
 
 export interface HealthStatus {
   success: boolean;
-  zebra: {
+  wolf: {
     healthy: boolean;
     ready: boolean;
   };
@@ -133,7 +110,6 @@ export interface NetworkPageInitialData {
   fetchedAt: number;
   stats: NetworkStats | null;
   health: HealthStatus | null;
-  price: { price?: number } | null;
   breakdown: TransparentBreakdown | null;
   halving: HalvingInfo | null;
   emission: (EmissionInfo & { success?: boolean }) | null;
@@ -155,11 +131,6 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
   const healthQuery = useApiQuery<HealthStatus>('/api/network/health', undefined, {
     refreshInterval: 60_000,
     initialData: initialData.health ?? undefined,
-    initialFetchedAt: initialData.fetchedAt,
-  });
-  const priceQuery = useApiQuery<{ price?: number }>('/api/price', undefined, {
-    refreshInterval: 60_000,
-    initialData: initialData.price ?? undefined,
     initialFetchedAt: initialData.fetchedAt,
   });
   const breakdownQuery = useApiQuery<TransparentBreakdown>(
@@ -184,7 +155,6 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
   const [webSocketStats, setWebSocketStats] = useState<NetworkStats | null>(null);
   const stats = webSocketStats ?? statsQuery.data;
   const health = healthQuery.data;
-  const zecPrice = priceQuery.data?.price ?? null;
   const breakdown = breakdownQuery.data;
   const halving = halvingQuery.data;
   const emission = emissionQuery.data;
@@ -213,7 +183,7 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
         <PageHeader
           eyebrow="NETWORK_STATUS"
           title="Network Overview"
-          subtitle="Live Zcash network statistics: block height, hashrate, difficulty, peer count, circulating supply, shielded pool balances, and mining pool distribution — indexed directly from a Zebra full node."
+          subtitle="Live W.cash network statistics: block height, hashrate, difficulty, peer count, issued supply, Ironwood activity, and mining pool distribution — indexed from a Wolf full node."
         />
         <div className="mb-6 h-24 bg-cipher-border-alpha/30 rounded-lg animate-pulse" />
         <div className="mb-8 h-[300px] bg-cipher-border-alpha/30 rounded-lg animate-pulse" />
@@ -261,7 +231,7 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
       <PageHeader
         eyebrow="NETWORK_STATUS"
         title="Network Overview"
-        subtitle="Live Zcash network statistics: block height, hashrate, difficulty, peer count, circulating supply, shielded pool balances, and mining pool distribution — indexed directly from a Zebra full node."
+        subtitle="Live W.cash network statistics: block height, hashrate, difficulty, peer count, issued supply, Ironwood activity, and mining pool distribution — indexed from a Wolf full node."
       />
 
       <NetworkSectionNav />
@@ -270,7 +240,7 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
       <section id="network-overview" className="scroll-mt-36 mb-16">
         <OverviewHeroStrip
           height={stats.network.height}
-          healthy={health?.zebra.healthy ?? null}
+          healthy={health?.wolf.healthy ?? null}
           subversion={stats.network.subversion}
           shieldedSupplyPct={
             stats.supply && stats.supply.chainSupply > 0
@@ -282,22 +252,17 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
           hashrate={formatHashrate(stats.mining.networkHashrateRaw)}
         />
 
-        {/* On Crosslink: show the block activity chart (peer map has tiny sample size).
-            On mainnet/testnet: show the geographic node map. */}
+        {/* The node map is sourced from aggregated peer observations. */}
         <div className="mb-8 animate-fade-in-up stagger-3">
           <Suspense fallback={
             <div className="card p-8 flex items-center justify-center min-h-[300px]">
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-cipher-cyan border-t-transparent" />
             </div>
           }>
-            {isCrosslink ? (
-              <BlockActivityChart limit={80} />
-            ) : (
-              <NodeMap
-                initialLocations={initialData.nodeLocations}
-                initialStats={initialData.nodeStats}
-              />
-            )}
+            <NodeMap
+              initialLocations={initialData.nodeLocations}
+              initialStats={initialData.nodeStats}
+            />
           </Suspense>
         </div>
 
@@ -310,6 +275,7 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
                   remaining={emission?.remaining ?? Math.max(0, 21_000_000 - stats.supply.chainSupply)}
                   circulatingPct={emission?.circulatingPct ?? (stats.supply.chainSupply / 21_000_000) * 100}
                   dailyEmission={emission?.dailyEmissionEstimate ?? stats.mining.dailyRevenue}
+                  supplyHistory={emission?.supplyHistory ?? []}
                 />
               </Suspense>
               <Suspense fallback={<div className="card h-48 animate-pulse" />}>
@@ -317,7 +283,7 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
               </Suspense>
             </div>
 
-            <ChainInfoStrip stats={stats} zecPrice={zecPrice} getUpgradeUrl={getUpgradeUrl} />
+            <ChainInfoStrip stats={stats} />
           </>
         )}
 
@@ -342,7 +308,7 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
                 </div>
 
                 <div className="flex justify-between text-sm mb-3">
-                  <span className="text-secondary">Shielded</span>
+                <span className="text-secondary">Ironwood</span>
                   <span className="text-primary font-mono font-bold">{stats.supply!.shieldedPercentage.toFixed(1)}%</span>
                 </div>
 
@@ -350,19 +316,12 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
                   {(stats.supply!.ironwood || 0) > 0 && (
                     <div className="h-full bg-cipher-yellow" style={{ width: `${(stats.supply!.ironwood / stats.supply!.chainSupply) * 100}%` }} title="Ironwood" />
                   )}
-                  <div className="h-full bg-cipher-purple" style={{ width: `${(stats.supply!.orchard / stats.supply!.chainSupply) * 100}%` }} title="Orchard" />
-                  <div className="h-full bg-cipher-cyan" style={{ width: `${(stats.supply!.sapling / stats.supply!.chainSupply) * 100}%` }} title="Sapling" />
-                  <div className="h-full bg-cipher-border" style={{ width: `${(stats.supply!.sprout / stats.supply!.chainSupply) * 100}%` }} title="Sprout (legacy, deprecated)" />
                   <div className="h-full bg-gray-600" style={{ width: `${(stats.supply!.transparent / stats.supply!.chainSupply) * 100}%` }} title="Transparent" />
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                  {(stats.supply!.ironwood || 0) > 0 && (
-                    <PoolCard name="Ironwood" amount={stats.supply!.ironwood} color="amber" zecPrice={zecPrice} />
-                  )}
-                  <PoolCard name="Orchard" amount={stats.supply!.orchard} color="purple" zecPrice={zecPrice} />
-                  <PoolCard name="Sapling" amount={stats.supply!.sapling} color="cyan" zecPrice={zecPrice} />
-                  <PoolCard name="Sprout" amount={stats.supply!.sprout} color="muted" zecPrice={zecPrice} isSmall />
+                  <PoolCard name="Transparent" amount={stats.supply!.transparent} color="muted" />
+                  <PoolCard name="Ironwood" amount={stats.supply!.ironwood} color="amber" />
                 </div>
 
                 {breakdown && breakdown.categories.length > 0 && (
@@ -412,7 +371,7 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
                                   />
                                 </div>
                                 <span className="text-[11px] font-mono text-primary text-right w-24 tabular-nums">
-                                  {c.totalBalance >= 1000 ? `${(c.totalBalance / 1000).toFixed(1)}K` : c.totalBalance.toFixed(0)} ZEC
+                                  {c.totalBalance >= 1000 ? `${(c.totalBalance / 1000).toFixed(1)}K` : c.totalBalance.toFixed(0)} {CURRENCY}
                                 </span>
                                 <span className="text-[10px] font-mono text-muted text-right w-12 tabular-nums">
                                   {c.percentage.toFixed(1)}%
@@ -425,7 +384,7 @@ export default function NetworkClient({ initialData }: { initialData: NetworkPag
                                 <span className="text-[11px] font-mono text-muted w-20">Unlabeled</span>
                                 <div className="flex-1" />
                                 <span className="text-[11px] font-mono text-muted text-right w-24 tabular-nums">
-                                  {unlabeled.totalBalance >= 1000 ? `${(unlabeled.totalBalance / 1000).toFixed(1)}K` : unlabeled.totalBalance.toFixed(0)} ZEC
+                                  {unlabeled.totalBalance >= 1000 ? `${(unlabeled.totalBalance / 1000).toFixed(1)}K` : unlabeled.totalBalance.toFixed(0)} {CURRENCY}
                                 </span>
                                 <span className="text-[10px] font-mono text-muted text-right w-12 tabular-nums">
                                   {unlabeled.percentage.toFixed(1)}%
@@ -561,7 +520,7 @@ function HoverTip({ tip, children, className = '' }: { tip?: string; children: R
 
 function formatNodeVersion(subversion: string | null | undefined): string {
   if (!subversion) return '—';
-  return subversion.replace(/^\/Zebra:?/i, '').replace(/\/$/, '').trim() || subversion;
+  return subversion.replace(/^\/(?:Wolf|Wcash):?/i, '').replace(/\/$/, '').trim() || subversion;
 }
 
 function OverviewHeroStrip({
@@ -602,13 +561,13 @@ function OverviewHeroStrip({
           </div>
 
           <div className="text-right">
-            <p className="text-[10px] text-muted font-mono uppercase tracking-wider mb-1">Shielded supply</p>
+            <p className="text-[10px] text-muted font-mono uppercase tracking-wider mb-1">Ironwood supply</p>
             {shieldedSupplyPct != null ? (
               <>
                 <p className="text-2xl sm:text-3xl font-bold font-mono text-cipher-yellow tabular-nums">
                   {shieldedSupplyPct.toFixed(1)}%
                 </p>
-                <p className="text-[10px] text-muted font-mono mt-0.5">of chain supply</p>
+              <p className="text-[10px] text-muted font-mono mt-0.5">of chain supply</p>
               </>
             ) : (
               <p className="text-2xl font-bold font-mono text-muted">—</p>
@@ -628,7 +587,7 @@ function OverviewHeroStrip({
               {healthy == null ? 'Checking node…' : isHealthy ? 'Synced' : 'Degraded'}
             </span>
             <span className="text-muted/40" aria-hidden>·</span>
-            <span className="text-muted truncate">Zebra {version}</span>
+            <span className="text-muted truncate">Wolf {version}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -648,48 +607,32 @@ function OverviewHeroStrip({
   );
 }
 
-function ChainInfoStrip({
-  stats,
-  zecPrice,
-  getUpgradeUrl,
-}: {
-  stats: NetworkStats;
-  zecPrice: number | null;
-  getUpgradeUrl: (name: string | null) => string | undefined;
-}) {
+function ChainInfoStrip({ stats }: { stats: NetworkStats }) {
   const supply = stats.supply!;
-  const upgradeUrl = getUpgradeUrl(supply.activeUpgrade);
   const latestBlockAgo = `${Math.floor((Date.now() / 1000 - stats.blockchain.latestBlockTime) / 60)}m ago`;
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8 animate-fade-in-up stagger-4">
       <ChainInfoChip
-        label="Lockbox"
-        value={`${supply.lockbox.toLocaleString(undefined, { maximumFractionDigits: 0 })} ZEC`}
-        subtitle={zecPrice ? `$${((supply.lockbox * zecPrice) / 1e6).toFixed(1)}M` : undefined}
-        tooltip="ZEC reserved in the protocol lockbox for future Zcash development funding."
+        label="Ironwood pool"
+        value={`${supply.ironwood.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${CURRENCY}`}
+        tooltip="Aggregate W.cash Ironwood value reported by Wolf. Individual shielded balances are not observable."
       />
       <ChainInfoChip
-        label="Blockchain size"
+        label="Transparent pool"
+        value={`${supply.transparent.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${CURRENCY}`}
+        tooltip="Aggregate publicly visible W.cash transparent value."
+      />
+      <ChainInfoChip
+        label="Serialized chain size"
         value={`${stats.blockchain.sizeGB.toFixed(2)} GB`}
-        tooltip="Total disk space used by the full Zcash blockchain on this node."
+        tooltip="Sum of indexed canonical block byte sizes. This is not Wolf's operational disk usage."
       />
-      <ChainInfoChip
-        label="Latest block"
-        value={latestBlockAgo}
-        subtitle={new Date(stats.blockchain.latestBlockTime * 1000).toLocaleTimeString()}
-        tooltip="Time since the most recent block was mined. Zcash targets a new block every 75 seconds."
-      />
-      <HoverTip tip="The currently active Zcash network upgrade.">
+      <HoverTip tip="Time since the most recent canonical W.cash block.">
         <div className="card p-3 h-full cursor-help">
-          <div className="text-[10px] text-muted font-mono uppercase tracking-wider mb-1">Network upgrade</div>
-          {upgradeUrl ? (
-            <a href={upgradeUrl} target="_blank" rel="noopener noreferrer" className="inline-block hover:opacity-80 transition-opacity">
-              <Badge color="green">{supply.activeUpgrade || 'Unknown'}</Badge>
-            </a>
-          ) : (
-            <Badge color="green">{supply.activeUpgrade || 'Unknown'}</Badge>
-          )}
+          <div className="text-[10px] text-muted font-mono uppercase tracking-wider mb-1">Latest block</div>
+          <Badge color="green">{latestBlockAgo}</Badge>
+          <div className="text-[10px] text-muted font-mono mt-1">{new Date(stats.blockchain.latestBlockTime * 1000).toLocaleTimeString()}</div>
         </div>
       </HoverTip>
     </div>
@@ -728,8 +671,8 @@ function StatCard({ label, value, subtitle, tooltip }: {
     </HoverTip>
   );
 }
-function PoolCard({ name, amount, color, zecPrice, isSmall }: {
-  name: string; amount: number; color: string; zecPrice: number | null; isSmall?: boolean;
+function PoolCard({ name, amount, color }: {
+  name: string; amount: number; color: string;
 }) {
   const colorMap: Record<string, string> = {
     green: 'text-cipher-green',
@@ -746,18 +689,12 @@ function PoolCard({ name, amount, color, zecPrice, isSmall }: {
     muted: 'bg-cipher-border',
   };
 
-  const display = isSmall ? `${(amount / 1000).toFixed(1)}K` : `${(amount / 1e6).toFixed(2)}M`;
+  const display = amount >= 1_000_000 ? `${(amount / 1e6).toFixed(2)}M` : amount >= 1_000 ? `${(amount / 1000).toFixed(1)}K` : amount.toFixed(2);
 
   return (
     <div className="bg-cipher-bg/50 rounded-lg p-3 text-center">
       <div className={`${colorMap[color]} text-base sm:text-lg font-bold font-mono`}>{display}</div>
-      {zecPrice && (
-        <div className="text-[10px] text-muted font-mono">
-          ${isSmall
-            ? ((amount / 1000) * zecPrice).toFixed(0) + 'K'
-            : ((amount / 1e6) * zecPrice).toFixed(1) + 'M'}
-        </div>
-      )}
+      <div className="text-[10px] text-muted font-mono">{CURRENCY}</div>
       <div className="flex items-center justify-center gap-1.5 text-[10px] sm:text-xs text-secondary mt-1">
         <span className={`w-1.5 h-1.5 rounded-full ${dotColor[color]}`}></span>
         {name === 'Ironwood' ? (

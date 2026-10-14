@@ -7,9 +7,8 @@ interface ShieldedRedirectProps {
 }
 
 /**
- * Permanent redirect from the legacy /txs/shielded route to the unified
- * /txs?type=shielded page. Preserves all query params (pool, flow_type,
- * min_zec, cursor, pagination).
+ * Compatibility redirect from the Ironwood route to the unified
+ * /txs?type=shielded page. Preserves the W.cash flow filters.
  */
 export default async function ShieldedTransactionsRedirect({
   searchParams,

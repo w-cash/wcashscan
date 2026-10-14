@@ -1,12 +1,12 @@
 /**
- * Zebra gRPC Indexer Client
+ * W.cash Wolf gRPC Indexer Client
  *
  * Connects to Zebra's gRPC indexer service for real-time streaming of:
  * - Mempool changes (tx added, invalidated, mined)
  * - Chain tip changes (new blocks)
  *
  * Requires Zebra compiled with --features indexer and
- * indexer_listen_addr set in zebrad.toml.
+ * indexer_listen_addr set in the Wolf configuration.
  *
  * The mempool and chain-tip streams are supervised independently by two
  * StreamSupervisor instances sharing one underlying gRPC client/channel.
@@ -227,12 +227,12 @@ class ZebraGrpcClient {
 
   start() {
     if (!this.grpcUrl) {
-      console.log('⏭️  [GRPC] ZEBRA_GRPC_URL not set — gRPC streaming disabled, falling back to polling');
+      console.log('⏭️  [GRPC] WCASH_INDEXER_GRPC_URL not set — gRPC streaming disabled, falling back to polling');
       return;
     }
 
     this.stopped = false;
-    console.log(`🔗 [GRPC] Connecting to Zebra indexer at ${this.grpcUrl}...`);
+    console.log(`🔗 [GRPC] Connecting to W.cash Wolf indexer at ${this.grpcUrl}...`);
     this._initClientAndSupervisors();
   }
 

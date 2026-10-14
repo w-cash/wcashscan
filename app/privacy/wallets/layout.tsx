@@ -1,18 +1,12 @@
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'Wallet Anonymity Analysis | CipherScan',
+  title: 'Wallet Analysis | WcashExplorer',
   description:
-    'Analyze Zcash wallet fingerprints, fee lane anonymity sets, and estimated wallet usage. See how transaction fees, expiry heights, and action padding reveal wallet identity.',
+    'W.cash wallet fingerprint analysis is unavailable until native heuristics are validated.',
   path: '/privacy/wallets',
   networks: ['mainnet'],
-  keywords: [
-    'zcash wallet fingerprint',
-    'zcash anonymity set',
-    'zip-317 fee lanes',
-    'zcash privacy analysis',
-    'wallet usage distribution',
-  ],
+  keywords: ['W.cash wallet analysis', 'W.cash privacy heuristics'],
 });
 
 export default function WalletsLayout({ children }: { children: React.ReactNode }) {

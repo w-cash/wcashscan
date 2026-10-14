@@ -1,25 +1,13 @@
-import AnchorSearchClient from './AnchorSearchClient';
 import { buildPageMetadata } from '@/lib/seo';
+import { WcashUnavailable } from '@/components/WcashUnavailable';
 
 export const metadata = buildPageMetadata({
-  title: 'Anchor Root Search - Wallet Debugging Tool | CipherScan',
-  description: 'Search for Sapling and Orchard commitment tree anchor roots across canonical and orphaned blocks. Helps debug wallet sync issues and fork detection.',
-  keywords: [
-    'zcash anchor root',
-    'sapling root search',
-    'orchard root search',
-    'zcash wallet debugging',
-    'zcash fork detection',
-    'commitment tree root',
-    'zcash reorg',
-  ],
+  title: 'Ironwood Anchor Search | WcashExplorer',
+  description: 'Ironwood anchor search will be enabled when the W.cash index contains verified anchor observations.',
+  keywords: ['W.cash Ironwood', 'TWC anchor root'],
   path: '/tools/anchor-search',
 });
 
 export default function AnchorSearchPage() {
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
-      <AnchorSearchClient />
-    </div>
-  );
+  return <WcashUnavailable title="Ironwood anchor search is not available yet" detail="The indexer schema has an anchor field, but this dashboard stays unavailable until the local W.cash anchor data has been verified against Wolf." />;
 }

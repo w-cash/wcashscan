@@ -32,7 +32,7 @@ export default function AddressError({
             </div>
             <h2 className="text-lg font-semibold text-primary mb-2">Something Went Wrong</h2>
             <p className="text-sm text-secondary max-w-md mx-auto mb-6">
-              CipherScan hit an unexpected error rendering this address. This has been logged.
+              WcashExplorer hit an unexpected error rendering this W.cash address. This has been logged.
             </p>
             <div className="flex items-center justify-center gap-4">
               <button

@@ -6,13 +6,13 @@ const assert = require('node:assert/strict');
 const { parsePeerAddress, parsePeerClient } = require('../lib/peer-client');
 
 const cases = [
-  ['/Zebra:6.0.0/', 'Zebra', '6.0.0'],
-  ['/Zebra:6.0.0-rc.0/', 'Zebra', '6.0.0-rc.0'],
-  ['/Zebra:6.0.0-modified/', 'Zebra', '6.0.0-modified'],
-  ['/MagicBean:6.20.0/', 'zcashd', '6.20.0'],
-  ['/Zakura:1.0.0/', 'Zakura', '1.0.0'],
-  ['/Zakura:1.0.0-rc3/Zakura:1.0.0-rc4/', 'Zakura', '1.0.0-rc3'],
-  ['/Zakura:8.0.0/Zebra:5.0.0-rc.3/', 'Zakura', '8.0.0'],
+  ['/Wolf:1.0.0/', 'Wolf', '1.0.0'],
+  ['/Wcash:1.0.0-rc.0/', 'Wolf', '1.0.0-rc.0'],
+  ['/Zebra:6.0.0/', 'Other', '6.0.0'],
+  ['/MagicBean:6.20.0/', 'Other', '6.20.0'],
+  ['/Zakura:1.0.0/', 'Other', '1.0.0'],
+  ['/Zakura:1.0.0-rc3/Zakura:1.0.0-rc4/', 'Other', '1.0.0-rc3'],
+  ['/Zakura:8.0.0/Zebra:5.0.0-rc.3/', 'Other', '8.0.0'],
   ['zeeder/1.4.0', 'Seeder', '1.4.0'],
   ['/CustomNode:2.1.0-beta.1/', 'Other', '2.1.0-beta.1'],
   ['', 'Unknown', null],

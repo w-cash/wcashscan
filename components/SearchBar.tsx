@@ -4,8 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { detectAddressType } from '@/lib/zcash';
 import { findAddressByLabel, searchAddressesByLabel, fetchOfficialLabels } from '@/lib/address-labels';
-import { isValidName } from '@/lib/zns';
-import { isMainnet } from '@/lib/config';
 
 interface SearchBarProps {
   compact?: boolean;
@@ -166,10 +164,8 @@ export function SearchBar({ compact = false, subtitle }: SearchBarProps) {
       const addressByLabel = findAddressByLabel(trimmedQuery);
       if (addressByLabel) {
         router.push(`/address/${encodeURIComponent(addressByLabel)}`);
-      } else if (isValidName(trimmedQuery.toLowerCase())) {
-        router.push(`/name/${encodeURIComponent(trimmedQuery.toLowerCase())}`);
       } else {
-        console.warn('No matching address, transaction, or label found');
+        console.warn('No matching W.cash address, transaction, block, or label found');
       }
     }
   };
@@ -389,20 +385,17 @@ export function SearchBar({ compact = false, subtitle }: SearchBarProps) {
         </button>
         <button
           type="button"
-          onClick={() => setQuery(isMainnet ? 't1a7l33nnr9qnhekptmjacyj95a565tcns09' : 'tmYWZuRKmdZwgKAxtV9RZRAuPsnWrLkyUtT')}
+          onClick={() => setQuery('WT6kWkxJzyp4LdwrjtvvuVFRbkMhH2SsBeq')}
           className="example-tag example-tag-default"
         >
-          t-address
+          Wcash address
         </button>
         <button
           type="button"
-          onClick={() => setQuery(isMainnet
-            ? 'u1a7l33nnr9qnhekptmjacyj95a565tcns09xvyxmt777xnk2q6c6s0jrthgme6dkeevc24zue9yqlmspdla5fw5mjws9'
-            : 'utest1qz2c9w98v9xavajc8ml5zd459902alt62tndt3sktsx0hd3gd20evhwfrqq834335a7lmw4a4mx79pnhczxvs50w5'
-          )}
+          onClick={() => setQuery('wutest12ky95e9c6mu3qveefsekul4tk949ahkllsu8yglndurppu8j8qeleyd20r7z6jaacwhnwar5wlrmw0nynugqr2yldvc9cv9y9gfktz8k')}
           className="example-tag example-tag-default"
         >
-          u-address
+          Wcash UA
         </button>
       </div>
 

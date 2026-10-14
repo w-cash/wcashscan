@@ -20,19 +20,9 @@ function parsePeerClient(value) {
     (match) => ({ name: match[1], version: match[2] })
   );
 
-  const zakuraVersion = firstVersion(segments, 'zakura');
-  if (zakuraVersion) {
-    return { clientImpl: 'Zakura', clientVersion: zakuraVersion, userAgent };
-  }
-
-  const zebraVersion = firstVersion(segments, 'zebra');
-  if (zebraVersion) {
-    return { clientImpl: 'Zebra', clientVersion: zebraVersion, userAgent };
-  }
-
-  const zcashdVersion = firstVersion(segments, 'magicbean');
-  if (zcashdVersion) {
-    return { clientImpl: 'zcashd', clientVersion: zcashdVersion, userAgent };
+  const wolfVersion = firstVersion(segments, 'wolf') || firstVersion(segments, 'wcash');
+  if (wolfVersion) {
+    return { clientImpl: 'Wolf', clientVersion: wolfVersion, userAgent };
   }
 
   const seederMatch = userAgent.match(/^zeeder\/([^\s/]+)/i);

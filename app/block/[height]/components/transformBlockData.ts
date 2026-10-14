@@ -1,10 +1,9 @@
-import { zatToZec } from '@/lib/format-numbers';
+import { zatToTwc } from '@/lib/format-numbers';
 import type { BlockData, CanonicalBlockSummary } from './types';
 
 export function transformExpressBlockData(blockData: any): BlockData {
   const transformedTransactions = (blockData.transactions || []).map((tx: any) => {
-    const hasShieldedActivity = tx.has_sapling || tx.has_orchard || tx.has_ironwood ||
-      (tx.sapling_spend_count > 0) || (tx.sapling_output_count > 0) || (tx.orchard_actions > 0) || (tx.ironwood_actions > 0);
+    const hasShieldedActivity = Boolean(tx.has_ironwood || tx.ironwood_actions > 0);
 
     // Coinbase is a consensus fact recorded per-transaction in the DB (is_coinbase),
     // not something inferrable from shielded activity — a coinbase can *also* deposit
@@ -20,13 +19,13 @@ export function transformExpressBlockData(blockData: any): BlockData {
       ? [{ coinbase: true }]
       : (tx.inputs || []).map((input: any) => ({
           ...input,
-          value: input.value ? zatToZec(input.value) : 0,
+          value: input.value ? zatToTwc(input.value) : 0,
           txid: input.prev_txid,
           vout: input.prev_vout,
         }));
 
     const transformedOutputs = (tx.outputs || []).map((output: any) => ({
-      value: output.value ? zatToZec(output.value) : 0,
+      value: output.value ? zatToTwc(output.value) : 0,
       n: output.vout_index,
       spent: output.spent || false,
       scriptPubKey: {
@@ -42,9 +41,6 @@ export function transformExpressBlockData(blockData: any): BlockData {
       vin: transformedInputs,
       vout: transformedOutputs,
       hasShieldedActivity,
-      vShieldedSpend: tx.sapling_spend_count > 0 ? Array(tx.sapling_spend_count).fill({}) : [],
-      vShieldedOutput: tx.sapling_output_count > 0 ? Array(tx.sapling_output_count).fill({}) : [],
-      orchard: tx.orchard_actions > 0 ? { actions: Array(tx.orchard_actions).fill({}) } : null,
     };
   });
 
@@ -60,7 +56,7 @@ export function transformExpressBlockData(blockData: any): BlockData {
       return outputSum + parseInt(output.value || 0);
     }, 0);
 
-    const valueBalance = parseInt(tx.value_balance_sapling || 0) + parseInt(tx.value_balance_orchard || 0) + parseInt(tx.value_balance_ironwood || 0);
+    const valueBalance = parseInt(tx.value_balance_ironwood || 0);
 
     const txFee = transparentInputs - transparentOutputs + valueBalance;
     return sum + (txFee > 0 ? txFee : 0);
@@ -98,13 +94,11 @@ export function transformExpressBlockData(blockData: any): BlockData {
     nextBlockHash: blockData.next_block_hash || blockData.nextBlockHash,
     version: blockData.version ? parseInt(blockData.version) : undefined,
     merkleRoot: blockData.merkle_root || blockData.merkleRoot,
-    finalSaplingRoot: blockData.final_sapling_root || blockData.finalSaplingRoot,
-    finalOrchardRoot: blockData.final_orchard_root || blockData.finalOrchardRoot || null,
     finalIronwoodRoot: blockData.final_ironwood_root || blockData.finalIronwoodRoot || null,
     bits: blockData.bits,
     nonce: blockData.nonce,
     solution: blockData.solution,
-    totalFees: zatToZec(totalFeesZatoshi),
+    totalFees: zatToTwc(totalFeesZatoshi),
     minerAddress: blockData.miner_address || blockData.minerAddress,
     minerPool: blockData.miner_pool || null,
     minerPoolUrl: blockData.miner_pool_url || null,

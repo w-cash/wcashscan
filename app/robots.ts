@@ -5,18 +5,6 @@ export default function robots(): MetadataRoute.Robots {
   const network = getNetwork();
   const baseUrl = getBaseUrl();
 
-  if (network === 'crosslink-testnet') {
-    return {
-      rules: [
-        {
-          userAgent: '*',
-          allow: '/',
-          disallow: ['/api/'],
-        },
-      ],
-    };
-  }
-
   // Testnet: allow crawling but throttle aggressively. Only the homepage is
   // indexed (page-level noindex on child routes), so crawlers gain nothing
   // from hammering dynamic block/tx/address pages.
@@ -46,8 +34,8 @@ export default function robots(): MetadataRoute.Robots {
     };
   }
 
-  // Mainnet: crawlable with moderate rate limits to keep serverless function
-  // invocations under control.
+  // Mainnet is currently a Testnet-data preview. Page metadata marks it
+  // noindex; do not advertise a preview sitemap to crawlers.
   return {
     rules: [
       {
@@ -69,6 +57,6 @@ export default function robots(): MetadataRoute.Robots {
         crawlDelay: 5,
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+      sitemap: undefined,
   };
 }

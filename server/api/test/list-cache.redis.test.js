@@ -32,7 +32,7 @@ test('real Redis: MISS/HIT, TTL, stale refresh, locking, and fail-open', {
     },
   });
   const namespace = `test-${randomUUID()}`;
-  const prefix = `cipherscan:list:v1:${namespace}`;
+  const prefix = `wcashscan:list:v1:${namespace}`;
 
   async function cleanup() {
     if (!client.isReady) return;

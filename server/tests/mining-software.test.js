@@ -9,17 +9,14 @@ const fixtures = [
   ["0", "missing"],
   ["zz", "missing"],
   ["00ff", "unknown"],
-  [hex("🦓"), "zebra"],
-  [hex("🌸"), "zakura"],
-  [hex("/ZEBRA:v6.0.0-rc.0/"), "zebra"],
-  [hex("/zcashd:5.0.0/"), "other"],
-  [hex("🦓🌸"), "conflicting"],
-  [hex("🌸/Zebra:6.0.0/"), "conflicting"],
-  [hex("/Zebra:6.0.0/Zakura:1.0.0/"), "conflicting"],
+  [hex("/Wolf:v1.0.0/"), "wolf"],
+  [hex("/Wcash:1.0.0/"), "wolf"],
+  [hex("/ZEBRA:v6.0.0-rc.0/"), "unknown"],
+  [hex("/zcashd:5.0.0/"), "unknown"],
+  [hex("/Wolf:1.0.0/Zebra:6.0.0/"), "wolf"],
   ["0f09fa6930", "unknown"],
   [hex("Zebra pool"), "unknown"],
-  [hex("🦓/Zebra:6.0.0/"), "zebra"],
-  [hex("/Zakura 1.0/"), "zakura"],
+  [hex("/Wolf:1.0.0/"), "wolf"],
 ];
 test("coinbase classifier handles byte boundaries, malformed data and contradictory markers", () => {
   for (const [value, expected] of fixtures)
@@ -28,13 +25,13 @@ test("coinbase classifier handles byte boundaries, malformed data and contradict
 test("block filters validate date, height, software, pool and sorting", () => {
   assert.deepEqual(
     parseBlockFilters({
-      software: "zebra",
+      software: "wolf",
       from: "2026-09-01",
       to: "2026-09-01",
       min_height: "0",
     }),
     {
-      software: "zebra",
+      software: "wolf",
       poolName: "all",
       order: "newest",
       start: 1788220800,

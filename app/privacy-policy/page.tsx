@@ -3,104 +3,40 @@ import { buildPageMetadata } from '@/lib/seo';
 import { PageHeader } from '@/components/ui/SectionHeader';
 
 export const metadata = buildPageMetadata({
-  title: 'Privacy Policy | CipherScan',
-  description: 'Read how CipherScan handles analytics, logs, local browser data, and public Zcash blockchain information while protecting visitor privacy.',
+  title: 'Privacy Policy | WcashExplorer',
+  description: 'How WcashExplorer handles service requests and public W.cash blockchain data.',
   path: '/privacy-policy',
   networks: ['mainnet'],
 });
 
 export default function PrivacyPolicyPage() {
-  const updated = 'April 25, 2026';
-
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
-      <PageHeader
-        eyebrow="LEGAL"
-        title="Privacy Policy"
-        subtitle={<span className="font-mono">Last updated: {updated}</span>}
-      />
-
+    <div className="max-w-3xl mx-auto">
+      <PageHeader eyebrow="LEGAL" title="Privacy Policy" subtitle="Last updated: September 15, 2026" />
       <div className="prose-legal space-y-8 text-sm text-secondary leading-relaxed">
         <section>
-          <h2 className="text-lg font-bold text-primary mb-3">1. Who We Are</h2>
-          <p>
-            CipherScan (<Link href="/" className="text-cipher-cyan hover:underline">cipherscan.app</Link>) is
-            an open-source Zcash blockchain explorer operated by Atmosphere Labs (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;).
-          </p>
+          <h2 className="text-lg font-bold text-primary mb-3">Public chain data</h2>
+          <p>WcashExplorer displays data that is already observable on the W.cash network or produced by the site&apos;s own indexer. Transparent addresses, public outputs, block metadata, and transaction identifiers are not private information created by this service.</p>
         </section>
-
         <section>
-          <h2 className="text-lg font-bold text-primary mb-3">2. Information We Collect</h2>
-          <p className="mb-3"><strong className="text-primary">We do not collect personal data.</strong> No accounts, no registration, no IP logging, no analytics.</p>
-          <ul className="list-disc pl-5 space-y-1.5">
-            <li><strong className="text-primary">No server logs:</strong> We do not log IP addresses, user-agents, or browsing activity.</li>
-            <li><strong className="text-primary">Blockchain data:</strong> All blockchain data displayed on CipherScan is publicly available on the Zcash network. Shielded transaction contents are never visible to us or anyone without the appropriate viewing keys.</li>
-            <li><strong className="text-primary">Viewing keys:</strong> If you use our Decrypt Memo tool, viewing keys are processed entirely in your browser (client-side) and are never transmitted to our servers.</li>
-            <li><strong className="text-primary">Wallet addresses:</strong> If you use the Swap feature and connect a wallet, your wallet address is used solely to facilitate the transaction and is not stored by us.</li>
-          </ul>
+          <h2 className="text-lg font-bold text-primary mb-3">Requests and logs</h2>
+          <p>The API may record operational request metadata such as timestamps, status codes, latency, rate-limit counters, and redacted paths to keep the service reliable and secure. Dynamic transaction hashes, addresses, and amounts are redacted from application request logs where supported.</p>
         </section>
-
         <section>
-          <h2 className="text-lg font-bold text-primary mb-3">3. Third-Party Services</h2>
-          <p className="mb-3">We integrate with third-party services that have their own privacy policies:</p>
-          <ul className="list-disc pl-5 space-y-1.5">
-            <li><strong className="text-primary">NEAR Intents (1-Click Swap):</strong> Cross-chain swap quotes and execution. When you initiate a swap, your transaction data is shared with NEAR Intents to facilitate the exchange.</li>
-            <li><strong className="text-primary">Fiat on-ramp providers:</strong> If you purchase cryptocurrency with a credit card through an embedded widget, you interact directly with the provider (e.g. MoonPay). They may require identity verification (KYC). We do not receive or store your payment information.</li>
-          </ul>
+          <h2 className="text-lg font-bold text-primary mb-3">No keys or credentials</h2>
+          <p>Do not submit private keys, viewing keys, API tokens, passwords, or wallet credentials to WcashExplorer. The scanner does not require them for public browsing. Wallet and broadcast features remain gated until a reviewed W.cash-native implementation exists.</p>
         </section>
-
         <section>
-          <h2 className="text-lg font-bold text-primary mb-3">4. Cookies &amp; Tracking</h2>
-          <p>
-            We do not use analytics cookies, advertising trackers, or fingerprinting. We store a theme preference
-            (light/dark) in your browser&rsquo;s local storage. That&rsquo;s it.
-          </p>
+          <h2 className="text-lg font-bold text-primary mb-3">Privacy analytics</h2>
+          <p>Ironwood analytics are conservative observations of public amounts, timing, and transaction structure. They do not identify private recipients, prove ownership, or recover encrypted memos. Unsupported analyses are marked unavailable rather than inferred.</p>
         </section>
-
         <section>
-          <h2 className="text-lg font-bold text-primary mb-3">5. Data Sharing</h2>
-          <p>
-            We do not sell, rent, or share your personal information with third parties for marketing purposes.
-            We may disclose information if required by law or to protect the security of our service.
-          </p>
+          <h2 className="text-lg font-bold text-primary mb-3">Third parties</h2>
+          <p>The site does not rely on a legacy scanner, cross-chain swap, pricing, or valuation provider. If a deployment adds an external service, its own policy and the deployment notice will govern that integration.</p>
         </section>
-
         <section>
-          <h2 className="text-lg font-bold text-primary mb-3">6. Data Security</h2>
-          <p>
-            We use HTTPS encryption for all connections. Our servers are secured with standard industry practices.
-            However, no method of transmission over the internet is 100% secure.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-bold text-primary mb-3">7. Your Rights</h2>
-          <p>
-            Since we collect minimal data and do not maintain user accounts, there is generally no personal data to
-            access, modify, or delete. If you have questions about data we may hold, contact us.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-bold text-primary mb-3">8. Changes</h2>
-          <p>
-            We may update this policy from time to time. Changes will be posted on this page with a revised
-            &ldquo;last updated&rdquo; date.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-lg font-bold text-primary mb-3">9. Contact</h2>
-          <p>
-            Questions? Reach us on{' '}
-            <a href="https://twitter.com/cipherscan_app" target="_blank" rel="noopener noreferrer" className="text-cipher-cyan hover:underline">
-              X / Twitter
-            </a>{' '}
-            or open an issue on{' '}
-            <a href="https://github.com/Kenbak/cipherscan" target="_blank" rel="noopener noreferrer" className="text-cipher-cyan hover:underline">
-              GitHub
-            </a>.
-          </p>
+          <h2 className="text-lg font-bold text-primary mb-3">Contact</h2>
+          <p>For implementation or data-source questions, open an issue in the <Link href="https://github.com/w-cash/wcashscan" target="_blank" rel="noreferrer" className="text-cipher-cyan hover:underline">WcashScan repository</Link>. Never include secrets in an issue.</p>
         </section>
       </div>
     </div>

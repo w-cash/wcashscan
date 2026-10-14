@@ -1,9 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Card, CardBody } from '@/components/ui/Card';
 import { formatDuration } from '@/lib/format-numbers';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceDot } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getChartColors } from '@/lib/chart-theme';
 
@@ -11,9 +10,9 @@ export interface HalvingInfo {
   halvingBlock: number | null;
   blocksRemaining: number | null;
   eraProgress?: number;
-  currentSubsidy: number;
+  currentSubsidy: number | null;
   nextSubsidy: number | null;
-  minerReward: number;
+  minerReward: number | null;
   nextMinerReward: number | null;
   estimatedDate: string | null;
   estimatedSeconds: number | null;
@@ -82,13 +81,13 @@ export function HalvingPanel({ halving }: { halving: HalvingInfo | null }) {
           <div className="flex justify-between items-center">
             <span className="text-[11px] text-muted font-mono">Current block subsidy</span>
             <span className="text-[11px] font-mono text-cipher-yellow font-bold">
-              {halving.currentSubsidy} ZEC
+              {halving.currentSubsidy == null ? '—' : `${halving.currentSubsidy} TWC`}
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[11px] text-muted font-mono">Next block subsidy</span>
             <span className="text-[11px] font-mono text-cipher-yellow font-bold">
-              {halving.nextSubsidy != null ? `${halving.nextSubsidy} ZEC` : '—'}
+              {halving.nextSubsidy != null ? `${halving.nextSubsidy} TWC` : '—'}
             </span>
           </div>
         </div>
@@ -97,75 +96,27 @@ export function HalvingPanel({ halving }: { halving: HalvingInfo | null }) {
   );
 }
 
-function generateEmissionCurve(currentCirculating: number) {
-  const points: { date: string; supply: number; ts: number }[] = [];
-  const genesisDate = new Date('2016-10-28');
-  const maxSupply = 21_000_000;
-
-  // Zcash actual emission schedule (accounting for Blossom halving per-block reward):
-  // Era 1: blocks 0–1,046,399 (Oct 2016 – Nov 2020) — effectively 10 ZEC/block avg (slow start + pre-Blossom)
-  // Era 2: blocks 1,046,400–2,726,399 (Nov 2020 – ~Dec 2024) — 3.125 ZEC/block
-  // Era 3: blocks 2,726,400–4,406,399 (Dec 2024 – ~Nov 2028) — 1.5625 ZEC/block
-  // Era 4: blocks 4,406,400+ (~Nov 2028+) — 0.78125 ZEC/block
-  const eras = [
-    { endBlock: 1_046_400, avgSubsidy: 10.0 },
-    { endBlock: 2_726_400, avgSubsidy: 3.125 },
-    { endBlock: 4_406_400, avgSubsidy: 1.5625 },
-    { endBlock: 6_086_400, avgSubsidy: 0.78125 },
-    { endBlock: 7_766_400, avgSubsidy: 0.390625 },
-  ];
-  const blockTime = 75;
-
-  for (let year = 2016; year <= 2036; year += 1) {
-    for (let month = 0; month < 12; month += 3) {
-      const date = new Date(year, month, 1);
-      if (date < genesisDate) continue;
-      if (date > new Date(2036, 0, 1)) break;
-
-      const secondsSinceGenesis = (date.getTime() - genesisDate.getTime()) / 1000;
-      const blockAtDate = Math.floor(secondsSinceGenesis / blockTime);
-
-      let s = 0;
-      let prevEnd = 0;
-      for (const era of eras) {
-        if (blockAtDate <= era.endBlock) {
-          s += (blockAtDate - prevEnd) * era.avgSubsidy;
-          break;
-        }
-        s += (era.endBlock - prevEnd) * era.avgSubsidy;
-        prevEnd = era.endBlock;
-      }
-
-      const cappedSupply = Math.min(s, maxSupply);
-      const label = `${date.toLocaleString(undefined, { month: 'short' })} '${String(year).slice(2)}`;
-      points.push({ date: label, supply: cappedSupply, ts: date.getTime() });
-    }
-  }
-
-  return points;
-}
-
 export function SupplyEmissionPanel({
   circulating,
   remaining,
   circulatingPct,
   dailyEmission,
+  supplyHistory = [],
   maxSupply = 21_000_000,
 }: {
   circulating: number;
   remaining: number;
   circulatingPct: number;
   dailyEmission: number | null;
+  supplyHistory?: { date: string; circulating: number; height?: number }[];
   maxSupply?: number;
 }) {
   const { theme } = useTheme();
   const colors = getChartColors(theme);
-  const emissionData = useMemo(() => generateEmissionCurve(circulating), [circulating]);
-
-  const nowTs = Date.now();
-  const nowIndex = emissionData.reduce((closest, p, i) =>
-    Math.abs(p.ts - nowTs) < Math.abs(emissionData[closest].ts - nowTs) ? i : closest, 0);
-  const nowPoint = emissionData[nowIndex];
+  const emissionData = supplyHistory.map((point) => ({
+    ...point,
+    label: new Date(point.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+  }));
 
   return (
     <Card>
@@ -179,25 +130,30 @@ export function SupplyEmissionPanel({
           <div>
             <p className="text-[9px] text-muted font-mono uppercase mb-0.5">Circulating</p>
             <p className="text-sm font-bold font-mono text-cipher-yellow tabular-nums">
-              {(circulating / 1_000_000).toFixed(2)}M ZEC
+              {(circulating / 1_000_000).toFixed(2)}M TWC
             </p>
             <p className="text-[9px] text-muted font-mono">{circulatingPct.toFixed(1)}%</p>
           </div>
           <div>
             <p className="text-[9px] text-muted font-mono uppercase mb-0.5">Remaining</p>
             <p className="text-sm font-bold font-mono text-secondary tabular-nums">
-              {(remaining / 1_000_000).toFixed(2)}M ZEC
+              {(remaining / 1_000_000).toFixed(2)}M TWC
             </p>
           </div>
           <div>
             <p className="text-[9px] text-muted font-mono uppercase mb-0.5">Daily Emission</p>
             <p className="text-sm font-bold font-mono text-primary tabular-nums">
-              ~{dailyEmission != null ? `${Math.round(dailyEmission).toLocaleString()}` : '—'} ZEC
+              ~{dailyEmission != null ? `${dailyEmission.toFixed(2)}` : '—'} TWC
             </p>
           </div>
         </div>
 
         <div className="h-[180px]">
+          {emissionData.length < 2 ? (
+            <div className="h-full flex items-center justify-center text-xs text-muted text-center px-6">
+              Supply history will appear after the WcashExplorer snapshot job records two canonical observations.
+            </div>
+          ) : (
           <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height="100%">
             <AreaChart data={emissionData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
               <defs>
@@ -232,32 +188,22 @@ export function SupplyEmissionPanel({
                 }}
                 itemStyle={{ color: colors.tooltipText }}
                 labelStyle={{ color: colors.tooltipText }}
-                formatter={(value) => [`${(Number(value) / 1_000_000).toFixed(2)}M ZEC`, 'Supply']}
+                formatter={(value) => [`${(Number(value) / 1_000_000).toFixed(2)}M TWC`, 'Supply']}
               />
-              <ReferenceLine y={maxSupply} stroke={colors.axis} strokeDasharray="3 3" strokeOpacity={0.5} />
-              {nowPoint && (
-                <ReferenceDot
-                  x={nowPoint.date}
-                  y={nowPoint.supply}
-                  r={4}
-                  fill="#5B9CF6"
-                  stroke="#fff"
-                  strokeWidth={1.5}
-                />
-              )}
               <Area
                 type="monotone"
-                dataKey="supply"
+                dataKey="circulating"
                 stroke="#5B9CF6"
                 strokeWidth={2}
                 fill="url(#emissionGradient)"
               />
             </AreaChart>
           </ResponsiveContainer>
+          )}
         </div>
 
         <p className="text-[9px] text-muted font-mono text-center mt-2">
-          21M cap · Halving every 840,000 blocks
+          21M TWC cap · subsidy halves every 1,680,000 blocks · observed history only
         </p>
       </CardBody>
     </Card>

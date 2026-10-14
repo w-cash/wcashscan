@@ -171,7 +171,7 @@ test('configureFromEnv applies REPLICA_QUERY_TIMEOUT_MS as both statement_timeou
     const replicaPool = routing.getReadPool();
     assert.equal(replicaPool.options.statement_timeout, routing.REPLICA_QUERY_TIMEOUT_MS);
     assert.equal(replicaPool.options.query_timeout, routing.REPLICA_QUERY_TIMEOUT_MS);
-    assert.equal(replicaPool.options.application_name, 'cipherscan-api-replica');
+    assert.equal(replicaPool.options.application_name, 'wcashscan-api-replica');
 
     // Never actually connects during this test — release the (unconnected)
     // pool's resources immediately rather than leaving it dangling.

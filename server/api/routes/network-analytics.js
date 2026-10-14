@@ -1,12 +1,21 @@
 const { logSafeError } = require('../lib/safe-log');
 /**
- * Network analytics routes — halving, mining history, pool trends, emission, chain size.
- * Requires chain_snapshots table for size history (see docs/network-analytics-setup.md).
+ * W.cash analytics routes — halving, mining history, pool trends, emission,
+ * and serialized chain size. Every amount returned by this module is TWC
+ * unless its field name ends in `Zat`/`Zatoshi`.
  */
 
-const MAX_SUPPLY_ZEC = 21_000_000;
-const HALVING_CACHE_KEY = 'zcash:halving_info';
+const MAX_SUPPLY_TWC = 21_000_000;
+const HALVING_CACHE_KEY = 'wcash:halving_info';
 const HALVING_CACHE_TTL = 86400; // 24h
+
+function wcashIdentity() {
+  return {
+    network: 'wcash',
+    ticker: 'TWC',
+    dataNetwork: process.env.WCASH_CHAIN || 'wcash-testnet-v5',
+  };
+}
 
 async function getFromRedisCache(redisClient, key) {
   try {
@@ -29,42 +38,58 @@ async function setRedisCache(redisClient, key, data, ttlSeconds) {
 }
 
 function periodToInterval(period) {
+  if (period === 'all') return null;
   const map = {
     '7d': '7 days',
     '30d': '30 days',
     '90d': '90 days',
     '1y': '365 days',
-    all: '4000 days',
   };
   return map[period] || '90 days';
 }
 
-/** True when per-pool columns hold real chain-state history (not flat ratio estimates). */
+/** True when W.cash pool columns have canonical, provenance-bearing history. */
 async function hasVerifiedPerPoolBreakdown(pool) {
-  const result = await pool.query(`
-    SELECT orchard_pool_size, pool_size
-    FROM privacy_trends_daily
-    WHERE orchard_pool_size > 0 AND pool_size > 0
-      AND date >= CURRENT_DATE - INTERVAL '365 days'
-  `);
-  if (result.rows.length < 7) return false;
+  try {
+    const result = await pool.query(`
+      SELECT source_block_height, source_block_hash, ironwood_pool_size,
+             transparent_pool_size, pool_size, chain_supply
+      FROM privacy_trends_daily
+      WHERE source_block_height IS NOT NULL
+        AND source_block_hash IS NOT NULL
+        AND date >= CURRENT_DATE - INTERVAL '365 days'
+      ORDER BY date DESC
+    `);
+    if (result.rows.length === 0) return false;
 
-  const ratios = result.rows.map((r) => {
-    const orchard = Number(r.orchard_pool_size) || 0;
-    const shielded = Number(r.pool_size) || 0;
-    return shielded > 0 ? orchard / shielded : 0;
-  });
-
-  return Math.max(...ratios) - Math.min(...ratios) > 0.01;
+    return result.rows.every((row) => {
+      try {
+        const ironwood = BigInt(String(row.ironwood_pool_size ?? 0));
+        const transparent = BigInt(String(row.transparent_pool_size ?? 0));
+        const totalPool = BigInt(String(row.pool_size ?? 0));
+        const supply = BigInt(String(row.chain_supply ?? 0));
+        return ironwood >= 0n
+          && transparent >= 0n
+          && totalPool === ironwood
+          && supply >= ironwood + transparent;
+      } catch {
+        return false;
+      }
+    });
+  } catch {
+    // A pre-migration database is not a verified W.cash pool history. Keep
+    // the endpoint usable while clearly reporting the breakdown as unverified.
+    return false;
+  }
 }
 
-/** Shielded supply % = shielded ZEC / total chain supply. Never use tx-adoption %. */
-function computeShieldedSupplyPct({ shieldedZat, chainSupplyZat, sproutZat, saplingZat, orchardZat, transparentZat }) {
-  if (chainSupplyZat > 0 && shieldedZat > 0) {
+/** Shielded supply % = Ironwood / total chain supply. Never use tx-adoption %. */
+function computeShieldedSupplyPct({ shieldedZat, chainSupplyZat, transparentZat }) {
+  if (chainSupplyZat > 0) {
     return (shieldedZat / chainSupplyZat) * 100;
   }
-  const poolTotalZat = sproutZat + saplingZat + orchardZat + transparentZat;
-  if (poolTotalZat > 0 && shieldedZat > 0) {
+  const poolTotalZat = shieldedZat + transparentZat;
+  if (poolTotalZat > 0) {
     return (shieldedZat / poolTotalZat) * 100;
   }
   // pool_size is tracked but chain_supply not backfilled — omit (do not guess from shielded pool)
@@ -152,8 +177,6 @@ async function discoverNextHalving(callZebraRPC, currentHeight) {
     nextSubsidy: nextSubsidy?.totalblocksubsidy ?? null,
     minerReward: current.miner ?? currentTotal,
     nextMinerReward: nextSubsidy?.miner ?? null,
-    fundingStreams: current.fundingstreamstotal ?? 0,
-    lockbox: current.lockboxtotal ?? 0,
   };
 }
 
@@ -173,66 +196,21 @@ async function columnExists(pool, tableName, columnName) {
   return r.rows.length > 0;
 }
 
-/** Chain supply never decreases — enforce before charting. */
-function enforceMonotonicSupply(points) {
-  if (points.length === 0) return points;
-  const out = [{ ...points[0] }];
-  for (let i = 1; i < points.length; i++) {
-    const prev = out[i - 1].circulating;
-    const curr = points[i].circulating;
-    out.push({
-      ...points[i],
-      circulating: curr != null && curr >= prev ? curr : prev,
-    });
-  }
-  return out;
-}
-
-/** Fill missing calendar days so charts don't show vertical steps across gaps. */
-function densifyDailySupply(points) {
-  if (points.length < 2) return points;
-  const sorted = [...points].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
-  const out = [{ ...sorted[0] }];
-
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = sorted[i - 1];
-    const curr = sorted[i];
-    const prevDate = new Date(prev.date);
-    const currDate = new Date(curr.date);
-    const dayGap = Math.round((currDate.getTime() - prevDate.getTime()) / 86400000);
-
-    if (dayGap > 1) {
-      const supplyStep = (curr.circulating - prev.circulating) / dayGap;
-      for (let d = 1; d < dayGap; d++) {
-        const dt = new Date(prevDate);
-        dt.setUTCDate(dt.getUTCDate() + d);
-        out.push({
-          date: dt.toISOString(),
-          circulating: prev.circulating + supplyStep * d,
-          height: prev.height,
-        });
-      }
-    }
-    out.push({ ...curr });
-  }
-  return out;
-}
-
 function registerNetworkAnalyticsRoutes(router) {
   router.get('/api/network/halving', async (req, res) => {
     try {
       const callZebraRPC = req.app.locals.callZebraRPC;
       const redisClient = req.app.locals.redisClient;
       const cached = await getFromRedisCache(redisClient, HALVING_CACHE_KEY);
-      if (cached && cached.halvingBlock != null) return res.json({ success: true, ...cached, cached: true });
+      if (cached && cached.halvingBlock != null) {
+        return res.json({ success: true, ...wcashIdentity(), ...cached, cached: true });
+      }
 
-      // Use Zebra for both height and subsidy so backfills cannot mix a stale
+      // Use Wolf for both height and subsidy so backfills cannot mix a stale
       // database height with live-chain subsidy values.
       const currentHeight = Number(await callZebraRPC('getblockcount'));
       if (!Number.isSafeInteger(currentHeight) || currentHeight < 1) {
-        throw new Error('Could not read current Zebra height');
+        throw new Error('Could not read current Wolf height');
       }
       const halving = await discoverNextHalving(callZebraRPC, currentHeight);
 
@@ -251,7 +229,7 @@ function registerNetworkAnalyticsRoutes(router) {
       if (setRedisCache && payload.halvingBlock != null) {
         await setRedisCache(redisClient, HALVING_CACHE_KEY, payload, HALVING_CACHE_TTL);
       }
-      res.json({ success: true, ...payload, cached: false });
+      res.json({ success: true, ...wcashIdentity(), ...payload, cached: false });
     } catch (error) {
       logSafeError('❌ [HALVING] Error:', error);
       res.status(500).json({ success: false, error: 'Failed to fetch halving info' });
@@ -261,6 +239,7 @@ function registerNetworkAnalyticsRoutes(router) {
   router.get('/api/network/mining-metrics', async (req, res) => {
     try {
       const pool = req.app.locals.pool;
+      const callZebraRPC = req.app.locals.callZebraRPC;
       const window = Math.min(Math.max(parseInt(req.query.window, 10) || 20, 5), 100);
       const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 120, 20), 500);
 
@@ -281,13 +260,13 @@ function registerNetworkAnalyticsRoutes(router) {
       });
 
       const difficulties = rows.map((r) => parseFloat(r.difficulty) || 0);
-      // Same 2^13 Equihash constant as /api/network/stats — see comment there.
-      const solrates = difficulties.map((d, i) => (d * 8192) / intervals[i]);
+      // Historical solution rate is only real when Wolf supplies a historical
+      // sample. Never derive it from an inherited difficulty constant.
+      const currentSolutionRate = await callZebraRPC('getnetworksolps', [120]).catch(() => null);
       const fees = rows.map((r) => (parseInt(r.total_fees, 10) || 0) / 1e8);
       const txCounts = rows.map((r) => parseInt(r.transaction_count, 10) || 0);
 
       const rollDiff = rollingAverage(difficulties, window);
-      const rollSolrate = rollingAverage(solrates, window);
       const rollBlockTime = rollingAverage(intervals, window);
       const rollFees = rollingAverage(fees, window);
       const rollTx = rollingAverage(txCounts, window);
@@ -295,7 +274,9 @@ function registerNetworkAnalyticsRoutes(router) {
       const points = rows.map((r, i) => ({
         height: parseInt(r.height, 10),
         difficulty: rollDiff[i],
-        solrate: rollSolrate[i],
+        solrate: i === rows.length - 1 && Number.isFinite(Number(currentSolutionRate))
+          ? Number(currentSolutionRate)
+          : null,
         blockTime: rollBlockTime[i],
         txFees: rollFees[i],
         txCount: rollTx[i],
@@ -305,9 +286,10 @@ function registerNetworkAnalyticsRoutes(router) {
 
       res.json({
         success: true,
+        ...wcashIdentity(),
         window,
         latest: {
-          solrate: latest.solrate ?? 0,
+          solrate: latest.solrate ?? null,
           difficulty: latest.difficulty ?? 0,
           blockTime: latest.blockTime ?? 75,
           txFees: latest.txFees ?? 0,
@@ -321,11 +303,13 @@ function registerNetworkAnalyticsRoutes(router) {
     }
   });
 
-  // Long-range network hashrate trend (daily buckets, robust to per-block difficulty
-  // noise). Complements /api/network/mining-metrics, which is short-range/per-block.
+  // Long-range network solution-rate trend. Wolf may not expose historical
+  // getnetworksolps samples; return null historical points instead of a
+  // fabricated difficulty conversion.
   router.get('/api/network/hashrate-history', async (req, res) => {
     try {
       const pool = req.app.locals.pool;
+      const callZebraRPC = req.app.locals.callZebraRPC;
       const redisClient = req.app.locals.redisClient;
       const period = req.query.period || '90d';
       const cacheKey = `network:hashrate-history:${period}`;
@@ -335,45 +319,38 @@ function registerNetworkAnalyticsRoutes(router) {
 
       const interval = periodToInterval(period);
       const dateFilter =
-        period === 'all'
+        interval == null
           ? `timestamp >= 0`
           : `timestamp >= EXTRACT(EPOCH FROM NOW() - INTERVAL '${interval}')`;
 
+      const latest = await callZebraRPC('getnetworksolps', [120]).catch(() => null);
       const result = await pool.query(`
-        SELECT
-          date_trunc('day', to_timestamp(timestamp)) as day,
-          AVG(difficulty) as avg_difficulty,
-          COUNT(*) as block_count,
-          MIN(timestamp) as first_ts,
-          MAX(timestamp) as last_ts
+        SELECT date_trunc('day', to_timestamp(timestamp)) AS day,
+               COUNT(*) AS block_count
         FROM blocks
         WHERE ${dateFilter}
         GROUP BY day
         ORDER BY day ASC
       `);
 
-      // Realized rate over the bucket: blockCount / actual-elapsed-seconds, not a fixed
-      // 86400 — the "today" bucket is always partial (the day isn't over yet), so
-      // dividing its handful-of-blocks by a full day's seconds would make the most
-      // recent point look like a cliff-edge crash even though nothing changed.
-      const points = result.rows.map((r) => {
-        const avgDifficulty = parseFloat(r.avg_difficulty) || 0;
-        const blockCount = parseInt(r.block_count, 10) || 0;
-        const firstTs = parseInt(r.first_ts, 10) || 0;
-        const lastTs = parseInt(r.last_ts, 10) || 0;
-        const elapsedSeconds = lastTs - firstTs;
-        const hashrate = blockCount > 1 && elapsedSeconds > 0
-          ? (avgDifficulty * 8192 * (blockCount - 1)) / elapsedSeconds
-          : (avgDifficulty * 8192) / 75; // single-block bucket: fall back to target block time
-        return {
-          date: r.day.toISOString().slice(0, 10),
-          avgDifficulty,
-          blockCount,
-          hashrate,
-        };
-      });
+      const points = result.rows.map((r, index) => ({
+        date: r.day.toISOString().slice(0, 10),
+        blockCount: parseInt(r.block_count, 10) || 0,
+        solutionRate: index === result.rows.length - 1 && Number.isFinite(Number(latest))
+          ? Number(latest)
+          : null,
+      }));
 
-      const response = { success: true, period, points };
+      const response = {
+        success: true,
+        network: 'wcash',
+        ticker: 'TWC',
+        period,
+        available: Number.isFinite(Number(latest)),
+        source: 'wolf:getnetworksolps',
+        points,
+        note: 'Wolf exposes the current solution rate; historical points remain null until historical node samples are stored.',
+      };
       await setRedisCache(redisClient, cacheKey, response, 600); // 10 min
       res.json(response);
     } catch (error) {
@@ -386,22 +363,19 @@ function registerNetworkAnalyticsRoutes(router) {
     try {
       const pool = req.app.locals.pool;
       const period = req.query.period || '1y';
-      const format = req.query.format || 'zec'; // 'zec' (default) or 'zatoshi'
+      const format = req.query.format || 'twc'; // 'twc' (default) or 'zatoshi'
       const useZat = format === 'zatoshi';
       const interval = periodToInterval(period);
-      const hasPoolCols = await columnExists(pool, 'privacy_trends_daily', 'orchard_pool_size');
-      const hasIronwoodCol = hasPoolCols && await columnExists(pool, 'privacy_trends_daily', 'ironwood_pool_size');
+      const hasIronwoodCol = await columnExists(pool, 'privacy_trends_daily', 'ironwood_pool_size');
+      const hasTransparentCol = await columnExists(pool, 'privacy_trends_daily', 'transparent_pool_size');
 
-      const cols = hasPoolCols
-        ? `date, pool_size, shielded_percentage, chain_supply,
-           sprout_pool_size, sapling_pool_size, orchard_pool_size,
-           ${hasIronwoodCol ? 'ironwood_pool_size,' : ''} transparent_pool_size`
-        : `date, pool_size, shielded_percentage`;
+      const cols = `date, pool_size, shielded_percentage, chain_supply,
+        ${hasIronwoodCol ? 'ironwood_pool_size,' : ''}
+        ${hasTransparentCol ? 'transparent_pool_size' : '0 AS transparent_pool_size'}`;
 
-      const dateFilter =
-        period === 'all'
-          ? `date >= '2016-10-28'`
-          : `date >= CURRENT_DATE - INTERVAL '${interval}'`;
+      const dateFilter = interval == null
+        ? 'TRUE'
+        : `date >= CURRENT_DATE - INTERVAL '${interval}'`;
 
       const result = await pool.query(
         `SELECT ${cols}
@@ -412,33 +386,27 @@ function registerNetworkAnalyticsRoutes(router) {
 
       const ZAT = 1e8;
       const points = result.rows.map((r) => {
-        const sproutZat = hasPoolCols ? (parseInt(r.sprout_pool_size, 10) || 0) : 0;
-        const saplingZat = hasPoolCols ? (parseInt(r.sapling_pool_size, 10) || 0) : 0;
-        const orchardZat = hasPoolCols ? (parseInt(r.orchard_pool_size, 10) || 0) : 0;
         const ironwoodZat = hasIronwoodCol ? (parseInt(r.ironwood_pool_size, 10) || 0) : 0;
-        const transparentZat = hasPoolCols ? (parseInt(r.transparent_pool_size, 10) || 0) : 0;
-        const shieldedZat = parseInt(r.pool_size, 10) || 0;
-        const chainSupplyZat = hasPoolCols ? (parseInt(r.chain_supply, 10) || 0) : 0;
+        const transparentZat = hasTransparentCol ? (parseInt(r.transparent_pool_size, 10) || 0) : 0;
+        // W.cash has one shielded pool. Once the W.cash column exists, use it
+        // as the canonical total instead of trusting the inherited generic
+        // pool_size column if an old migration left it stale.
+        const shieldedZat = hasIronwoodCol ? ironwoodZat : (parseInt(r.pool_size, 10) || 0);
+        const chainSupplyZat = parseInt(r.chain_supply, 10) || 0;
 
         if (useZat) {
           return {
             date: r.date,
             shieldedZat: shieldedZat.toString(),
-            sproutZat: sproutZat.toString(),
-            saplingZat: saplingZat.toString(),
-            orchardZat: orchardZat.toString(),
             ironwoodZat: ironwoodZat.toString(),
             transparentZat: transparentZat.toString(),
             chainSupplyZat: chainSupplyZat > 0 ? chainSupplyZat.toString() : null,
             shieldedSupplyPct: computeShieldedSupplyPct({
               shieldedZat,
               chainSupplyZat,
-              sproutZat,
-              saplingZat,
-              orchardZat,
               transparentZat,
             }),
-            hasPoolBreakdown: hasPoolCols,
+            hasPoolBreakdown: hasIronwoodCol && hasTransparentCol,
           };
         }
 
@@ -448,39 +416,38 @@ function registerNetworkAnalyticsRoutes(router) {
         return {
           date: r.date,
           shielded,
-          sprout: sproutZat / ZAT,
-          sapling: saplingZat / ZAT,
-          orchard: orchardZat / ZAT,
           ironwood: ironwoodZat / ZAT,
           transparent: transparentZat / ZAT,
           chainSupply: chainSupply > 0 ? chainSupply : null,
           shieldedSupplyPct: computeShieldedSupplyPct({
             shieldedZat,
             chainSupplyZat,
-            sproutZat,
-            saplingZat,
-            orchardZat,
             transparentZat,
           }),
-          hasPoolBreakdown: hasPoolCols,
+          hasPoolBreakdown: hasIronwoodCol && hasTransparentCol,
         };
       });
 
-      const verifiedPerPool = hasPoolCols ? await hasVerifiedPerPoolBreakdown(pool) : false;
+      const verifiedPerPool = hasIronwoodCol && hasTransparentCol
+        ? await hasVerifiedPerPoolBreakdown(pool)
+        : false;
 
       const coverageStart = points.length > 0 ? String(points[0].date).slice(0, 10) : null;
       const coverageEnd = points.length > 0 ? String(points[points.length - 1].date).slice(0, 10) : null;
 
       res.json({
         success: true,
+        ...wcashIdentity(),
         period,
         format,
         points,
-        timelineStart: '2016-10-28',
+        timelineStart: coverageStart,
         coverageStart,
         coverageEnd,
-        hasPoolBreakdown: hasPoolCols,
+        hasPoolBreakdown: hasIronwoodCol && hasTransparentCol,
         hasVerifiedPerPoolBreakdown: verifiedPerPool,
+        source: 'canonical W.cash indexed snapshots',
+        dataQuality: verifiedPerPool ? 'exact-indexed-snapshots' : 'unverified-or-empty',
       });
     } catch (error) {
       logSafeError('❌ [POOL-HISTORY] Error:', error);
@@ -494,13 +461,19 @@ function registerNetworkAnalyticsRoutes(router) {
       const callZebraRPC = req.app.locals.callZebraRPC;
       const period = req.query.period || '1y';
       const interval = periodToInterval(period);
+      const snapshotDateFilter = interval == null
+        ? 'TRUE'
+        : `snapshot_time >= NOW() - INTERVAL '${interval}'`;
+      const trendDateFilter = interval == null
+        ? 'TRUE'
+        : `date >= CURRENT_DATE - INTERVAL '${interval}'`;
 
       let supplyPoints = [];
       if (await tableExists(pool, 'chain_snapshots')) {
         const snap = await pool.query(
           `SELECT snapshot_time, chain_supply_zat, block_height
            FROM chain_snapshots
-           WHERE snapshot_time >= NOW() - INTERVAL '${interval}'
+           WHERE ${snapshotDateFilter}
            ORDER BY snapshot_time ASC`
         );
         supplyPoints = snap.rows.map((r) => ({
@@ -513,14 +486,15 @@ function registerNetworkAnalyticsRoutes(router) {
       const trends = await pool.query(
         `SELECT date, pool_size, chain_supply
          FROM privacy_trends_daily
-         WHERE date >= CURRENT_DATE - INTERVAL '${interval}'
+         WHERE ${trendDateFilter}
          ORDER BY date ASC`
       );
 
-      // Fall back to daily privacy trends when snapshots are new or sparse
+      // Fall back to exact daily indexed snapshots when dedicated chain
+      // snapshots are new or sparse. Do not interpolate between observations.
       if (supplyPoints.length < 2) {
         const fromTrends = trends.rows
-          .filter((r) => (parseInt(r.chain_supply, 10) || 0) > 0)
+          .filter((r) => r.chain_supply != null)
           .map((r) => ({
             date: r.date,
             circulating: parseInt(r.chain_supply, 10) / 1e8,
@@ -530,42 +504,55 @@ function registerNetworkAnalyticsRoutes(router) {
         }
       }
 
-      supplyPoints = enforceMonotonicSupply(
-        densifyDailySupply(
-          supplyPoints.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        )
+      supplyPoints = supplyPoints.sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
       );
 
       const dailyEmission = [];
       for (let i = 1; i < trends.rows.length; i++) {
-        const prev = parseInt(trends.rows[i - 1].chain_supply, 10) || 0;
-        const curr = parseInt(trends.rows[i].chain_supply, 10) || 0;
-        if (prev > 0 && curr > prev) {
+        const previousValue = trends.rows[i - 1].chain_supply;
+        const currentValue = trends.rows[i].chain_supply;
+        if (previousValue != null && currentValue != null) {
+          const prev = BigInt(String(previousValue));
+          const curr = BigInt(String(currentValue));
           dailyEmission.push({
             date: trends.rows[i].date,
-            emission: (curr - prev) / 1e8,
+            emission: Number(curr - prev) / 1e8,
           });
         }
       }
 
       const latestSupply = supplyPoints.length > 0
         ? supplyPoints[supplyPoints.length - 1].circulating
-        : (parseInt(trends.rows[trends.rows.length - 1]?.chain_supply, 10) || 0) / 1e8;
+        : trends.rows.length > 0 && trends.rows[trends.rows.length - 1].chain_supply != null
+          ? parseInt(trends.rows[trends.rows.length - 1].chain_supply, 10) / 1e8
+          : null;
 
       const subsidy = await callZebraRPC('getblocksubsidy').catch(() => null);
-      const dailyEstimate = subsidy?.totalblocksubsidy != null ? subsidy.totalblocksubsidy * 1152 : null;
+      // Wolf's getblocksubsidy response is already denominated in the
+      // network coin (TWC), unlike PostgreSQL's *_zat columns.
+      const dailyEstimate = subsidy?.totalblocksubsidy != null
+        ? Number(subsidy.totalblocksubsidy) * 1152
+        : null;
 
       res.json({
         success: true,
-        maxSupply: MAX_SUPPLY_ZEC,
+        ...wcashIdentity(),
+        available: latestSupply != null,
+        maxSupply: MAX_SUPPLY_TWC,
         circulating: latestSupply,
-        remaining: Math.max(0, MAX_SUPPLY_ZEC - latestSupply),
-        circulatingPct: latestSupply > 0 ? (latestSupply / MAX_SUPPLY_ZEC) * 100 : 0,
+        remaining: latestSupply == null ? null : MAX_SUPPLY_TWC - latestSupply,
+        circulatingPct: latestSupply == null ? null : (latestSupply / MAX_SUPPLY_TWC) * 100,
         dailyEmissionEstimate: dailyEstimate,
+        unit: 'TWC',
+        coverageStart: supplyPoints.length > 0 ? String(supplyPoints[0].date) : null,
+        coverageEnd: supplyPoints.length > 0 ? String(supplyPoints[supplyPoints.length - 1].date) : null,
         supplyHistory: supplyPoints,
         dailyEmission,
         hasChainSnapshots: await tableExists(pool, 'chain_snapshots'),
         supplyHistorySource: supplyPoints.length >= 2 ? 'history' : supplyPoints.length === 1 ? 'partial' : 'none',
+        dataQuality: 'exact-indexed-snapshots; gaps are not interpolated',
+        dailyEstimateIsForecast: dailyEstimate != null,
       });
     } catch (error) {
       logSafeError('❌ [EMISSION] Error:', error);
@@ -577,23 +564,28 @@ function registerNetworkAnalyticsRoutes(router) {
     try {
       const pool = req.app.locals.pool;
       if (!(await tableExists(pool, 'chain_snapshots'))) {
-        return res.json({ success: true, points: [], available: false });
+        return res.json({ success: true, ...wcashIdentity(), points: [], available: false });
       }
 
       const period = req.query.period || '90d';
       const interval = periodToInterval(period);
+      const dateFilter = interval == null
+        ? 'TRUE'
+        : `snapshot_time >= NOW() - INTERVAL '${interval}'`;
 
       const result = await pool.query(
         `SELECT snapshot_time, chain_size_bytes, block_height
          FROM chain_snapshots
-         WHERE snapshot_time >= NOW() - INTERVAL '${interval}'
+         WHERE ${dateFilter}
          ORDER BY snapshot_time ASC`
       );
 
       res.json({
         success: true,
+        ...wcashIdentity(),
         available: true,
         period,
+        source: 'sum of serialized canonical W.cash block bytes',
         points: result.rows.map((r) => ({
           time: r.snapshot_time,
           sizeBytes: parseInt(r.chain_size_bytes, 10) || 0,
@@ -626,6 +618,7 @@ function registerNetworkAnalyticsRoutes(router) {
 
       res.json({
         success: true,
+        ...wcashIdentity(),
         blocks: result.rows.map((r) => ({
           height: parseInt(r.height, 10),
           hash: r.hash,

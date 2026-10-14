@@ -7,7 +7,6 @@ import {
   truncateHash,
 } from '@/lib/seo';
 import { fetchWithDeadline } from '@/lib/server-fetch';
-import { retainLastGoodOrBuildFallback } from '@/lib/isr-fallback';
 
 type Props = {
   params: Promise<{ height: string }>;
@@ -41,8 +40,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         throw new Error('Chain tip payload is malformed');
       }
       if (Number(height) > tipHeight) {
-        const title = `Zcash Block #${formatNumber(Number(height))} — Estimated Arrival | CipherScan`;
-        const description = `Zcash block #${formatNumber(Number(height))} has not been mined yet. Estimated to arrive in approximately ${formatNumber(Number(height) - tipHeight)} blocks (~${Math.round((Number(height) - tipHeight) * 75 / 3600)} hours).`;
+        const title = `W.cash Block #${formatNumber(Number(height))} — Estimated Arrival | WcashExplorer`;
+        const description = `W.cash block #${formatNumber(Number(height))} has not been mined yet. Estimated to arrive in approximately ${formatNumber(Number(height) - tipHeight)} blocks (~${Math.round((Number(height) - tipHeight) * 75 / 3600)} hours).`;
         return buildPageMetadata({
           title,
           description,
@@ -54,8 +53,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       }
     }
 
-    const title = `Zcash Block ${truncateHash(height)} Not Found | CipherScan`;
-    const description = `CipherScan could not find Zcash block ${truncateHash(height)}.`;
+    const title = `W.cash Block ${truncateHash(height)} Not Found | WcashExplorer`;
+    const description = `WcashExplorer could not find W.cash block ${truncateHash(height)}.`;
 
     return buildPageMetadata({
       title,
@@ -68,19 +67,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   if (resolution.state === 'unavailable') {
-    const title = `Zcash Block ${truncateHash(height)} Status Unknown | CipherScan`;
+    const title = `W.cash Block ${truncateHash(height)} Status Unknown | WcashExplorer`;
     const fallback = buildPageMetadata({
       title,
-      description: `CipherScan cannot currently verify Zcash block ${truncateHash(height)} because the block index is temporarily unavailable.`,
+      description: `WcashExplorer cannot currently verify W.cash block ${truncateHash(height)} because the block index is temporarily unavailable.`,
       path: `/block/${encodeURIComponent(height)}`,
       index: false,
       imageAlt: title,
     });
-    return retainLastGoodOrBuildFallback(
-      fallback,
-      new Error(`Block ${height} metadata is unavailable`),
-      'block detail metadata',
-    );
+    return fallback;
   }
 
   const block = resolution.block;
@@ -107,15 +102,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const replacementHash = block.canonicalBlock?.hash?.toLowerCase();
 
   const title = isOrphaned
-    ? `Orphaned Zcash Block #${blockLabel} | CipherScan`
-    : `Zcash Block #${blockLabel} | CipherScan`;
+    ? `Orphaned W.cash Block #${blockLabel} | WcashExplorer`
+    : `W.cash Block #${blockLabel} | WcashExplorer`;
 
   let description: string;
   if (isOrphaned) {
     const replacement = replacementHash
       ? ` Canonical replacement: ${truncateHash(replacementHash)}.`
       : '';
-    description = `Orphaned Zcash block #${blockLabel} recorded ${formatNumber(transactionCount)} transaction${transactionCount !== 1 ? 's' : ''} before it was replaced in a chain reorganization. Hash: ${truncateHash(canonicalHash)}.${replacement}`;
+    description = `Orphaned W.cash block #${blockLabel} recorded ${formatNumber(transactionCount)} transaction${transactionCount !== 1 ? 's' : ''} before it was replaced in a chain reorganization. Hash: ${truncateHash(canonicalHash)}.${replacement}`;
   } else {
     const validTimestamp = Number.isFinite(timestamp) && timestamp > 0;
     const datePart = validTimestamp
@@ -124,7 +119,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const sizePart = Number.isFinite(size) && size > 0
       ? `, size ${(size / 1024).toFixed(1)} KB`
       : '';
-    description = `Zcash block #${blockLabel}${datePart}. Contains ${formatNumber(transactionCount)} transaction${transactionCount !== 1 ? 's' : ''}${sizePart}. Hash: ${truncateHash(canonicalHash)}.`;
+    description = `W.cash block #${blockLabel}${datePart}. Contains ${formatNumber(transactionCount)} transaction${transactionCount !== 1 ? 's' : ''}${sizePart}. Hash: ${truncateHash(canonicalHash)}.`;
   }
 
   return buildPageMetadata({

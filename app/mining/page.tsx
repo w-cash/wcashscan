@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import {
   PieChart, Pie, Cell, AreaChart, Area, BarChart, Bar,
   LineChart, Line,
@@ -16,7 +15,7 @@ import { ChartCard } from '@/components/network/ChartCard';
 import { PageSectionNav } from '@/components/PageSectionNav';
 import { MiningMetricsChart } from '@/components/network/MiningMetricsChart';
 import { NetworkHashrateChart } from '@/components/network/NetworkHashrateChart';
-import { zatToZec, formatZecCompact } from '@/lib/format-numbers';
+import { zatToTwc } from '@/lib/format-numbers';
 
 const SECTIONS = [
   { id: 'metrics', label: 'Network' },
@@ -64,25 +63,23 @@ interface HashratePoint {
 interface BehaviorPoint {
   date: string;
   earnedZat: string;
-  spentZat: string;
+  movedZat: string;
   heldZat: string;
-  sellRatio: number;
 }
 
 interface BehaviorSummary {
   totalEarnedZat: string;
-  totalSpentZat: string;
+  totalMovedZat: string;
   totalHeldZat: string;
-  overallSellRatio: number;
 }
 
-function formatZec(zatStr: string | number): string {
+function formatTwc(zatStr: string | number): string {
   const zat = typeof zatStr === 'string' ? parseInt(zatStr) : zatStr;
   if (isNaN(zat)) return '0';
-  const zec = zatToZec(zat);
-  if (zec >= 1000) return `${(zec / 1000).toFixed(1)}K`;
-  if (zec >= 1) return zec.toFixed(2);
-  return zec.toFixed(4);
+  const twc = zatToTwc(zat);
+  if (twc >= 1000) return `${(twc / 1000).toFixed(1)}K`;
+  if (twc >= 1) return twc.toFixed(2);
+  return twc.toFixed(4);
 }
 
 function formatPct(share: number): string {
@@ -312,7 +309,7 @@ function RankingSection() {
                     align: 'right',
                     className: 'hidden md:table-cell',
                     cell: (pool) => (
-                      <span className="font-mono text-xs tabular-nums text-muted">{formatZec(pool.totalFeesZat)} ZEC</span>
+                      <span className="font-mono text-xs tabular-nums text-muted">{formatTwc(pool.totalFeesZat)} TWC</span>
                     ),
                   },
                 ]}
@@ -585,10 +582,9 @@ function MinerBehaviorSection() {
 
   const chartData = series.map(p => ({
     date: p.date,
-    earned: zatToZec(parseInt(p.earnedZat)),
-    spent: zatToZec(parseInt(p.spentZat)),
-    held: zatToZec(parseInt(p.heldZat)),
-    sellRatio: p.sellRatio * 100,
+    earned: zatToTwc(parseInt(p.earnedZat)),
+    moved: zatToTwc(parseInt(p.movedZat)),
+    held: zatToTwc(parseInt(p.heldZat)),
   }));
 
   return (
@@ -599,18 +595,10 @@ function MinerBehaviorSection() {
             <span className="text-xs text-muted font-mono uppercase tracking-widest opacity-50">{'>'}</span>
             <h2 className="text-lg font-bold font-sans text-primary">Miner Behavior</h2>
           </div>
-          <Link
-            href="/zodl"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-cipher-border bg-glass-3 text-[11px] font-mono text-secondary hover:text-primary hover:border-cipher-yellow/40 transition"
-          >
-            ZODL leaderboard
-            <span className="opacity-60">→</span>
-          </Link>
         </div>
         <p className="text-xs text-secondary mt-1 font-sans">
-          How much of their block rewards miners move vs leave unspent. A high moved ratio means rewards changed address
-          quickly; it does not prove they were sold. The{' '}
-          <Link href="/zodl" className="text-cipher-cyan hover:underline">ZODL leaderboard</Link> breaks each pool&apos;s spending down by destination (shielded vs. exchange vs. transparent), and most of it turns out to be shielding, not selling.
+          How much of publicly visible coinbase rewards move versus remain unspent. This does not identify
+          a wallet owner, sale, exchange, or private destination.
         </p>
       </div>
 
@@ -620,7 +608,7 @@ function MinerBehaviorSection() {
             <CardBody className="py-3">
               <p className="text-[10px] font-mono text-muted uppercase mb-1">Total Earned</p>
               <p className="text-lg font-bold font-mono tabular-nums text-primary">
-                {formatZec(summary.totalEarnedZat)} ZEC
+                {formatTwc(summary.totalEarnedZat)} TWC
               </p>
             </CardBody>
           </Card>
@@ -628,7 +616,7 @@ function MinerBehaviorSection() {
             <CardBody className="py-3">
               <p className="text-[10px] font-mono text-muted uppercase mb-1">Total Moved</p>
               <p className="text-lg font-bold font-mono tabular-nums text-cipher-orange">
-                {formatZec(summary.totalSpentZat)} ZEC
+                {formatTwc(summary.totalMovedZat)} TWC
               </p>
             </CardBody>
           </Card>
@@ -636,16 +624,14 @@ function MinerBehaviorSection() {
             <CardBody className="py-3">
               <p className="text-[10px] font-mono text-muted uppercase mb-1">Still Held</p>
               <p className="text-lg font-bold font-mono tabular-nums text-cipher-green">
-                {formatZec(summary.totalHeldZat)} ZEC
+                {formatTwc(summary.totalHeldZat)} TWC
               </p>
             </CardBody>
           </Card>
           <Card>
             <CardBody className="py-3">
-              <p className="text-[10px] font-mono text-muted uppercase mb-1">Sell Ratio</p>
-              <p className="text-lg font-bold font-mono tabular-nums text-primary">
-                {(summary.overallSellRatio * 100).toFixed(1)}%
-              </p>
+            <p className="text-[10px] font-mono text-muted uppercase mb-1">Movement coverage</p>
+              <p className="text-lg font-bold font-mono tabular-nums text-primary">public outputs</p>
             </CardBody>
           </Card>
         </div>
@@ -684,7 +670,7 @@ function MinerBehaviorSection() {
                 stroke={colors.axis}
                 tick={{ fill: colors.axis, fontSize: 10 }}
                 tickFormatter={(v: number) => `${v.toFixed(0)}`}
-                label={{ value: 'ZEC', angle: -90, position: 'insideLeft', fill: colors.axis, fontSize: 10 }}
+                label={{ value: 'TWC', angle: -90, position: 'insideLeft', fill: colors.axis, fontSize: 10 }}
               />
               <Tooltip
                 cursor={{ fill: 'rgba(255,255,255,0.03)' }}
@@ -698,18 +684,18 @@ function MinerBehaviorSection() {
                 itemStyle={{ color: colors.tooltipText }}
                 labelStyle={{ color: colors.tooltipText, marginBottom: 4 }}
                 formatter={(value, name) => {
-                  const label = name === 'earned' ? 'Earned' : name === 'spent' ? 'Moved/Sold' : 'Held';
-                  return [`${Number(value).toFixed(2)} ZEC`, label];
+                  const label = name === 'earned' ? 'Earned' : name === 'moved' ? 'Moved' : 'Held';
+                  return [`${Number(value).toFixed(2)} TWC`, label];
                 }}
                 labelFormatter={(label) => String(label)}
               />
               <Legend
                 wrapperStyle={{ fontSize: 10, fontFamily: 'monospace' }}
-                formatter={(value) => value === 'earned' ? 'Earned' : value === 'spent' ? 'Moved/Sold' : 'Held'}
+                formatter={(value) => value === 'earned' ? 'Earned' : value === 'moved' ? 'Moved' : 'Held'}
               />
               <Bar dataKey="earned" fill={colors.cyan} fillOpacity={0.3} stroke={colors.cyan} />
-              <Bar dataKey="spent" fill="#f59e0b" fillOpacity={0.7} />
-              <Bar dataKey="held" fill={colors.orchard} fillOpacity={0.7} />
+              <Bar dataKey="moved" fill="#f59e0b" fillOpacity={0.7} />
+              <Bar dataKey="held" fill={colors.ironwood} fillOpacity={0.7} />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -723,8 +709,8 @@ export default function MiningPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 overflow-x-hidden">
       <PageHeader
         eyebrow="MINING"
-        title="Zcash Mining"
-        subtitle="Hashrate, difficulty, block economics, pool distribution, and miner behavior."
+        title="W.cash Mining"
+        subtitle="Hashrate, difficulty, block economics, miner payout distribution, and reward movement."
       />
 
       <PageSectionNav sections={SECTIONS} ariaLabel="Mining pool sections" />
@@ -746,15 +732,14 @@ export default function MiningPage() {
           </h2>
           <div className="space-y-3 text-sm text-muted leading-relaxed">
             <p>
-              Zcash is secured by Equihash proof-of-work mining with a 75-second block target.
+              W.cash is secured by Equihash proof-of-work mining with a 75-second block target.
               Pool attribution is derived from coinbase transaction payout addresses. A single
               pool may use multiple addresses; unknown addresses are labeled by region when
               identifiable through peer analysis.
             </p>
             <p>
-              Miner behavior tracks whether coinbase outputs (block rewards) have been spent
-              or remain unspent. This is a moved-versus-unspent measure; destination analysis
-              is required before describing a movement as shielding, exchange transfer, or sale.
+              Miner movement tracks whether publicly indexed coinbase outputs have been spent
+              or remain unspent. Private payouts and destinations remain unknown.
             </p>
           </div>
         </div>

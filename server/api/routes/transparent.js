@@ -1,5 +1,5 @@
 /**
- * Transparent Address Routes — Quantum Exposure (Project 11)
+ * W.cash Transparent Address Routes — public-key exposure observations.
  *
  * Endpoints for identifying transparent public-key exposures.
  * Used by Project 11's Quantum RISQ List.
@@ -7,7 +7,7 @@
  * - GET /api/transparent/exposed — paginated list of exposed addresses
  * - GET /api/transparent/exposed/summary — aggregate stats
  *
- * Canonical exposure metadata is written by cipherscan-rust to
+ * Canonical exposure metadata is written by the W.cash indexer to
  * transparent_key_exposures. Reusable address balances and addressless direct
  * P2PK/bare-multisig UTXOs are deliberately reported separately.
  */
@@ -18,6 +18,7 @@ const { validate } = require('../validation');
 const { applyListCacheHeaders, createListCache } = require('../list-cache');
 const { parseSafeListPagination, offsetExceededError } = require('../lib/pagination');
 const { logSafeError } = require('../lib/safe-log');
+const { getWcashBase58Prefixes } = require('../lib/wcash-profile');
 
 const disabledListCache = createListCache({ enabled: false });
 
@@ -31,6 +32,15 @@ const MAX_EXPOSED_OFFSET = 100_000;
 let pool;
 let listCache;
 let chainTip;
+
+function addressScriptTypeExpression(column = 'a.address') {
+  const { p2pkh, p2sh } = getWcashBase58Prefixes();
+  return `CASE
+                WHEN ${column} LIKE '${p2sh}%' THEN 'scripthash'
+                WHEN ${column} LIKE '${p2pkh}%' THEN 'pubkeyhash'
+                ELSE 'other'
+              END`;
+}
 
 router.use((req, res, next) => {
   pool = req.app.locals.pool;
@@ -105,10 +115,7 @@ router.get('/api/transparent/exposed', validate('exposedAddresses'), async (req,
                 WHEN a.total_sent > 0 THEN 'spent'
                 ELSE 'public_key_disclosed'
               END`;
-        const scriptTypeExpr = `CASE
-                WHEN a.address LIKE 't3%' OR a.address LIKE 't2%' THEN 'scripthash'
-                ELSE 'pubkeyhash'
-              END`;
+        const scriptTypeExpr = addressScriptTypeExpression();
 
         if (sort === 'address' && cursor) {
           [listResult, countResult] = await measure('db_exposed', () => Promise.all([
@@ -164,7 +171,8 @@ router.get('/api/transparent/exposed', validate('exposedAddresses'), async (req,
           addresses: rows.map((row) => ({
             address: row.address,
             balance: parseInt(row.balance),
-            balance_zec: parseFloat(row.balance) / 1e8,
+            balanceZat: String(row.balance),
+            balanceTwc: parseFloat(row.balance) / 1e8,
             script_type: row.script_type,
             exposure_reason: row.exposure_reason,
           })),
@@ -268,21 +276,24 @@ router.get('/api/transparent/exposed/summary', async (req, res) => {
 
         return {
           success: true,
+          network: 'wcash',
+          ticker: 'TWC',
+          dataNetwork: process.env.WCASH_CHAIN || 'wcash-testnet-v5',
           total_addresses: parseInt(total_addresses),
-          total_balance: reusableBalance,
-          total_balance_zec: parseFloat(total_balance) / 1e8,
+          totalBalanceZat: String(reusableBalance),
+          totalBalanceTwc: reusableBalance / 1e8,
           directAddressless: {
             output_count: parseInt(direct.output_count),
             exposed_key_count: parseInt(direct.exposed_key_count),
-            total_balance: directBalance,
-            total_balance_zec: directBalance / 1e8,
+            totalBalanceZat: String(directBalance),
+            totalBalanceTwc: directBalance / 1e8,
             p2pk_output_count: parseInt(direct.p2pk_output_count),
             p2pk_balance: parseInt(direct.p2pk_balance),
             multisig_output_count: parseInt(direct.multisig_output_count),
             multisig_balance: parseInt(direct.multisig_balance),
           },
-          combined_total_balance: reusableBalance + directBalance,
-          combined_total_balance_zec: (reusableBalance + directBalance) / 1e8,
+          combinedBalanceZat: String(reusableBalance + directBalance),
+          combinedBalanceTwc: (reusableBalance + directBalance) / 1e8,
           coverage: {
             reusableAddressBalances: 'canonical_exposed_addresses',
             directAddressless: 'unspent_p2pk_and_bare_multisig_outputs',

@@ -24,12 +24,12 @@ const FEED_ORDER: HomeFeedType[] = ['blocks', 'shielded', 'transactions', 'reorg
 
 const FEED_META: Record<HomeFeedType, { sectionLabel: string; menuLabel: string; viewAllHref: string }> = {
   blocks: { sectionLabel: 'RECENT_BLOCKS', menuLabel: 'Recent Blocks', viewAllHref: '/blocks' },
-  shielded: { sectionLabel: 'SHIELDED_ACTIVITY', menuLabel: 'Shielded Activity', viewAllHref: '/txs?type=shielded' },
+  shielded: { sectionLabel: 'IRONWOOD_TRANSACTIONS', menuLabel: 'Ironwood Transactions', viewAllHref: '/txs?type=shielded' },
   transactions: { sectionLabel: 'RECENT_TRANSACTIONS', menuLabel: 'Recent Transactions', viewAllHref: '/txs' },
   reorgs: { sectionLabel: 'RECENT_REORGS', menuLabel: 'Forks & Reorgs', viewAllHref: '/reorgs' },
   miners: { sectionLabel: 'TOP_MINERS', menuLabel: 'Top Miners (24h)', viewAllHref: '/mining' },
-  ironwood: { sectionLabel: 'IRONWOOD_PROGRESS', menuLabel: 'Ironwood Migration', viewAllHref: '/ironwood' },
-  poolsChart: { sectionLabel: 'SHIELDED_POOLS', menuLabel: 'Shielded Pool Trend', viewAllHref: '/pools' },
+  ironwood: { sectionLabel: 'IRONWOOD_ACTIVITY', menuLabel: 'Ironwood Activity', viewAllHref: '/ironwood' },
+  poolsChart: { sectionLabel: 'VALUE_POOL_TREND', menuLabel: 'Value-pool Trend', viewAllHref: '/pools' },
 };
 
 const CheckIcon = () => (

@@ -3,12 +3,9 @@
 import Link from 'next/link';
 import { CURRENCY } from '@/lib/config';
 import { Card, CardBody } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { HashLink } from '@/components/ui/HashLink';
 import { FactBox, CopyableHash } from '@/components/ui/FactBox';
 import { TxTypeBadge, type TxCategory } from '@/components/ui/TxTypeBadge';
-import { StakingActionBadge } from '@/components/StakingActionBadge';
-import { displayPubkey } from '@/lib/utils';
 import { formatTimestamp } from './format-timestamp';
 import type { TransactionData, TxClassification } from './types';
 
@@ -17,13 +14,7 @@ interface TxOverviewProps {
   classification: TxClassification;
 }
 
-/**
- * One shielded pool's activity — spend/output (or action) counts plus its
- * value balance, grouped into a single box instead of five separate flat
- * label:value rows. Sapling separates spends from outputs; Orchard/Ironwood
- * only have one combined "action" count, hence the two different `counts`
- * shapes rather than forcing both into the same three fields.
- */
+/** W.cash Ironwood activity, grouped into one compact fact box. */
 function PoolActivityBox({
   category,
   counts,
@@ -46,11 +37,10 @@ function PoolActivityBox({
       {valueBalance != null && valueBalance !== 0 && (
         <div className="mt-2.5 pt-2.5 border-t border-cipher-border/50 flex items-center gap-2 flex-wrap">
           <span className="font-mono text-sm text-primary tabular-nums">
-            {valueBalance < 0 ? '+' : '-'}
             {Math.abs(valueBalance).toFixed(8)} {CURRENCY}
           </span>
           <span className="text-[10px] text-muted font-mono whitespace-nowrap">
-            {valueBalance < 0 ? '→ entering pool' : '← leaving pool'}
+            {valueBalance < 0 ? '→ entering Ironwood' : '← leaving Ironwood'}
           </span>
         </div>
       )}
@@ -59,14 +49,7 @@ function PoolActivityBox({
 }
 
 export function TxOverview({ data }: TxOverviewProps) {
-  // `data.hasShieldedData` means "this tx has *some* shielded component",
-  // not specifically Sapling — using it here showed an empty "0 spends · 0
-  // outputs" Sapling box on pure Orchard/Ironwood transactions. Each pool's
-  // own counts are the only reliable signal that pool was actually active.
-  const hasSaplingActivity = data.saplingSpendCount > 0 || data.saplingOutputCount > 0;
-  const hasOrchardActivity = (data.orchardActions || 0) > 0;
   const hasIronwoodActivity = (data.ironwoodActions || 0) > 0;
-  const hasAnyPoolActivity = hasSaplingActivity || hasOrchardActivity || hasIronwoodActivity;
 
   return (
     <div>
@@ -86,11 +69,6 @@ export function TxOverview({ data }: TxOverviewProps) {
                 <span className="text-muted text-xs whitespace-nowrap">
                   ({data.confirmations.toLocaleString()} confirmation{data.confirmations !== 1 ? 's' : ''})
                 </span>
-                {data.finality && (
-                  <Badge color={data.finality === 'Finalized' ? 'green' : 'orange'} variant="subtle">
-                    {data.finality === 'Finalized' ? 'Finalized' : 'Pending'}
-                  </Badge>
-                )}
               </div>
             </FactBox>
 
@@ -110,33 +88,6 @@ export function TxOverview({ data }: TxOverviewProps) {
               </span>
             </FactBox>
           </div>
-
-          {data.stakingAction && (
-            <div className="mt-3">
-              <FactBox span label="Crosslink Action" tooltip="Crosslink staking action encoded in this transaction">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <StakingActionBadge type={data.stakingAction.type} />
-                  {data.stakingAction.amountZec !== null && (
-                    <span className="font-mono font-semibold text-primary text-sm">
-                      {data.stakingAction.amountZec.toFixed(4)} {CURRENCY}
-                    </span>
-                  )}
-                  {data.stakingAction.delegatee && (
-                    <span className="text-xs text-muted">
-                      to{' '}
-                      <HashLink
-                        value={displayPubkey(data.stakingAction.delegatee)}
-                        href={`/finalizer/${data.stakingAction.delegatee}`}
-                        lead={12}
-                        tail={6}
-                        copy={false}
-                      />
-                    </span>
-                  )}
-                </div>
-              </FactBox>
-            </div>
-          )}
 
           {/* Line 2: consensus/technical fields, always visible — no
               "Show More" gate. Block Hash gets its own wider min-width
@@ -165,45 +116,24 @@ export function TxOverview({ data }: TxOverviewProps) {
             )}
 
             <FactBox hug label="Block Hash" tooltip="Hash of the block containing this transaction" className="fact-box-hash-inline">
-              <CopyableHash value={data.blockHash} href={`/block/${data.blockHeight}`} colorClass="text-primary" />
+              <CopyableHash value={data.blockHash || ''} href={`/block/${data.blockHeight}`} colorClass="text-primary" />
             </FactBox>
 
-            {data.bindingSigSapling && (
-              <FactBox label="Sapling Binding Signature" tooltip="Cryptographic proof that the transaction is balanced" className="w-full">
-                <code className="text-xs text-cipher-purple/70 break-all block font-mono">{data.bindingSigSapling}</code>
-              </FactBox>
-            )}
           </div>
 
           {/* Line 3: shielded pool activity — one box per active pool
               instead of six flat rows (spends, outputs, actions, value
               balance × 3 pools) that gave every pool's data equal weight
               regardless of which pools this transaction actually touched. */}
-          {hasAnyPoolActivity && (
+          {hasIronwoodActivity && (
             <div className="mt-5 pt-4 border-t border-cipher-border/50">
-              <span className="text-[10px] font-mono text-muted uppercase tracking-widest">Shielded Pool Activity</span>
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {hasSaplingActivity && (
-                  <PoolActivityBox
-                    category="sapling"
-                    counts={{ spends: data.saplingSpendCount, outputs: data.saplingOutputCount }}
-                    valueBalance={data.valueBalanceSapling}
-                  />
-                )}
-                {hasOrchardActivity && (
-                  <PoolActivityBox
-                    category="orchard"
-                    counts={{ actions: data.orchardActions || 0 }}
-                    valueBalance={data.valueBalanceOrchard}
-                  />
-                )}
-                {hasIronwoodActivity && (
-                  <PoolActivityBox
-                    category="ironwood"
-                    counts={{ actions: data.ironwoodActions || 0 }}
-                    valueBalance={data.valueBalanceIronwood}
-                  />
-                )}
+              <span className="text-[10px] font-mono text-muted uppercase tracking-widest">Ironwood Activity</span>
+              <div className="mt-3 max-w-md">
+                <PoolActivityBox
+                  category="ironwood"
+                  counts={{ actions: data.ironwoodActions || 0 }}
+                  valueBalance={data.valueBalanceIronwood}
+                />
               </div>
             </div>
           )}

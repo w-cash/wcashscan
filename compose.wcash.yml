@@ -1,0 +1,209 @@
+name: wcashscan
+
+# This is the W.cash stack. The older docker-compose.yml is retained as an
+# historical reference only and must not be used for Wcash deployment.
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:16-bookworm}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:-postgres-local-only}
+      POSTGRES_DB: ${WCASH_DB_NAME:-wcashscan_testnet_v5}
+      APP_DB_USER: ${WCASH_DB_USER:-wcashscan}
+      APP_DB_PASSWORD: ${WCASH_DB_PASSWORD:-wcash-local-only}
+    volumes:
+      - wcash-postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/001-create-app-role.sh:/docker-entrypoint-initdb.d/001-create-app-role.sh:ro
+      - ./server/wcash-indexer/schema/postgres.sql:/docker-entrypoint-initdb.d/002-wcashscan-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: ${REDIS_IMAGE:-redis:7-bookworm}
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - wcash-redis-data:/data
+
+  migrate:
+    image: ${POSTGRES_IMAGE:-postgres:16-bookworm}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${WCASH_DB_NAME:-wcashscan_testnet_v5}
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_ADMIN_PASSWORD:-postgres-local-only}
+      DATABASE_URL: postgresql://postgres:${POSTGRES_ADMIN_PASSWORD:-postgres-local-only}@postgres:5432/${WCASH_DB_NAME:-wcashscan_testnet_v5}
+    volumes:
+      - ./server/wcash-indexer:/workspace/wcash-indexer:ro
+    command: ["bash", "-ceu", "bash /workspace/wcash-indexer/deploy/apply-migrations.sh"]
+
+  wolf:
+    # Build Wolf separately from the frozen revision in UPSTREAM.md, or set
+    # WCASH_WOLF_IMAGE to an image built from that revision. Compose refuses
+    # to invent a node image because an unverified node is unsafe here.
+    image: ${WCASH_WOLF_IMAGE:?Set WCASH_WOLF_IMAGE to the pinned W.cash Wolf image}
+    restart: unless-stopped
+    # Wolf's verified startup contract is a config file plus `start`; the
+    # network, RPC bind, cookie directory, peers and state path belong in that
+    # config. The config is operator-supplied and never committed here.
+    command: ["-c", "/etc/wcash/wolf.toml", "start"]
+    volumes:
+      - wcash-wolf-data:/var/lib/wcash
+      - ${WCASH_WOLF_CONFIG_FILE:?Set WCASH_WOLF_CONFIG_FILE to the operator Wolf config}:/etc/wcash/wolf.toml:ro
+    ports:
+      - "127.0.0.1:${WCASH_RPC_PORT:-38232}:${WCASH_WOLF_RPC_BIND_PORT:-38232}"
+
+  indexer:
+    build:
+      context: ./server/wcash-indexer
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      wolf:
+        condition: service_started
+    # The one-shot backfill is invoked explicitly with `docker compose run`.
+    # The long-running service follows it with the polling live-RPC command.
+    command: ["live-rpc"]
+    environment:
+      WCASH_CHAIN: ${WCASH_CHAIN:-wcash-testnet-v5}
+      WCASH_SOURCE: rpc
+      WCASH_RPC_URL: http://wolf:${WCASH_WOLF_RPC_BIND_PORT:-38232}
+      WCASH_RPC_COOKIE_FILE: ${WCASH_RPC_COOKIE_FILE:?Set WCASH_RPC_COOKIE_FILE to the path inside wcash-wolf-data}
+      WCASH_DATABASE_URL: postgres://${WCASH_DB_USER:-wcashscan}:${WCASH_DB_PASSWORD:-wcash-local-only}@postgres:5432/${WCASH_DB_NAME:-wcashscan_testnet_v5}
+      WCASH_INDEXER_GRPC_URL: ${WCASH_INDEXER_GRPC_URL:-}
+      RUST_LOG: ${RUST_LOG:-wcashscan_indexer=info}
+    volumes:
+      - wcash-wolf-data:/var/lib/wcash:ro
+
+  api:
+    build:
+      context: .
+      dockerfile: server/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      wolf:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      HOST: 0.0.0.0
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${WCASH_DB_NAME:-wcashscan_testnet_v5}
+      DB_USER: ${WCASH_DB_USER:-wcashscan}
+      DB_PASSWORD: ${WCASH_DB_PASSWORD:-wcash-local-only}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      WCASH_CHAIN: ${WCASH_CHAIN:-wcash-testnet-v5}
+      WCASH_RPC_URL: http://wolf:${WCASH_WOLF_RPC_BIND_PORT:-38232}
+      WCASH_RPC_COOKIE_FILE: ${WCASH_RPC_COOKIE_FILE:?Set WCASH_RPC_COOKIE_FILE to the path inside wcash-wolf-data}
+      WCASH_HEALTH_URL: ${WCASH_HEALTH_URL:-http://wolf:8080}
+      WCASH_BROADCAST_CHANNEL: wcash:broadcast
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3002
+    volumes:
+      - wcash-wolf-data:/var/lib/wcash:ro
+    ports:
+      - "${WCASH_API_PORT:-3001}:3001"
+
+  jobs-wcash:
+    build:
+      context: .
+      dockerfile: server/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      wolf:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${WCASH_DB_NAME:-wcashscan_testnet_v5}
+      DB_USER: ${WCASH_DB_USER:-wcashscan}
+      DB_PASSWORD: ${WCASH_DB_PASSWORD:-wcash-local-only}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      WCASH_CHAIN: ${WCASH_CHAIN:-wcash-testnet-v5}
+      WCASH_RPC_URL: http://wolf:${WCASH_WOLF_RPC_BIND_PORT:-38232}
+      WCASH_RPC_COOKIE_FILE: ${WCASH_RPC_COOKIE_FILE:?Set WCASH_RPC_COOKIE_FILE to the path inside wcash-wolf-data}
+      WCASH_HEALTH_URL: ${WCASH_HEALTH_URL:-http://wolf:8080}
+      WCASH_JOB: ${WCASH_JOB:-all}
+    command: ["node", "/app/server/jobs/jobs-wcash.js", "serve"]
+    volumes:
+      - wcash-wolf-data:/var/lib/wcash:ro
+
+  web-testnet:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_NETWORK: testnet
+        NEXT_PUBLIC_DATA_NETWORK: wcash-testnet-v5
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_TESTNET_API_URL: ${NEXT_PUBLIC_TESTNET_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_MAINNET_API_URL: ${NEXT_PUBLIC_MAINNET_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_TESTNET_URL: ${NEXT_PUBLIC_TESTNET_URL:-http://localhost:3000}
+        NEXT_PUBLIC_MAINNET_URL: ${NEXT_PUBLIC_MAINNET_URL:-http://localhost:3002}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_NETWORK: testnet
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      WCASHEXPLORER_API_URL: http://api:3001
+      WCASH_ALLOW_BUILD_UPSTREAM_FALLBACK: "0"
+    ports:
+      - "${WCASH_TESTNET_WEB_PORT:-3000}:3000"
+
+  web-mainnet-preview:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_NETWORK: mainnet
+        NEXT_PUBLIC_DATA_NETWORK: wcash-testnet-v5
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_TESTNET_API_URL: ${NEXT_PUBLIC_TESTNET_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_MAINNET_API_URL: ${NEXT_PUBLIC_MAINNET_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_TESTNET_URL: ${NEXT_PUBLIC_TESTNET_URL:-http://localhost:3000}
+        NEXT_PUBLIC_MAINNET_URL: ${NEXT_PUBLIC_MAINNET_URL:-http://localhost:3002}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_NETWORK: mainnet
+      # Deliberately the same API until a real W.cash mainnet API is supplied.
+      NEXT_PUBLIC_MAINNET_API_URL: ${NEXT_PUBLIC_MAINNET_API_URL:-http://localhost:3001}
+      WCASHEXPLORER_API_URL: http://api:3001
+      WCASH_ALLOW_BUILD_UPSTREAM_FALLBACK: "0"
+    ports:
+      - "${WCASH_MAINNET_WEB_PORT:-3002}:3000"
+
+volumes:
+  wcash-postgres-data:
+  wcash-redis-data:
+  wcash-wolf-data:

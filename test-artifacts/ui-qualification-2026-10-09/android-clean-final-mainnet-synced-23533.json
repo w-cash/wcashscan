@@ -1,0 +1,43 @@
+{
+  "apk": "/tmp/wcash-wallet-runtime-20261009/wallet-mobile/android/app/build/outputs/apk/beta/debug/app-beta-arm64-v8a-debug.apk",
+  "apk_sha256": "6929bb6b7266baf84957ba283671504d3d5f9bdff616d418b2604a199e552fcf",
+  "apk_zcash_yellow_asset_paths": 0,
+  "app_version": "2.0.23",
+  "chain_name": "main",
+  "consensus_branch_id": "d9c6a7ee",
+  "emulator": "sdk_gphone64_arm64 API 34",
+  "endpoint": "https://mainnet.zecwec.com:443",
+  "estimated_height": 23534,
+  "info_height": 23533,
+  "install_mode": "adb install -r; existing wallet data preserved",
+  "lightwalletd_version": "v6.3.0",
+  "node_observed_at_utc": "2026-10-09T22:45:27.673458+00:00",
+  "notes": [
+    "Clean final beta ARM64 APK installed over the existing wallet without clearing data.",
+    "UI wallet-range label is latestBlock minus birthday, not a second chain tip.",
+    "The scan range uses an exclusive end height: [1, tip+1)."
+  ],
+  "package": "com.wcashwallet.wallet.beta",
+  "platform": "Android emulator",
+  "privacy_evidence": {
+    "seed_or_viewing_key_recorded": false,
+    "seed_screen_opened": false,
+    "transaction_broadcast": false
+  },
+  "screenshot": "/Users/rustdev/Documents/ChatGPT/wcashwallet/test-artifacts/ui-qualification-2026-10-09/android-clean-final-mainnet-synced-23533.png",
+  "screenshot_captured_at_utc": "2026-10-09T22:45:27.793116+00:00",
+  "screenshot_sha256": "439b941ceda52594d26c95d60fa9396334ce3f072acc669ac74befdcdf295a04",
+  "tip_hash": "0c87a12cc388826eddb612057000c07ba930ab9d81277504174e5b6535dca0f2",
+  "tip_height": 23533,
+  "ui_server_blocks": 23533,
+  "ui_sync_status": "Fully Synced",
+  "ui_wallet_range_blocks": 23532,
+  "vendor": "ZcashFoundation/zebra",
+  "version_code": 30331,
+  "wallet_db_height_before_install": 23533,
+  "wallet_db_height_immediately_after_install": 23533,
+  "wallet_db_max_scanned_height": 23533,
+  "wallet_db_scan_queue": [
+    "1|23534|10"
+  ]
+}

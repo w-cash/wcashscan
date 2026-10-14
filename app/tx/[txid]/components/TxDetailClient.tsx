@@ -33,7 +33,6 @@ export default function TxDetailClient({ txid, initialMeta = null }: TxDetailCli
     setRawData,
     rawLoading,
     setRawLoading,
-    priceUsd,
     mempoolTx,
     mempoolChecked,
     mempoolConfirming,
@@ -74,7 +73,7 @@ export default function TxDetailClient({ txid, initialMeta = null }: TxDetailCli
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-6 sm:pt-6 sm:pb-12 animate-fade-in">
       <TxHeaderBadges data={data} classification={classification} />
 
-      <TxHeroCard data={data} classification={classification} priceUsd={priceUsd} />
+      <TxHeroCard data={data} classification={classification} />
 
       <div className="mb-6 animate-fade-in-up stagger-2">
         <Tabs

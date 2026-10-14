@@ -1,20 +1,20 @@
-export interface BridgeData {
-  direction: 'entry' | 'exit';
-  sourceChain: string;
-  sourceToken: string;
-  sourceAmount: number | null;
-  destChain: string;
-  destToken: string;
-  destAmount: number | null;
-  otherChain: string;
-  otherToken: string;
-  otherAmount: number;
-  otherAmountUsd: number;
-  otherTxHash: string | null;
-  explorerUrl: string | null;
-  swapTimestamp: string;
-  zecAmount?: number;
-  zecAddress?: string | null;
+export interface TransactionInput {
+  address?: string | null;
+  value?: number;
+  prev_txid?: string | null;
+  prev_vout?: number | null;
+  coinbase?: string | boolean | null;
+  txid?: string | null;
+  vout?: number | null;
+}
+
+export interface TransactionOutput {
+  address?: string | null;
+  value?: number;
+  vout_index?: number;
+  n?: number;
+  spent?: boolean;
+  scriptPubKey?: { hex?: string; addresses?: string[] };
 }
 
 export interface TransactionData {
@@ -22,11 +22,11 @@ export interface TransactionData {
   status?: 'confirmed' | 'stale' | 'unknown';
   isCanonical?: boolean;
   blockHeight: number;
-  blockHash: string;
+  blockHash: string | null;
   timestamp: number;
   confirmations: number;
-  inputs: any[];
-  outputs: any[];
+  inputs: TransactionInput[];
+  outputs: TransactionOutput[];
   totalInput: number;
   totalInputZat?: string | null;
   totalOutput: number;
@@ -37,53 +37,18 @@ export interface TransactionData {
   version: number;
   locktime: number;
   expiryHeight: number | null;
-  saplingSpendCount: number;
-  saplingOutputCount: number;
-  hasShieldedData: boolean;
   isCoinbase?: boolean;
-  orchardActions?: number;
-  ironwoodActions?: number;
-  valueBalance?: number;
-  valueBalanceZat?: string | null;
-  valueBalanceSapling?: number;
-  valueBalanceSaplingZat?: string | null;
-  valueBalanceOrchard?: number;
-  valueBalanceOrchardZat?: string | null;
+  hasIronwood: boolean;
+  ironwoodActions: number;
   valueBalanceIronwood?: number;
   valueBalanceIronwoodZat?: string | null;
-  bindingSig?: string;
-  bindingSigSapling?: string;
-  finality?: string | null;
-  bridge?: BridgeData | null;
-  bridges?: BridgeData[];
-  stakingAction?: {
-    type: string;
-    bondKey: string | null;
-    delegatee: string | null;
-    amountZats: number | null;
-    amountZat?: string | null;
-    amountZec: number | null;
-  } | null;
   coinbaseHex?: string | null;
   coinbaseText?: string | null;
-  zip318?: {
-    compliant: boolean;
-    checks: number;
-    denomination: boolean;
-    matchedDenomination: number | null;
-    correctActions: boolean;
-    orchardActions: number;
-    ironwoodActions: number;
-    anchorCompliant: boolean;
-  } | null;
 }
 
 export type TxType =
   | 'COINBASE'
-  | 'MIGRATION'
   | 'IRONWOOD'
-  | 'ORCHARD'
-  | 'SHIELDED'
   | 'SHIELDING'
   | 'UNSHIELDING'
   | 'MIXED'
@@ -96,25 +61,17 @@ export type ActiveTab = 'summary' | 'io' | 'raw';
 export interface TxClassification {
   isCoinbase: boolean;
   hasIronwood: boolean;
-  hasOrchard: boolean;
-  hasSapling: boolean;
   hasTransparentInputs: boolean;
   hasTransparentOutputs: boolean;
   hasTransparent: boolean;
   hasShielded: boolean;
-  hasSaplingSpends: boolean;
-  hasSaplingOutputs: boolean;
   valueBalance: number;
   isShielding: boolean;
   isUnshielding: boolean;
-  migrationSourcePool: 'Orchard' | 'Sapling' | null;
-  isMigration: boolean;
   txType: TxType;
-  allBridges: BridgeData[];
-  bridgeOutputAddresses: Map<string, BridgeData>;
 }
 
 export interface RawTxData {
   hex: string;
-  decoded: any;
+  decoded: unknown;
 }

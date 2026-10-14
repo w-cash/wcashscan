@@ -23,7 +23,7 @@ export function BlockPageError({
           </h1>
           <p className="text-secondary mb-3">
             {temporarilyUnavailable
-              ? 'CipherScan could not refresh this block from the block index. Please try again shortly.'
+              ? 'WcashExplorer could not refresh this block from the W.cash index. Please try again shortly.'
               : 'This block is no longer present in the block index.'}
           </p>
           {initialSummary ? (

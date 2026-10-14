@@ -1,0 +1,11 @@
+{
+  "chain_name": "main",
+  "consensus_branch_id": "d9c6a7ee",
+  "estimated_height": 23505,
+  "info_height": 23504,
+  "observed_at_utc": "2026-10-09T22:08:02.310349+00:00",
+  "tip_hash": "c9a9d2b4aaca6b7a6567f20e763a9f8ead3eca0d5dd2b3d04ccf5b8e4f20ae73",
+  "tip_height": 23504,
+  "vendor": "ZcashFoundation/zebra",
+  "version": "v6.3.0"
+}

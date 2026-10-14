@@ -1,7 +1,6 @@
-import { unstable_cache } from 'next/cache';
 import { getAllNewsletters } from '@/lib/newsletter';
-import { createRefreshCache } from '@/lib/refresh-cache';
 import { getApiUrl, getBaseUrl, getNetwork } from '@/lib/seo';
+import { createRefreshCache } from '@/lib/refresh-cache';
 import {
   getBlockSitemapRange,
   getConfiguredBlockSitemapRanges,
@@ -10,14 +9,10 @@ import {
   serializeUrlSet,
   type SitemapUrlEntry,
 } from '@/lib/sitemaps';
-import { getZnsStatus, isValidName, listZnsRegistrations } from '@/lib/zns';
 
 export const dynamic = 'force-dynamic';
 
 const FETCH_TIMEOUT_MS = 10_000;
-const ZNS_SITEMAP_LIMIT = 5_000;
-const ZNS_PAGE_SIZE = 500;
-const ZNS_REVALIDATE_SECONDS = 60 * 60;
 
 interface DynamicSitemapResult {
   entries: SitemapUrlEntry[];
@@ -83,51 +78,8 @@ async function fetchJson(url: string, revalidate: number): Promise<unknown> {
   return response.json();
 }
 
-async function refreshRegisteredNamePages(baseUrl: string): Promise<SitemapUrlEntry[]> {
-  const signal = AbortSignal.timeout(FETCH_TIMEOUT_MS);
-  const status = await getZnsStatus(signal);
-  const total = Math.min(Math.max(Number(status.registered) || 0, 0), ZNS_SITEMAP_LIMIT);
-  const entries: SitemapUrlEntry[] = [];
-
-  for (let offset = 0; offset < total; offset += ZNS_PAGE_SIZE) {
-    const registrations = await listZnsRegistrations(ZNS_PAGE_SIZE, offset, signal);
-    for (const registration of registrations) {
-      if (typeof registration.name !== 'string' || !isValidName(registration.name)) continue;
-      entries.push({
-        url: `${baseUrl}/name/${encodeURIComponent(registration.name.toLowerCase())}`,
-      });
-    }
-    if (registrations.length < ZNS_PAGE_SIZE) break;
-  }
-
-  if (total > 0 && entries.length === 0) {
-    throw new Error('Name sitemap data source returned no valid registrations');
-  }
-
-  return entries;
-}
-
-const getRegisteredNamePagesFromDataCache = unstable_cache(
-  refreshRegisteredNamePages,
-  ['sitemap-zns-registrations-v2'],
-  {
-    revalidate: ZNS_REVALIDATE_SECONDS,
-    tags: ['sitemap-zns-registrations'],
-  },
-);
-
-const getRegisteredNamePages = createRefreshCache({
-  load: getRegisteredNamePagesFromDataCache,
-  maxAgeMs: 5 * 60 * 1000,
-  retryAfterMs: 30 * 1000,
-});
-
 async function getDynamicSitemap(slug: string, baseUrl: string): Promise<DynamicSitemapResult> {
   const apiUrl = getApiUrl();
-
-  if (slug === 'names') {
-    return { entries: await getRegisteredNamePages(baseUrl), maxAge: 3_600 };
-  }
 
   if (slug === 'addresses') {
     const data = await fetchJson(`${apiUrl}/api/rich-list?limit=100&offset=0`, 3_600) as {

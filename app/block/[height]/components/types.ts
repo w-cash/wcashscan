@@ -24,8 +24,6 @@ export interface BlockData {
   nextBlockHash?: string;
   version?: number;
   merkleRoot?: string;
-  finalSaplingRoot?: string;
-  finalOrchardRoot?: string | null;
   finalIronwoodRoot?: string | null;
   bits?: string;
   nonce?: string;

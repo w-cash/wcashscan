@@ -105,7 +105,7 @@ export function buildTopLevelSegments(input: SupplyTotals & {
     },
     {
       key: 'shielded',
-      label: 'Shielded',
+      label: 'Ironwood',
       zat: input.shielded,
       color: input.colors.shielded,
     },
@@ -131,18 +131,13 @@ export function buildShieldedPoolSegments(input: {
     ironwood: string;
   };
 }): SupplySegmentInput[] {
-  const segments: SupplySegmentInput[] = [
-    { key: 'sapling', label: 'Sapling', zat: input.sapling, color: input.colors.sapling },
-    { key: 'orchard', label: 'Orchard', zat: input.orchard, color: input.colors.orchard },
-    { key: 'sprout', label: 'Sprout', zat: input.sprout, color: input.colors.sprout },
-    {
-      key: 'ironwood',
-      label: 'Ironwood',
-      zat: input.ironwood,
-      color: input.colors.ironwood,
-      href: '/ironwood',
-    },
-  ];
+  const segments: SupplySegmentInput[] = [{
+    key: 'ironwood',
+    label: 'Ironwood',
+    zat: input.ironwood,
+    color: input.colors.ironwood,
+    href: '/ironwood',
+  }];
   return segments.filter((seg) => seg.zat > 0);
 }
 

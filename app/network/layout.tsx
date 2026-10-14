@@ -1,9 +1,9 @@
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'Zcash Network Stats & Node Map | CipherScan',
-  description: 'Track Zcash network health with live node locations, hashrate, difficulty, peer counts, and blockchain statistics.',
-  keywords: ['zcash network stats', 'zcash node map', 'zcash hashrate', 'zcash peers', 'zcash nodes', 'ZEC network', 'zcash difficulty', 'zcash blockchain stats'],
+  title: 'W.cash Network Stats & Node Map | WcashExplorer',
+  description: 'Track W.cash network health with live node locations, hashrate, difficulty, peer counts, and blockchain statistics.',
+  keywords: ['W.cash network stats', 'W.cash node map', 'W.cash hashrate', 'W.cash peers', 'W.cash nodes', 'TWC network'],
   path: '/network',
 });
 

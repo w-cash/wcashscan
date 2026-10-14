@@ -14,9 +14,6 @@ interface MempoolTransaction {
   time: number;
   vin: number;
   vout: number;
-  vShieldedSpend: number;
-  vShieldedOutput: number;
-  orchardActions?: number;
   ironwoodActions?: number;
   totalOutput?: number;
 }
@@ -55,7 +52,7 @@ export default function MempoolLiveClient() {
   const handleWsMessage = useCallback((msg: any) => {
     if (msg.type === 'mempool_tx' && msg.data?.txid) {
       setTransactions(prev => {
-        const hasShielded = msg.data.hasOrchard || msg.data.hasSapling || msg.data.hasIronwood;
+        const hasShielded = msg.data.hasIronwood;
         const hasTransparent = (msg.data.inputCount || 0) > 0 || (msg.data.outputCount || 0) > 0;
         const type = hasShielded && hasTransparent ? 'mixed' : hasShielded ? 'shielded' : 'transparent';
         const newTx: MempoolTransaction = {
@@ -65,9 +62,6 @@ export default function MempoolLiveClient() {
           time: msg.data.time || Math.floor(Date.now() / 1000),
           vin: msg.data.inputCount || 0,
           vout: msg.data.outputCount || 0,
-          vShieldedSpend: 0,
-          vShieldedOutput: 0,
-          orchardActions: msg.data.orchardActions || 0,
           ironwoodActions: msg.data.ironwoodActions || 0,
           totalOutput: msg.data.totalOutput,
         };

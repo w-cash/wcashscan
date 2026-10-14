@@ -26,6 +26,9 @@ export interface PrivacyStats {
   shieldedPool: {
     currentSize: number;
   };
+  ironwoodPool?: {
+    currentSize?: number;
+  };
   trends: {
     daily: Array<{
       date: string;
@@ -52,6 +55,13 @@ function formatLargeNumber(num: number): string {
     return (num / 1000).toFixed(0) + 'K';
   }
   return num.toString();
+}
+
+function formatTwcCompact(num: number): string {
+  if (!Number.isFinite(num)) return '0';
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
 function MetricCell({
@@ -103,8 +113,10 @@ export function PrivacyWidget({ initialStats = null, initialRiskStats = null }: 
 
         const response = await fetch(apiUrl);
         const result = await response.json();
-        const statsData = result.success ? result.data : result;
-        setStats(statsData);
+        // /api/privacy-stats returns the stats object directly.  Accept a
+        // data wrapper as well for deployments still running an older API.
+        const statsData = result?.data ?? result;
+        if (statsData && !statsData.error) setStats(statsData);
       } catch (error) {
         console.error('Error fetching privacy stats:', error);
       }
@@ -162,7 +174,8 @@ export function PrivacyWidget({ initialStats = null, initialRiskStats = null }: 
   }
 
   const totalTxs = stats.totals.totalTx || 0;
-  const poolSizeFormatted = ((stats.shieldedPool?.currentSize || 0) / 1000000).toFixed(2);
+  // The API has already converted currentSize from zatoshi to TWC.
+  const poolSizeFormatted = formatTwcCompact(stats.ironwoodPool?.currentSize ?? stats.shieldedPool?.currentSize ?? 0);
   const privacyScore = stats.metrics.privacyScore || 0;
   const shieldedPct = (stats.metrics.shieldedPercentage || 0).toFixed(1);
   const hasRisks = riskStats && riskStats.total > 0;
@@ -173,15 +186,15 @@ export function PrivacyWidget({ initialStats = null, initialRiskStats = null }: 
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <span className="text-muted opacity-50">&gt;</span>
-        <span className="text-xs text-muted font-mono uppercase tracking-wide">PRIVACY_METRICS</span>
+        <span className="text-xs text-muted font-mono uppercase tracking-wide">WCASH_ACTIVITY</span>
       </div>
 
       {/* Metrics row — all columns share the same visual rhythm */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5 lg:gap-0">
         <Link href="/privacy" className="lg:border-r lg:border-cipher-border lg:pr-5">
           <MetricCell
-            label="Privacy Score"
-            tooltip="Overall network privacy health score"
+            label="Activity Index"
+            tooltip="Observed Ironwood activity share, not a measure of private ownership"
             value={privacyScore}
             suffix="/100"
             color="muted"
@@ -189,9 +202,9 @@ export function PrivacyWidget({ initialStats = null, initialRiskStats = null }: 
         </Link>
         <Link href="/privacy" className="lg:border-r lg:border-cipher-border lg:px-5">
           <MetricCell
-            label="Shielded Pool"
-            tooltip="Total ZEC currently in the shielded pool"
-            value={`${poolSizeFormatted}M`}
+            label="Ironwood Pool"
+            tooltip="Total TWC currently observed in the W.cash Ironwood pool"
+            value={poolSizeFormatted}
             suffix={CURRENCY}
             color="muted"
           />
@@ -200,8 +213,8 @@ export function PrivacyWidget({ initialStats = null, initialRiskStats = null }: 
         <div className="col-span-2 border-t border-cipher-border lg:hidden" />
         <Link href="/privacy" className="lg:border-r lg:border-cipher-border lg:px-5">
           <MetricCell
-            label="Shielded TXs"
-            tooltip="Percentage of transactions using shielded pools"
+            label="Ironwood TXs"
+            tooltip="Percentage of non-coinbase transactions using Ironwood"
             value={shieldedPct}
             suffix="%"
             color="muted"
@@ -225,7 +238,7 @@ export function PrivacyWidget({ initialStats = null, initialRiskStats = null }: 
               className="lg:pl-5 group/risk"
             >
               <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-[10px] text-muted font-mono uppercase tracking-wide">Privacy Risks</span>
+                <span className="text-[10px] text-muted font-mono uppercase tracking-wide">Activity Risks</span>
                 <Tooltip content="Transactions where shielding patterns may reveal address links" />
               </div>
               <div className="flex items-baseline gap-1">

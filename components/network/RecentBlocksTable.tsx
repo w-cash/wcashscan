@@ -11,7 +11,7 @@ export interface RecentBlock {
   timestamp: number;
   txCount: number;
   size: number;
-  minerReward: number;
+  minerReward: number | null;
   fees: number;
 }
 
@@ -36,7 +36,7 @@ const columns: DataTableColumn<RecentBlock>[] = [
     align: 'right',
     skeletonWidth: 'w-20',
     cell: (b) => (
-      <span className="font-mono text-sm text-primary whitespace-nowrap">{b.minerReward.toFixed(4)} ZEC</span>
+      <span className="font-mono text-sm text-primary whitespace-nowrap">{b.minerReward == null ? '—' : `${b.minerReward.toFixed(8)} TWC`}</span>
     ),
   },
   {

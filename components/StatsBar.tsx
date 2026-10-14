@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { CURRENCY, isCrosslink } from '@/lib/config';
+import { CURRENCY } from '@/lib/config';
 import { SlidersIcon } from '@/components/icons/common';
 import { useApiQuery } from '@/hooks/useApiQuery';
 
@@ -11,8 +11,6 @@ interface StatsData {
   mempoolCount: number | null;
   hashrate: string | null;
   avgBlockTime: number | null;
-  price: number | null;
-  change24h: number | null;
   privacyScore: number | null;
   shieldedPool: number | null;
   shieldedPct: number | null;
@@ -31,8 +29,7 @@ type StatId =
   | 'shieldedPct'
   | 'privacyScore'
   | 'ironwoodPool'
-  | 'ironwoodPct'
-  | 'price';
+  | 'ironwoodPct';
 
 // Canonical display order — filtering by selection never reorders the bar,
 // so toggling one stat off and back on doesn't shuffle the others.
@@ -47,7 +44,6 @@ const STAT_ORDER: StatId[] = [
   'ironwoodPool',
   'ironwoodPct',
   'privacyScore',
-  'price',
 ];
 
 const STAT_MENU_LABELS: Record<StatId, string> = {
@@ -56,19 +52,18 @@ const STAT_MENU_LABELS: Record<StatId, string> = {
   hashrate: 'Hashrate',
   mempool: 'Mempool',
   totalTxs: 'Total TXs',
-  shieldedPool: 'Shielded Pool',
-  shieldedPct: '% TXs Shielded',
+  shieldedPool: 'Ironwood Pool',
+  shieldedPct: '% Ironwood TXs',
   ironwoodPool: 'Ironwood Pool',
   ironwoodPct: '% Migrated',
-  privacyScore: 'Privacy Score',
-  price: `${CURRENCY} Price`,
+  privacyScore: 'Activity Index',
 };
 
 // Measured (not guessed) against the bar's real available width — see the
 // widths comment on MAX_STATS. Shielded Pool + % Shielded both stay in the
 // default set deliberately: cutting either undersells the one thing that
 // actually differentiates this explorer from a generic chain scanner.
-const DEFAULT_STATS: StatId[] = ['block', 'mempool', 'hashrate', 'shieldedPool', 'shieldedPct', 'price'];
+const DEFAULT_STATS: StatId[] = ['block', 'mempool', 'hashrate', 'shieldedPool', 'shieldedPct', 'privacyScore'];
 
 // Hard cap, not a soft target. The bar's content area caps at ~1216px on
 // any viewport ≥ the `lg` breakpoint (it lives in the same max-w-7xl
@@ -80,7 +75,7 @@ const DEFAULT_STATS: StatId[] = ['block', 'mempool', 'hashrate', 'shieldedPool',
 // 6 items lands around ~950px including gaps/separators: comfortable margin
 // even as block heights/prices grow more digits over time.
 const MAX_STATS = 6;
-const STORAGE_KEY = 'cipherscan-stats-bar-selection';
+const STORAGE_KEY = 'wcashscan-stats-bar-selection';
 
 function isValidStatId(value: unknown): value is StatId {
   return typeof value === 'string' && (STAT_ORDER as string[]).includes(value);
@@ -117,8 +112,6 @@ export function StatsBar() {
     mempoolCount: null,
     hashrate: null,
     avgBlockTime: null,
-    price: null,
-    change24h: null,
     privacyScore: null,
     shieldedPool: null,
     shieldedPct: null,
@@ -137,19 +130,11 @@ export function StatsBar() {
     count?: number;
     transactions?: unknown[];
   }>('/api/mempool', undefined, { refreshInterval: 30_000 });
-  const priceQuery = useApiQuery<{ price?: number; change24h?: number }>(
-    '/api/price',
-    undefined,
-    { refreshInterval: 30_000 },
-  );
   const networkQuery = useApiQuery<{
     mining?: { networkHashrate?: string; avgBlockTime?: number };
     network?: { height?: number };
     supply?: { ironwood?: number; totalShielded?: number };
-  }>('/api/network/stats', undefined, {
-    enabled: !isCrosslink,
-    refreshInterval: 30_000,
-  });
+  }>('/api/network/stats', undefined, { refreshInterval: 30_000 });
   const privacyQuery = useApiQuery<{
     success?: boolean;
     data?: {
@@ -160,10 +145,7 @@ export function StatsBar() {
     metrics?: { privacyScore?: number; shieldedPercentage?: number };
     shieldedPool?: { currentSize?: number };
     totals?: { totalTx?: number };
-  }>('/api/privacy-stats', undefined, {
-    enabled: !isCrosslink,
-    refreshInterval: 30_000,
-  });
+  }>('/api/privacy-stats', undefined, { refreshInterval: 30_000 });
 
   // Server render + first client paint always show DEFAULT_STATS — no
   // hydration mismatch — then this swaps in the visitor's own saved
@@ -278,9 +260,6 @@ export function StatsBar() {
           ?? mempoolQuery.data.transactions?.length
           ?? 0;
       }
-      if (priceQuery.data?.price != null) next.price = priceQuery.data.price;
-      if (priceQuery.data?.change24h != null) next.change24h = priceQuery.data.change24h;
-
       const network = networkQuery.data;
       if (network?.mining?.networkHashrate) next.hashrate = network.mining.networkHashrate;
       if (network?.mining?.avgBlockTime) next.avgBlockTime = network.mining.avgBlockTime;
@@ -305,11 +284,10 @@ export function StatsBar() {
     blocksQuery.data,
     mempoolQuery.data,
     networkQuery.data,
-    priceQuery.data,
     privacyQuery.data,
   ]);
 
-  const hasAnyData = stats.blockHeight !== null || stats.price !== null;
+  const hasAnyData = stats.blockHeight !== null;
 
   const renderStat = (id: StatId): React.ReactNode => {
     switch (id) {
@@ -345,11 +323,11 @@ export function StatsBar() {
         ) : null;
       case 'shieldedPool':
         return stats.shieldedPool !== null ? (
-          <StatItem href="/pools" label="Shielded Pool">{formatCompact(stats.shieldedPool)} {CURRENCY}</StatItem>
+          <StatItem href="/pools" label="Ironwood Pool">{formatCompact(stats.shieldedPool)} {CURRENCY}</StatItem>
         ) : null;
       case 'shieldedPct':
         return stats.shieldedPct !== null ? (
-          <StatItem href="/privacy" label="% TXs Shielded">{stats.shieldedPct.toFixed(1)}%</StatItem>
+          <StatItem href="/privacy" label="% Ironwood TXs">{stats.shieldedPct.toFixed(1)}%</StatItem>
         ) : null;
       case 'privacyScore':
         return stats.privacyScore !== null ? (
@@ -366,19 +344,6 @@ export function StatsBar() {
       case 'ironwoodPct':
         return stats.ironwoodPct !== null ? (
           <StatItem href="/ironwood" label="% Migrated">{stats.ironwoodPct.toFixed(1)}%</StatItem>
-        ) : null;
-      case 'price':
-        return stats.price !== null ? (
-          <StatItem href="/network" label={CURRENCY}>
-            <span className="flex items-center gap-1">
-              <span>${stats.price.toFixed(2)}</span>
-              {stats.change24h !== null && (
-                <span className={stats.change24h >= 0 ? 'text-cipher-green' : 'text-danger'}>
-                  [{stats.change24h >= 0 ? '↑' : '↓'}{Math.abs(stats.change24h).toFixed(1)}%]
-                </span>
-              )}
-            </span>
-          </StatItem>
         ) : null;
       default:
         return null;

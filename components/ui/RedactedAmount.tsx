@@ -30,11 +30,11 @@ function initialGlyphs(): string[] {
 
 /**
  * Placeholder for an amount that isn't just unloaded but genuinely
- * unknowable — a fully-shielded transaction's value never touches the
+ * unknowable — a fully-Ironwood transaction's value never touches the
  * transparent pool, so there's no number to reveal once "loading" finishes.
  *
  * A static mask (dots, dashes) reads as empty; a shimmer/pulse reads as
- * "still loading" — CipherScan's own convention for that state (see
+ * "still loading" — WcashExplorer's convention for that state (see
  * SkeletonTable). Instead this continuously mutates a few symbol glyphs, one
  * at a time, at random — the same visual idea as ciphertext that's actively
  * encrypted rather than absent. Symbols only, never digits — a churning hex
@@ -69,7 +69,7 @@ export function RedactedAmount({ className = '' }: { className?: string }) {
       className={`font-mono text-sm text-secondary whitespace-nowrap ${className}`}
     >
       <span aria-hidden="true" className="tabular-nums">{glyphs.join('')}</span>
-      <span aria-hidden="true" className="text-muted/40 ml-1.5">ZEC</span>
+      <span aria-hidden="true" className="text-muted/40 ml-1.5">TWC</span>
     </IconTooltip>
   );
 }

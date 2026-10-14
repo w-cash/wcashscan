@@ -1,0 +1,47 @@
+{
+  "observed_at_utc": "2026-10-09T22:35:18Z",
+  "platform": "iOS Simulator 26.5",
+  "device": "iPhone 17 Pro",
+  "application": {
+    "bundle_id": "com.wcashwallet.wallet",
+    "version": "2.0.23",
+    "build": "317",
+    "configuration": "Release",
+    "source_head": "2be535122cc7af89e9cf836b7a4fcc02ef4356a0",
+    "executable_sha256": "e1891da689864cd2d84289c0f419016ac4f2f5d5021400be6f5f895709d2a1b8",
+    "javascript_bundle_sha256": "919fea30bf60e04a30be46b41813952070d361b50dc3c8a7fa495fccb90e3726"
+  },
+  "flow": {
+    "fresh_wallet_created": true,
+    "mainnet_sync_completed": true,
+    "relaunch_persistence_verified": true,
+    "visible_status": "Fully Synced",
+    "visible_server_height": 23526,
+    "visible_wallet_height": 23525,
+    "database_scanned_height": 23526,
+    "database_attested_tip_height": 23526
+  },
+  "independent_server_observation": {
+    "endpoint": "mainnet.zecwec.com:443",
+    "transport": "TLS",
+    "tip_height": 23526,
+    "chain_name": "main",
+    "consensus_branch_id": "d9c6a7ee"
+  },
+  "evidence": {
+    "screenshot": {
+      "path": "/Users/rustdev/Documents/ChatGPT/wcashwallet/test-artifacts/ui-qualification-2026-10-09/ios-mainnet-fully-synced-after-relaunch-20261009T223517Z.png",
+      "sha256": "933a3cc2e0b143679e18ceeae6b5a5a4466cee3a048fd705c75a2dd8d406c608"
+    },
+    "grpc_response": {
+      "path": "/Users/rustdev/Documents/ChatGPT/wcashwallet/test-artifacts/ui-qualification-2026-10-09/ios-mainnet-tip-after-relaunch-20261009T223517Z-grpc.json",
+      "sha256": "ab1870f16eb9daa509d373121c331623fc6baeb6615832b422cc48f35a08b534"
+    },
+    "wallet_state": {
+      "path": "/Users/rustdev/Documents/ChatGPT/wcashwallet/test-artifacts/ui-qualification-2026-10-09/ios-mainnet-wallet-state-after-relaunch-20261009T223517Z.json",
+      "sha256": "c57ef2cac561242156cdd38e3539972850a809867787fb4aeed38aa6687b6a69"
+    }
+  },
+  "privacy": "Evidence contains no seed phrase, viewing key, spending key, or wallet address.",
+  "scope": "Fresh-create, Mainnet sync, UI navigation, and restart persistence only; no transaction was sent or received."
+}

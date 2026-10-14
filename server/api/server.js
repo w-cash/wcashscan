@@ -1,7 +1,9 @@
 /**
- * Zcash Explorer API Server
+ * WcashScan API Server
  * Express.js + PostgreSQL + WebSocket
- * Runs on Hetzner, serves data to Vercel frontend
+ *
+ * The database is populated by server/wcash-indexer from a W.cash Wolf node.
+ * The browser never talks to the node or PostgreSQL directly.
  */
 
 require('dotenv').config();
@@ -16,7 +18,6 @@ const redis = require('redis');
 const fs = require('fs');
 const { createListCache } = require('./list-cache');
 const { createRequestObservability } = require('./request-observability');
-const createV1Router = require('./v1');
 const { isKnownServiceKey, createServiceKeyOnlySkip } = require('./service-auth');
 const {
   createInstanceId,
@@ -34,7 +35,7 @@ function redactPathForLogging(path) {
     .map((segment) => {
       if (/^[0-9a-fA-F]{64}$/.test(segment)) return ':txhash';
       if (/^[0-9a-fA-F]{40,66}$/.test(segment)) return ':hash';
-      if (/^(t1|t3|zc|zs|u1|utest1|ztestsapling1|tm|tn)[0-9a-zA-Z]{10,}$/.test(segment)) {
+      if (/^(W1|W3|WT|WU|WR|WS|wu|wutest|wuregtest|wtex|wtextest|wtexregtest)[0-9a-zA-Z]{8,}$/.test(segment)) {
         return ':address';
       }
       if (/^\d+$/.test(segment)) return ':n';
@@ -51,26 +52,20 @@ const server = http.createServer(app);
 const blocksRouter = require('./routes/blocks');
 const transactionsRouter = require('./routes/transactions');
 const networkRouter = require('./routes/network');
-const { createAttestationRouter } = require('./routes/attestations');
-const crosschainRouter = require('./routes/crosschain');
-const wrappedZecRouter = require('./routes/wrapped-zec');
 const statsRouter = require('./routes/stats');
-const privacyRouter = require('./routes/privacy');
+const privacyRouter = require('./routes/wcash-privacy');
 const scanRouter = require('./routes/scan');
 const addressRouter = require('./routes/address');
-const blendCheckRouter = require('./routes/blend-check');
 const { logSafeError } = require('./lib/safe-log');
-const crosslinkRouter = require('./routes/crosslink');
 const reorgsRouter = require('./routes/reorgs');
 const poolsRouter = require('./routes/pools');
-const miningRouter = require('./routes/mining');
+const miningRouter = require('./routes/wcash-mining');
 const analyticsRouter = require('./routes/analytics');
-const migrationRouter = require('./routes/migration');
 const sitemapsRouter = require('./routes/sitemaps');
 const transparentRouter = require('./routes/transparent');
-const valuationRouter = require('./routes/valuation');
-const pulseRouter = require('./routes/pulse');
-const signalsRouter = require('../signals/api');
+const configRouter = require('./routes/config');
+const ironwoodRouter = require('./routes/ironwood');
+const pulseRouter = require('./routes/wcash-pulse');
 
 // Import privacy linkage functions
 const {
@@ -84,18 +79,15 @@ const {
   getPrivacyGraph,
 } = require('./privacy-linkage');
 
-// Import Zebra gRPC client
+// Import W.cash Wolf gRPC client
 const { ZebraGrpcClient } = require('./zebra-grpc');
 
-// Import Fork Monitor
-const { ForkMonitor } = require('./fork-monitor');
- 
 // PostgreSQL connection pool
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'zcash_explorer_testnet',
-  user: process.env.DB_USER || 'zcash_user',
+  database: process.env.DB_NAME || 'wcashscan_testnet_v5',
+  user: process.env.DB_USER || 'wcashscan',
   password: process.env.DB_PASSWORD,
   max: 20,
   idleTimeoutMillis: 30000,
@@ -105,7 +97,7 @@ const pool = new Pool({
   // query pattern (see reltuples-based counts) rather than raising this.
   statement_timeout: 15000,
   query_timeout: 15000,
-  application_name: 'cipherscan-api',
+  application_name: 'wcashscan-api',
 });
 
 // Catch idle-client errors so a terminated connection (e.g. replica recovery
@@ -177,20 +169,22 @@ redisSub.on('error', (err) => logSafeError('Redis Sub Error:', err));
 // Identifies this process's broadcasts on the shared Redis channel so its
 // own publishes are never re-delivered to its own WebSocket clients (see
 // broadcast-relay.js). Every API instance publishes AND subscribes to the
-// same 'zcash:broadcast' channel, so without this check the instance that
+// same Wcash broadcast channel, so without this check the instance that
 // originates an event would deliver it locally twice: once synchronously,
 // and once again when its own publish echoes back through its subscription.
 const SERVER_INSTANCE_ID = createInstanceId();
 const seenBroadcastMessages = createSeenMessageTracker();
 
+const BROADCAST_CHANNEL = process.env.WCASH_BROADCAST_CHANNEL || 'wcash:broadcast';
+
 // Subscribe to Redis broadcast channel (for multi-server support)
 (async () => {
   try {
     if (redisSub.isOpen) {
-      await redisSub.subscribe('zcash:broadcast', (message) => {
+      await redisSub.subscribe(BROADCAST_CHANNEL, (message) => {
         // Drops self-echoes (already delivered locally by broadcastToAll)
         // and already-seen message IDs; forwards everything else — i.e.
-        // events genuinely originating from another instance.
+// events genuinely originating from another instance.
         const body = receiveEnvelope({
           raw: message,
           ownInstanceId: SERVER_INSTANCE_ID,
@@ -217,49 +211,12 @@ const seenBroadcastMessages = createSeenMessageTracker();
 // ZEBRA RPC HELPER
 // ============================================================================
 
-const https = require('https');
-
 /**
  * Call Zebra RPC
  * Reads cookie authentication from file (like the indexer does)
  */
 // Shared HTTP agent: reuses TCP connections to zebrad instead of
 const { callZebraRPC } = require('../lib/zebra-rpc');
-
-// ============================================================================
-// LIGHTWALLETD GRPC CLIENT
-// ============================================================================
-
-const grpc = require('@grpc/grpc-js');
-const protoLoader = require('@grpc/proto-loader');
-const path = require('path');
-
-// Load proto files
-const PROTO_PATH = path.join(__dirname, 'proto/service.proto');
-const COMPACT_FORMATS_PATH = path.join(__dirname, 'proto/compact_formats.proto');
-
-let CompactTxStreamer = null;
-
-// Initialize gRPC client
-try {
-  const packageDefinition = protoLoader.loadSync(
-    [PROTO_PATH, COMPACT_FORMATS_PATH],
-    {
-      keepCase: true,
-      longs: String,
-      enums: String,
-      defaults: true,
-      oneofs: true,
-    }
-  );
-
-  const protoDescriptor = grpc.loadPackageDefinition(packageDefinition);
-  CompactTxStreamer = protoDescriptor.cash.z.wallet.sdk.rpc.CompactTxStreamer;
-  console.log('✅ Lightwalletd gRPC client initialized');
-} catch (error) {
-  logSafeError('❌ Failed to initialize Lightwalletd gRPC client:', error);
-  console.error('   Make sure proto files exist in proto/ directory');
-}
 
 // Trust proxy: exactly one hop (Caddy). With `true`, Express would trust the
 // left-most X-Forwarded-For entry, which a client can set arbitrarily to
@@ -270,13 +227,12 @@ app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet());
 
-// CORS configuration (only allow your domains)
+// CORS configuration (only allow WcashScan origins)
 const allowedOrigins = [
-  'https://testnet.cipherscan.app',
-  'https://cipherscan.app',
-  'https://crosslink.cipherscan.app',
+  'https://testnet.wcashexplorer.com',
+  'https://wcashexplorer.com',
   'http://localhost:3000',
-  'http://localhost:3001',
+  'http://localhost:3002',
   ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : []),
 ];
 
@@ -308,9 +264,9 @@ app.use(cors({
   credentials: true,
   exposedHeaders: [
     'X-Request-Id',
-    'X-CipherScan-Cache',
-    'X-CipherScan-Indexed-Height',
-    'X-CipherScan-Data-Age-Blocks',
+    'X-WcashScan-Cache',
+    'X-WcashScan-Indexed-Height',
+    'X-WcashScan-Data-Age-Blocks',
     'Server-Timing',
   ],
 }));
@@ -323,14 +279,13 @@ app.use(createRequestObservability({
 // Internal service API keys bypass rate limiting (comma-separated in env)
 const SERVICE_API_KEYS = (process.env.SERVICE_API_KEYS || '').split(',').filter(Boolean);
 
-// Our own frontend domains — never rate-limit browsers visiting CipherScan
+// Our own frontend domains — never rate-limit browsers visiting WcashScan
 const OWN_ORIGINS = [
-  'https://cipherscan.app',
-  'https://www.cipherscan.app',
-  'https://testnet.cipherscan.app',
-  'https://crosslink.cipherscan.app',
+  'https://wcashexplorer.com',
+  'https://www.wcashexplorer.com',
+  'https://testnet.wcashexplorer.com',
   'http://localhost:3000',
-  'http://localhost:3001',
+  'http://localhost:3002',
 ];
 
 // OWN_ORIGINS is used ONLY for the WebSocket upgrade check below — it is
@@ -338,7 +293,7 @@ const OWN_ORIGINS = [
 // which is service-key only for exactly that reason).
 //
 // WebSocket upgrades are gated here (no cookies/CORS involved in the
-// handshake): allow a valid service key from any origin (CipherPay, internal
+// handshake): allow a valid service key from any origin (internal services),
 // services), allow our own frontend origins, and allow requests with no
 // Origin header at all (native apps, curl, mobile clients reading public
 // chain data). Reject only unrecognized cross-site browser origins.
@@ -392,8 +347,6 @@ app.use((req, res, next) => {
 
 // Make additional dependencies available to routes
 app.locals.callZebraRPC = callZebraRPC;
-app.locals.CompactTxStreamer = CompactTxStreamer;
-app.locals.grpc = grpc;
 app.locals.findLinkedTransactions = findLinkedTransactions;
 app.locals.formatTimeDelta = formatTimeDelta;
 app.locals.getTransparentAddresses = getTransparentAddresses;
@@ -413,13 +366,9 @@ app.use(transactionsRouter);
 
 // Network routes: /api/network/*
 app.use(networkRouter);
-app.use(createAttestationRouter());
-
-// Cross-chain routes: /api/crosschain/*
-app.use(crosschainRouter);
-
-// Wrapped ZEC routes: /api/wrapped-zec/* (read-only Base/Solana/NEAR RPC, no shared DB access)
-app.use(wrappedZecRouter);
+// Wcash profile and source status: /api/config
+app.use(configRouter);
+app.use(ironwoodRouter);
 
 // Stats routes: /api/stats/*, /api/privacy-stats
 app.use(statsRouter);
@@ -433,33 +382,18 @@ app.use(scanRouter);
 // Address routes: /api/address/*
 app.use(addressRouter);
 
-// Blend check routes: /api/blend-check
-app.use(blendCheckRouter);
-
-// Crosslink routes: /api/crosslink
-app.use(crosslinkRouter);
 app.use(reorgsRouter);
 app.use(poolsRouter);
 
 // Mining routes: /api/mining/*
 app.use(miningRouter);
 app.use(analyticsRouter);
+app.use(pulseRouter);
 
-// Orchard → Ironwood migration routes: /api/migration/*
-app.use(migrationRouter);
 app.use(sitemapsRouter);
 
 // Transparent address analysis: /api/transparent/*
 app.use(transparentRouter);
-app.use(valuationRouter);
-app.use(pulseRouter);
-
-// Private trading signals: /api/signals/* (service-key protected)
-app.use('/api/signals', signalsRouter);
-
-// Stable public API contract. The router is fail-closed by default and returns
-// an indistinguishable 404 until API_V1_ENABLED is explicitly configured.
-app.use('/v1', createV1Router());
 
 // Count registered API routes (available as app.locals.apiRouteCount)
 function countApiRoutes(app) {
@@ -663,7 +597,7 @@ async function broadcastToAll(message, serviceExtra = null) {
   // underlying gRPC event, unchanged from before this fix.
   try {
     if (redisPub.isOpen) {
-      await redisPub.publish('zcash:broadcast', wrapEnvelope(SERVER_INSTANCE_ID, message));
+      await redisPub.publish(BROADCAST_CHANNEL, wrapEnvelope(SERVER_INSTANCE_ID, message));
     }
   } catch (err) {
     logSafeError('Redis publish error:', err);
@@ -711,7 +645,7 @@ async function purgeChainTipCache() {
 }
 
 // ============================================================================
-// ZEBRA GRPC STREAMING (real-time mempool + blocks)
+// WOLF GRPC STREAMING (real-time mempool + blocks)
 // ============================================================================
 
 let lastKnownHeight = 0;
@@ -735,28 +669,22 @@ const chainTipBroadcaster = createChainTipBroadcaster({
 });
 
 const zebraGrpc = new ZebraGrpcClient(
-  process.env.ZEBRA_GRPC_URL || null,
+  process.env.WCASH_INDEXER_GRPC_URL || null,
   {
     onMempoolChange: async (change) => {
       if (change.type === 'ADDED') {
         try {
           const tx = await callZebraRPC('getrawtransaction', [change.txid, 1]);
           if (tx) {
-            const orchardActions = tx.orchard?.actions?.length || 0;
             const ironwoodActions = tx.ironwood?.actions?.length || 0;
             const data = {
               txid: change.txid,
               size: tx.size || 0,
               fee: tx.fee || 0,
-              hasOrchard: orchardActions > 0,
-              hasSapling: (tx.vShieldedSpend?.length || 0) > 0 || (tx.vShieldedOutput?.length || 0) > 0,
               hasIronwood: ironwoodActions > 0,
-              orchardActions,
               ironwoodActions,
               // Public regardless of pool — needed so the frontend can show a
               // known amount for shield/deshield txs (see /api/mempool parity).
-              valueBalanceSapling: tx.valueBalance || 0,
-              valueBalanceOrchard: tx.orchard?.valueBalance || 0,
               valueBalanceIronwood: tx.ironwood?.valueBalance || 0,
               totalOutput: (tx.vout || []).reduce((sum, o) => sum + (o.value || 0), 0),
               inputCount: tx.vin?.length || 0,
@@ -799,11 +727,6 @@ const zebraGrpc = new ZebraGrpcClient(
 );
 
 zebraGrpc.start();
-
-// Fork Monitor: poll external lightwalletd nodes for chain tip comparison
-const forkMonitor = new ForkMonitor({ pool, grpc, CompactTxStreamer });
-forkMonitor.start();
-app.locals.forkMonitor = forkMonitor;
 
 // Fallback: poll for new blocks every 10s when the chain-tip gRPC stream
 // specifically is not connected. Gating on the chain-tip stream (rather
@@ -848,7 +771,7 @@ app.get('/api/grpc-status', (req, res) => {
   res.json({
     connected: streamStatus.mempool && streamStatus.chainTip,
     streams: streamStatus,
-    url: process.env.ZEBRA_GRPC_URL ? 'configured' : 'not configured',
+    url: process.env.WCASH_INDEXER_GRPC_URL ? 'configured' : 'not configured',
     websocket: {
       clients: [...clients].filter(c => c.readyState === WebSocket.OPEN).length,
       serviceClients,
@@ -883,13 +806,13 @@ server.listen(PORT, HOST, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
-║   🚀 Zcash Explorer API Server                           ║
+║   🚀 WcashScan API Server                                ║
 ║                                                           ║
 ║   HTTP:      http://localhost:${PORT}                        ║
 ║   WebSocket: ws://localhost:${PORT}                          ║
 ║                                                           ║
 ║   Environment: ${process.env.NODE_ENV || 'development'}                              ║
-║   Database:    ${process.env.DB_NAME || 'zcash_explorer_testnet'}              ║
+║   Database:    ${process.env.DB_NAME || 'wcashscan_testnet_v5'}              ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
   `);
@@ -917,7 +840,6 @@ function shutdown(signal) {
   // Stop producing new broadcasts/streams before tearing down the transport
   // they'd otherwise try to send through.
   zebraGrpc.stop();
-  forkMonitor.stop();
   clearInterval(wsAliveCheck);
 
   // Upgraded WebSocket connections are not closed by http.Server.close(), so

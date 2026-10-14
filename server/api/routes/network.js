@@ -10,6 +10,7 @@ const { parsePeerClient } = require('../../lib/peer-client');
 const { parseSafeListPagination, offsetExceededError } = require('../lib/pagination');
 const { logSafeError } = require('../lib/safe-log');
 const { applyListCacheHeaders } = require('../list-cache');
+const { getWcashBase58Prefixes } = require('../lib/wcash-profile');
 
 // The crawled node census is bounded to the live network's peer count
 // (thousands, not millions), but the shared cap still applies for
@@ -39,11 +40,11 @@ router.use((req, res, next) => {
 // CACHE CONFIGURATION
 // ============================================================================
 
-const NETWORK_STATS_CACHE_KEY = 'zcash:network_stats';
+const NETWORK_STATS_CACHE_KEY = 'wcash:network_stats';
 const NETWORK_STATS_CACHE_DURATION = 120; // 2 minutes — network stats don't change fast
-const NETWORK_HEALTH_CACHE_KEY = 'zcash:network_health';
+const NETWORK_HEALTH_CACHE_KEY = 'wcash:network_health';
 const NETWORK_HEALTH_CACHE_DURATION = 60;
-const NETWORK_TOPOLOGY_CACHE_KEY = 'zcash:network_topology';
+const NETWORK_TOPOLOGY_CACHE_KEY = 'wcash:network_topology';
 const NETWORK_TOPOLOGY_CACHE_DURATION = 300; // 5 minutes — aligned with crawler ingest cycle
 
 // Fallback in-memory cache (if Redis fails)
@@ -127,6 +128,12 @@ async function fetchNetworkStatsOptimized() {
       rolling_block_time AS (
         SELECT (MAX(timestamp) - MIN(timestamp))::float / NULLIF(COUNT(*) - 1, 0) AS avg_secs
         FROM (SELECT timestamp FROM blocks ORDER BY height DESC LIMIT 1000) sub
+      ),
+      latest_metric AS (
+        SELECT serialized_bytes
+        FROM wcash_block_metrics
+        ORDER BY height DESC
+        LIMIT 1
       )
       SELECT
         latest.height,
@@ -137,15 +144,28 @@ async function fetchNetworkStatsOptimized() {
         last_24h.tx_24h,
         last_24h.tx_24h_excl_coinbase,
         last_24h.avg_block_fee_zat,
-        rolling_block_time.avg_secs AS rolling_block_time_secs
+        rolling_block_time.avg_secs AS rolling_block_time_secs,
+        latest_metric.serialized_bytes
       FROM latest, last_24h, rolling_block_time
+      LEFT JOIN latest_metric ON TRUE
     `);
 
     if (!dbStats.rows[0]) {
       throw new Error('No blockchain data available');
     }
 
-    const { height, difficulty, timestamp, blocks_24h, avg_difficulty, tx_24h, tx_24h_excl_coinbase, avg_block_fee_zat, rolling_block_time_secs } = dbStats.rows[0];
+    const {
+      height,
+      difficulty,
+      timestamp,
+      blocks_24h,
+      avg_difficulty,
+      tx_24h,
+      tx_24h_excl_coinbase,
+      avg_block_fee_zat,
+      rolling_block_time_secs,
+      serialized_bytes,
+    } = dbStats.rows[0];
 
     const [networkInfo, peerInfo, blockchainInfo, blockSubsidy] = await Promise.all([
       callZebraRPC('getnetworkinfo').catch(() => null),
@@ -159,60 +179,64 @@ async function fetchNetworkStatsOptimized() {
     const protocolVersion = networkInfo?.protocolversion || null;
     const subversion = networkInfo?.subversion || null;
 
-    // Extract supply and pool data from getblockchaininfo
+    // Extract only W.cash's live value pools from getblockchaininfo. Wolf's
+    // response may contain compatibility fields from its upstream ancestry;
+    // never pass those foreign pools through to the explorer.
     let supplyData = null;
     if (blockchainInfo) {
-      const chainSupplyZat = blockchainInfo.chainSupply?.chainValueZat || 0;
-      const valuePools = blockchainInfo.valuePools || [];
+      const finiteZatoshi = (value) => {
+        const number = Number(value);
+        return Number.isSafeInteger(number) && number >= 0 ? number : null;
+      };
+      const chainSupplyZat = finiteZatoshi(blockchainInfo.chainSupply?.chainValueZat);
+      const valuePools = Array.isArray(blockchainInfo.valuePools) ? blockchainInfo.valuePools : [];
 
-      const transparent = valuePools.find(p => p.id === 'transparent')?.chainValueZat || 0;
-      const sprout = valuePools.find(p => p.id === 'sprout')?.chainValueZat || 0;
-      const sapling = valuePools.find(p => p.id === 'sapling')?.chainValueZat || 0;
-      const orchard = valuePools.find(p => p.id === 'orchard')?.chainValueZat || 0;
-      const ironwood = valuePools.find(p => p.id === 'ironwood')?.chainValueZat || 0;
-      const lockbox = valuePools.find(p => p.id === 'lockbox')?.chainValueZat || 0;
-
-      const totalShielded = sprout + sapling + orchard + ironwood;
-      const shieldedPercentage = chainSupplyZat > 0 ? (totalShielded / chainSupplyZat) * 100 : 0;
-
-      // Get active upgrade
-      const upgrades = blockchainInfo.upgrades || {};
-      const activeUpgrades = Object.values(upgrades).filter((u) => u.status === 'active');
-      const latestUpgrade = activeUpgrades.length > 0
-        ? activeUpgrades.reduce((latest, u) => u.activationheight > latest.activationheight ? u : latest)
+      const transparent = finiteZatoshi(valuePools.find(p => p.id === 'transparent')?.chainValueZat);
+      const ironwood = finiteZatoshi(valuePools.find(p => p.id === 'ironwood')?.chainValueZat);
+      const totalShielded = ironwood;
+      const shieldedPercentage = chainSupplyZat > 0 && totalShielded != null
+        ? (totalShielded / chainSupplyZat) * 100
         : null;
 
       supplyData = {
-        chainSupply: chainSupplyZat / 100000000,
-        transparent: transparent / 100000000,
-        sprout: sprout / 100000000,
-        sapling: sapling / 100000000,
-        orchard: orchard / 100000000,
-        ironwood: ironwood / 100000000,
-        lockbox: lockbox / 100000000,
-        totalShielded: totalShielded / 100000000,
+        chainSupply: chainSupplyZat == null ? null : chainSupplyZat / 100000000,
+        transparent: transparent == null ? null : transparent / 100000000,
+        ironwood: ironwood == null ? null : ironwood / 100000000,
+        totalShielded: totalShielded == null ? null : totalShielded / 100000000,
         shieldedPercentage: shieldedPercentage,
-        sizeOnDisk: blockchainInfo.size_on_disk || 0,
-        activeUpgrade: latestUpgrade?.name || null,
-        chain: blockchainInfo.chain || 'unknown',
+        sizeOnDisk: finiteZatoshi(blockchainInfo.size_on_disk),
+        chain: blockchainInfo.chain || null,
       };
     }
 
-    // Calculate hashrate
+    // Use Wolf's authoritative solution-rate RPC. Difficulty-to-rate formulas
+    // are chain-specific and must not be inherited from another explorer.
     const blocks24h = parseInt(blocks_24h || 0);
     const tx24h = parseInt(tx_24h || 0);
     const tx24hExclCoinbase = parseInt(tx_24h_excl_coinbase || 0);
     const avgBlockTime = rolling_block_time_secs
       ? Math.round(Number(rolling_block_time_secs) * 10) / 10
-      : (blocks24h > 0 ? Math.round(86400 / blocks24h) : 75);
+      : (blocks24h > 0 ? Math.round(86400 / blocks24h) : null);
     const difficultyNum = parseFloat(difficulty || 0);
-    // Zcash's Equihash difficulty encodes a solution-rate estimate with a 2^13
-    // constant (see zcashd's GetNetworkHashPS / getnetworksolps), not the plain
-    // Bitcoin-style difficulty/time ratio. Omitting it understates hashrate by 8192x.
-    const networkHashrate = (difficultyNum * 8192) / avgBlockTime;
+    const networkHashrateResult = await callZebraRPC('getnetworksolps', [120]).catch(() => null);
+    const networkHashrate = Number.isFinite(Number(networkHashrateResult))
+      ? Number(networkHashrateResult)
+      : null;
     const avgBlockFee = avg_block_fee_zat != null ? parseFloat(avg_block_fee_zat) / 100000000 : null;
+    const indexedHeight = Number.parseInt(height, 10);
+    const nodeHeight = Number.isSafeInteger(Number(blockchainInfo?.blocks))
+      ? Number(blockchainInfo.blocks)
+      : null;
+    const syncProgress = nodeHeight == null || nodeHeight < indexedHeight
+      ? null
+      : nodeHeight === 0
+        ? 100
+        : Number(((indexedHeight / nodeHeight) * 100).toFixed(2));
+    const serializedChainBytes = Number.parseInt(serialized_bytes, 10) || 0;
+    const operationalDiskBytes = Number.parseInt(blockchainInfo?.size_on_disk, 10) || 0;
 
     function formatHashrate(h) {
+      if (!Number.isFinite(h)) return '—';
       if (h >= 1e12) return `${(h / 1e12).toFixed(2)} TSol/s`;
       if (h >= 1e9) return `${(h / 1e9).toFixed(2)} GSol/s`;
       if (h >= 1e6) return `${(h / 1e6).toFixed(2)} MSol/s`;
@@ -220,42 +244,52 @@ async function fetchNetworkStatsOptimized() {
       return `${h.toFixed(2)} Sol/s`;
     }
 
-    // Block subsidy from Zebra RPC (dynamic, adjusts at halvings)
-    const totalBlockSubsidy = blockSubsidy?.totalblocksubsidy ?? 1.5625;
-    const minerReward = blockSubsidy?.miner ?? totalBlockSubsidy;
-    const fundingStreamsTotal = blockSubsidy?.fundingstreamstotal ?? 0;
-    const lockboxTotal = blockSubsidy?.lockboxtotal ?? 0;
-    const dailyRevenue = blocks24h * totalBlockSubsidy;
-    const dailyMinerRevenue = blocks24h * minerReward;
+    // Block subsidy from Wolf RPC (dynamic, adjusts at halvings). Do not
+    // invent a reward while the node is unavailable.
+    const totalBlockSubsidy = blockSubsidy?.totalblocksubsidy != null
+      ? Number(blockSubsidy.totalblocksubsidy)
+      : null;
+    const minerReward = blockSubsidy?.miner != null ? Number(blockSubsidy.miner) : totalBlockSubsidy;
+    const dailyRevenue = totalBlockSubsidy == null ? null : blocks24h * totalBlockSubsidy;
+    const dailyMinerRevenue = minerReward == null ? null : blocks24h * minerReward;
 
     return {
       success: true,
+      chain: 'wcash',
+      ticker: 'TWC',
+      dataNetwork: process.env.WCASH_CHAIN || 'wcash-testnet-v5',
       mining: {
         networkHashrate: formatHashrate(networkHashrate),
         networkHashrateRaw: networkHashrate,
         difficulty: difficultyNum,
         avgBlockTime, // in seconds
-        avgBlockFee, // in ZEC, null if no blocks in the last 24h
+        avgBlockFee, // in TWC, null if no blocks in the last 24h
         blocks24h,
         blockReward: totalBlockSubsidy,
         minerReward,
-        fundingStreams: fundingStreamsTotal,
-        lockbox: lockboxTotal,
         dailyRevenue,
         dailyMinerRevenue,
       },
       network: {
         peers: peerCount,
-        height: parseInt(height),
+        height: indexedHeight,
+        nodeHeight,
         protocolVersion: protocolVersion,
         subversion: subversion,
       },
       blockchain: {
-        height: parseInt(height),
+        height: indexedHeight,
+        indexedHeight,
+        nodeHeight,
         latestBlockTime: parseInt(timestamp),
-        syncProgress: 100, // Assume synced if we have recent blocks
-        sizeBytes: blockchainInfo?.size_on_disk || 0,
-        sizeGB: parseFloat(((blockchainInfo?.size_on_disk || 0) / (1024 * 1024 * 1024)).toFixed(2)),
+        syncProgress,
+        // This is the sum of canonical serialized W.cash block bytes. Wolf's
+        // operational state directory size is exposed separately below.
+        sizeBytes: serializedChainBytes,
+        sizeGB: parseFloat((serializedChainBytes / (1024 * 1024 * 1024)).toFixed(2)),
+        sizeKind: 'indexed_canonical_serialized_blocks',
+        operationalDiskBytes,
+        operationalDiskGB: parseFloat((operationalDiskBytes / (1024 * 1024 * 1024)).toFixed(2)),
         tx24h,
         tx24hExclCoinbase,
       },
@@ -345,62 +379,42 @@ router.get('/api/network/stats', async (req, res) => {
 
 /**
  * GET /api/network/fees
- * Get estimated transaction fees per ZIP-317
- * ZIP-317: marginal_fee = 5000 zatoshi/action, grace_actions = 2, p2pkh_standard_fee = 10000 zatoshi
- * Formula: max(marginal_fee * max(grace_actions, logical_actions), p2pkh_standard_fee)
+ * Wcash fee policy is not a scanner-owned market estimate. Do not expose the
+ * inherited foreign-chain constants as if they were Wcash consensus data.
  */
 router.get('/api/network/fees', async (req, res) => {
-  try {
-    console.log('💰 [FEES] Fetching fee estimates...');
-
-    // ZIP-317 conventional fees based on logical actions
-    // 2 actions (simple tx): max(5000*2, 10000) = 10000 zatoshi
-    // 3 actions: max(5000*3, 10000) = 15000 zatoshi
-    // 5 actions (complex): max(5000*5, 10000) = 25000 zatoshi
-    res.json({
-      success: true,
-      fees: {
-        low: 0.0001,          // 10,000 zatoshi — simple tx (2 logical actions)
-        standard: 0.00015,    // 15,000 zatoshi — typical shielded tx (3 actions)
-        high: 0.00025,        // 25,000 zatoshi — complex tx (5 actions)
-      },
-      unit: 'ZEC',
-      zip317: {
-        marginalFee: 5000,
-        graceActions: 2,
-        p2pkhStandardFee: 10000,
-        formula: 'max(marginal_fee * max(grace_actions, logical_actions), p2pkh_standard_fee)',
-      },
-      note: 'Fees follow ZIP-317 proportional fee mechanism. Actual fee depends on the number of logical actions in the transaction.',
-      timestamp: Date.now(),
-    });
-
-    console.log(`✅ [FEES] Fee estimates returned`);
-  } catch (error) {
-    logSafeError('❌ [FEES] Error fetching fees:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch fee estimates',
-    });
-  }
+  res.json({
+    success: true,
+    network: 'wcash',
+    ticker: 'TWC',
+    dataNetwork: process.env.WCASH_CHAIN || 'wcash-testnet-v5',
+    available: false,
+    fees: null,
+    unit: 'TWC',
+    source: 'W.cash Wolf fee policy',
+    note: 'WcashExplorer does not invent a fee estimate. Fee data will appear when the W.cash node exposes a configured fee policy.',
+    timestamp: Date.now(),
+  });
 });
 
 /**
  * GET /api/network/health
- * Get Zebra node health status (Zebra 3.0+)
+ * Get W.cash Wolf node health status.
  */
 router.get('/api/network/health', async (req, res) => {
   try {
     const cached = await getFromRedisCache(NETWORK_HEALTH_CACHE_KEY);
     if (cached) {
-      return res.json({ ...cached, cached: true });
+      return res.json({ ...cached, network: 'wcash', ticker: 'TWC', cached: true });
     }
 
-    const zebraHealthUrl = process.env.ZEBRA_HEALTH_URL || 'http://127.0.0.1:8080';
+    const wolfHealthUrl = process.env.WCASH_HEALTH_URL
+      || process.env.WOLF_HEALTH_URL
+      || 'http://127.0.0.1:8080';
 
     const [healthyRes, readyRes] = await Promise.allSettled([
-      fetch(`${zebraHealthUrl}/healthy`).then(r => ({ status: r.status, ok: r.ok })).catch(() => null),
-      fetch(`${zebraHealthUrl}/ready`).then(r => ({ status: r.status, ok: r.ok })).catch(() => null),
+      fetch(`${wolfHealthUrl}/healthy`).then(r => ({ status: r.status, ok: r.ok })).catch(() => null),
+      fetch(`${wolfHealthUrl}/ready`).then(r => ({ status: r.status, ok: r.ok })).catch(() => null),
     ]);
 
     const healthy = healthyRes.status === 'fulfilled' && healthyRes.value?.ok;
@@ -418,7 +432,10 @@ router.get('/api/network/health', async (req, res) => {
 
     const result = {
       success: true,
-      zebra: {
+      network: 'wcash',
+      ticker: 'TWC',
+      dataNetwork: process.env.WCASH_CHAIN || 'wcash-testnet-v5',
+      wolf: {
         healthy: healthy || fallbackHealthy,
         ready: ready,
         healthEndpointAvailable: healthy,
@@ -446,12 +463,14 @@ router.get('/api/network/peers', async (req, res) => {
   try {
     console.log('🌐 [PEERS] Fetching peer information...');
 
-    // Get detailed peer info from Zebra
+    // Get detailed peer info from Wolf
     const peerInfo = await callZebraRPC('getpeerinfo').catch(() => []);
 
     if (!Array.isArray(peerInfo)) {
       return res.json({
         success: true,
+        network: 'wcash',
+        ticker: 'TWC',
         count: 0,
         peers: [],
       });
@@ -475,6 +494,8 @@ router.get('/api/network/peers', async (req, res) => {
 
     res.json({
       success: true,
+      network: 'wcash',
+      ticker: 'TWC',
       count: peerInfo.length,
       inbound,
       outbound,
@@ -499,11 +520,12 @@ router.get('/api/network/peers', async (req, res) => {
 // TRANSPARENT SUPPLY BREAKDOWN
 // ============================================================================
 
-const BREAKDOWN_CACHE_KEY = 'zcash:transparent_breakdown';
+const BREAKDOWN_CACHE_KEY = 'wcash:transparent_breakdown';
 const BREAKDOWN_CACHE_DURATION = 600; // 10 minutes
 
 router.get('/api/supply/transparent-breakdown', async (req, res) => {
   try {
+    const { p2pkh, p2sh } = getWcashBase58Prefixes();
     const cached = await getFromRedisCache(BREAKDOWN_CACHE_KEY);
     if (cached) {
       return res.json({ ...cached, cached: true });
@@ -523,8 +545,8 @@ router.get('/api/supply/transparent-breakdown', async (req, res) => {
       pool.query(
         `SELECT
            CASE
-             WHEN address LIKE 't1%' THEN 'P2PKH'
-             WHEN address LIKE 't3%' THEN 'P2SH'
+             WHEN address LIKE '${p2pkh}%' THEN 'P2PKH'
+             WHEN address LIKE '${p2sh}%' THEN 'P2SH'
              ELSE 'other'
            END AS script_type,
            COUNT(*)::int AS address_count,
@@ -556,8 +578,8 @@ router.get('/api/supply/transparent-breakdown', async (req, res) => {
       const balance = parseFloat(row.total_balance) / 1e8;
       return {
         type: row.script_type,
-        description: row.script_type === 'P2PKH' ? 'Pay-to-Public-Key-Hash (t1...)' :
-                     row.script_type === 'P2SH' ? 'Pay-to-Script-Hash (t3..., multi-sig/custody)' : 'Other',
+        description: row.script_type === 'P2PKH' ? 'Pay-to-Public-Key-Hash (Wcash transparent)' :
+                     row.script_type === 'P2SH' ? 'Pay-to-Script-Hash (Wcash transparent)' : 'Other',
         addressCount: row.address_count,
         totalBalance: balance,
         percentage: transparentTotal > 0 ? (balance / transparentTotal) * 100 : 0,
@@ -566,6 +588,9 @@ router.get('/api/supply/transparent-breakdown', async (req, res) => {
 
     const result = {
       success: true,
+      network: 'wcash',
+      ticker: 'TWC',
+      dataNetwork: process.env.WCASH_CHAIN || 'wcash-testnet-v5',
       categories,
       addressTypes,
       transparentTotal,
@@ -588,8 +613,8 @@ router.get('/api/supply/transparent-breakdown', async (req, res) => {
 
 /**
  * GET /api/supply
- * Get value pool breakdown (transparent, sprout, sapling, orchard, lockbox)
- * Compatible with zcashexplorer.app /api/v1/supply format
+ * Get W.cash value pool breakdown. Wolf may expose additional fields in
+ * verbose RPC responses; only the two W.cash pools are published here.
  */
 router.get('/api/supply', async (req, res) => {
   try {
@@ -599,15 +624,23 @@ router.get('/api/supply', async (req, res) => {
       return res.status(500).json({ error: 'Could not fetch supply data' });
     }
 
-    // Return in same format as zcashexplorer.app
-    const pools = blockchainInfo.valuePools.map(pool => ({
+    const pools = blockchainInfo.valuePools
+      .filter(pool => pool.id === 'transparent' || pool.id === 'ironwood')
+      .map(pool => ({
       id: pool.id,
       chainValue: pool.chainValue,
       chainValueZat: pool.chainValueZat,
       monitored: pool.monitored,
-    }));
+      }));
 
-    res.json(pools);
+    res.json({
+      success: true,
+      network: 'wcash',
+      ticker: 'TWC',
+      pools,
+      // Keep the historical array under a named field rather than leaking
+      // foreign-chain pool records into the public W.cash contract.
+    });
   } catch (error) {
     logSafeError('❌ [SUPPLY] Error:', error);
     res.status(500).json({ error: 'Failed to fetch supply data' });
@@ -616,8 +649,7 @@ router.get('/api/supply', async (req, res) => {
 
 /**
  * GET /api/blockchain-info
- * Full blockchain info (supply, difficulty, upgrades, softforks, etc.)
- * Compatible with zcashexplorer.app /api/v1/blockchain-info format
+ * Full Wolf blockchain info with W.cash identity metadata.
  */
 router.get('/api/blockchain-info', async (req, res) => {
   try {
@@ -643,7 +675,21 @@ router.get('/api/blockchain-info', async (req, res) => {
       blockchainInfo.estimatedheight = dbTip;
     }
 
-    res.json(blockchainInfo);
+    const publicBlockchainInfo = {
+      ...blockchainInfo,
+      // Wolf may expose compatibility pools inherited from another
+      // protocol. The WcashExplorer contract publishes only W.cash pools.
+      valuePools: Array.isArray(blockchainInfo.valuePools)
+        ? blockchainInfo.valuePools.filter((pool) => pool?.id === 'transparent' || pool?.id === 'ironwood')
+        : blockchainInfo.valuePools,
+    };
+
+    res.json({
+      ...publicBlockchainInfo,
+      network: 'wcash',
+      ticker: 'TWC',
+      dataNetwork: process.env.WCASH_CHAIN || 'wcash-testnet-v5',
+    });
   } catch (error) {
     logSafeError('❌ [BLOCKCHAIN-INFO] Error:', error);
     res.status(500).json({ error: 'Failed to fetch blockchain info' });
@@ -652,8 +698,8 @@ router.get('/api/blockchain-info', async (req, res) => {
 
 /**
  * GET /api/circulating-supply
- * Returns just the circulating supply number (plain text or JSON)
- * Useful for CoinGecko, CoinMarketCap integrations
+ * Returns the canonical W.cash circulating supply. This is a chain metric,
+ * not a market-data integration.
  */
 router.get('/api/circulating-supply', async (req, res) => {
   try {
@@ -671,7 +717,9 @@ router.get('/api/circulating-supply', async (req, res) => {
         circulatingSupply: supply,
         circulatingSupplyZat: blockchainInfo.chainSupply.chainValueZat,
         maxSupply: 21000000,
-        unit: 'ZEC',
+        maxSupplyZat: 2100000000000000n.toString(),
+        unit: 'TWC',
+        network: 'wcash',
       });
     } else {
       res.type('text/plain').send(supply.toString());
@@ -929,94 +977,22 @@ router.get('/api/network/node-history', async (req, res) => {
   }
 });
 
-// ============================================================================
-// ZEC PRICE (Privacy proxy — prevents user IPs from leaking to CoinGecko)
-// ============================================================================
-
-let priceCache = { data: null, timestamp: 0 };
-const PRICE_CACHE_MS = 60_000;
-
-router.get('/api/price', async (req, res) => {
-  try {
-    const now = Date.now();
-    if (priceCache.data && now - priceCache.timestamp < PRICE_CACHE_MS) {
-      return res.json(priceCache.data);
-    }
-
-    const response = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=zcash&vs_currencies=usd&include_24hr_change=true'
-    );
-
-    if (!response.ok) {
-      if (priceCache.data) return res.json(priceCache.data);
-      return res.status(502).json({ error: 'Price service unavailable' });
-    }
-
-    const raw = await response.json();
-    const data = {
-      price: raw.zcash?.usd ?? null,
-      change24h: raw.zcash?.usd_24h_change ?? null,
-      timestamp: now,
-    };
-
-    priceCache = { data, timestamp: now };
-    res.json(data);
-  } catch (error) {
-    logSafeError('❌ [PRICE] Error:', error);
-    if (priceCache.data) return res.json(priceCache.data);
-    res.status(500).json({ error: 'Failed to fetch price' });
-  }
-});
-
-// ============================================================================
-// HISTORICAL PRICE LOOKUP
-// ============================================================================
-
-router.get('/api/price/at', async (req, res) => {
-  try {
-    const { date } = req.query;
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return res.status(400).json({ error: 'date query param required (YYYY-MM-DD)' });
-    }
-
-    const result = await pool.query(
-      'SELECT price_usd FROM zec_price_daily WHERE date = $1',
-      [date]
-    );
-
-    if (result.rows.length === 0) {
-      const closest = await pool.query(
-        `SELECT date, price_usd FROM zec_price_daily
-         WHERE date <= $1 ORDER BY date DESC LIMIT 1`,
-        [date]
-      );
-      if (closest.rows.length === 0) {
-        return res.json({ date, price_usd: null, exact: false });
-      }
-      return res.json({
-        date,
-        price_usd: parseFloat(closest.rows[0].price_usd),
-        actual_date: closest.rows[0].date,
-        exact: false,
-      });
-    }
-
-    res.json({
-      date,
-      price_usd: parseFloat(result.rows[0].price_usd),
-      exact: true,
-    });
-  } catch (error) {
-    logSafeError('Error fetching historical price:', error);
-    res.status(500).json({ error: 'Failed to fetch price' });
-  }
+// W.cash has no production price/valuation source. Keep these paths explicit
+// and closed so old frontend bundles or third-party callers cannot silently
+// re-enable a market-data dependency.
+router.get(['/api/price', '/api/price/at'], (req, res) => {
+  res.status(404).json({
+    success: false,
+    code: 'PRICING_DISABLED',
+    error: 'Market pricing is disabled for WcashExplorer',
+  });
 });
 
 // ============================================================================
 // PROTOCOL STATS: Commitment trees & nullifier sets
 // ============================================================================
 
-const PROTOCOL_STATS_CACHE_KEY = 'zcash:protocol_stats';
+const PROTOCOL_STATS_CACHE_KEY = 'wcash:protocol_stats';
 const PROTOCOL_STATS_CACHE_DURATION = 300; // 5 minutes
 
 router.get('/api/network/protocol-stats', async (req, res) => {
@@ -1027,20 +1003,12 @@ router.get('/api/network/protocol-stats', async (req, res) => {
     const [totals, monthly] = await Promise.all([
       pool.query(`
         SELECT
-          SUM(sapling_output_count)::bigint AS sapling_commitments,
-          SUM(sapling_spend_count)::bigint AS sapling_nullifiers,
-          SUM(orchard_actions)::bigint AS orchard_commitments,
-          SUM(orchard_actions)::bigint AS orchard_nullifiers,
-          SUM(ironwood_actions)::bigint AS ironwood_commitments,
-          SUM(ironwood_actions)::bigint AS ironwood_nullifiers
+          SUM(ironwood_actions)::bigint AS ironwood_actions
         FROM transactions
       `),
       pool.query(`
         SELECT
           date_trunc('month', to_timestamp(block_time))::date AS month,
-          SUM(sapling_output_count)::bigint AS sapling_outputs,
-          SUM(sapling_spend_count)::bigint AS sapling_spends,
-          SUM(orchard_actions)::bigint AS orchard_actions,
           SUM(ironwood_actions)::bigint AS ironwood_actions
         FROM transactions
         WHERE block_time > 0
@@ -1051,39 +1019,21 @@ router.get('/api/network/protocol-stats', async (req, res) => {
 
     const t = totals.rows[0];
 
-    let saplingCum = 0;
-    let saplingNullCum = 0;
-    let orchardCum = 0;
-    let orchardNullCum = 0;
     let ironwoodCum = 0;
-    let ironwoodNullCum = 0;
     const history = monthly.rows.map(row => {
-      saplingCum += parseInt(row.sapling_outputs) || 0;
-      saplingNullCum += parseInt(row.sapling_spends) || 0;
-      orchardCum += parseInt(row.orchard_actions) || 0;
-      orchardNullCum += parseInt(row.orchard_actions) || 0;
       ironwoodCum += parseInt(row.ironwood_actions) || 0;
-      ironwoodNullCum += parseInt(row.ironwood_actions) || 0;
       return {
         month: row.month,
-        saplingCommitments: saplingCum,
-        saplingNullifiers: saplingNullCum,
-        orchardCommitments: orchardCum,
-        orchardNullifiers: orchardNullCum,
-        ironwoodCommitments: ironwoodCum,
-        ironwoodNullifiers: ironwoodNullCum,
+        ironwoodActions: ironwoodCum,
       };
     });
 
     const result = {
       success: true,
+      network: 'wcash',
+      ticker: 'TWC',
       current: {
-        saplingCommitments: parseInt(t.sapling_commitments) || 0,
-        saplingNullifiers: parseInt(t.sapling_nullifiers) || 0,
-        orchardCommitments: parseInt(t.orchard_commitments) || 0,
-        orchardNullifiers: parseInt(t.orchard_nullifiers) || 0,
-        ironwoodCommitments: parseInt(t.ironwood_commitments) || 0,
-        ironwoodNullifiers: parseInt(t.ironwood_nullifiers) || 0,
+        ironwoodActions: parseInt(t.ironwood_actions) || 0,
       },
       history,
       timestamp: Date.now(),

@@ -1,0 +1,330 @@
+{
+  "chain_after_confirmation": {
+    "bestblockhash": "ff496b0023ba09438f558a687a99caa2fc6fac789a129114d728d5495b8bbafa",
+    "blocks": 102,
+    "chain": "test",
+    "chainSupply": {
+      "chainValue": 637.5,
+      "chainValueZat": 63750000000,
+      "monitored": true
+    },
+    "chainwork": 0,
+    "commitments": 0,
+    "consensus": {
+      "chaintip": "c3a6678a",
+      "nextblock": "c3a6678a"
+    },
+    "difficulty": 1.0,
+    "estimatedheight": 102,
+    "headers": 102,
+    "pruned": false,
+    "size_on_disk": 0,
+    "upgrades": {
+      "2bb40e60": {
+        "activationheight": 1,
+        "name": "Blossom",
+        "status": "active"
+      },
+      "4dec4df0": {
+        "activationheight": 1,
+        "name": "NU6.1",
+        "status": "active"
+      },
+      "5437f330": {
+        "activationheight": 1,
+        "name": "NU6.2",
+        "status": "active"
+      },
+      "5ba81b19": {
+        "activationheight": 1,
+        "name": "Overwinter",
+        "status": "active"
+      },
+      "76b809bb": {
+        "activationheight": 1,
+        "name": "Sapling",
+        "status": "active"
+      },
+      "c2d6d0b4": {
+        "activationheight": 1,
+        "name": "NU5",
+        "status": "active"
+      },
+      "c3a6678a": {
+        "activationheight": 1,
+        "name": "NU6.3",
+        "status": "active"
+      },
+      "c8e71055": {
+        "activationheight": 1,
+        "name": "NU6",
+        "status": "active"
+      },
+      "e9ff75a6": {
+        "activationheight": 1,
+        "name": "Canopy",
+        "status": "active"
+      },
+      "f5b9230b": {
+        "activationheight": 1,
+        "name": "Heartwood",
+        "status": "active"
+      }
+    },
+    "valuePools": [
+      {
+        "chainValue": 625.0002,
+        "chainValueZat": 62500020000,
+        "id": "transparent",
+        "monitored": true
+      },
+      {
+        "chainValue": 0.0,
+        "chainValueZat": 0,
+        "id": "sprout",
+        "monitored": false
+      },
+      {
+        "chainValue": 0.0,
+        "chainValueZat": 0,
+        "id": "sapling",
+        "monitored": false
+      },
+      {
+        "chainValue": 0.0,
+        "chainValueZat": 0,
+        "id": "orchard",
+        "monitored": false
+      },
+      {
+        "chainValue": 0.0,
+        "chainValueZat": 0,
+        "id": "lockbox",
+        "monitored": false
+      },
+      {
+        "chainValue": 12.4998,
+        "chainValueZat": 1249980000,
+        "id": "ironwood",
+        "monitored": true
+      }
+    ],
+    "verificationprogress": 1.0
+  },
+  "cli_idempotency": {
+    "equal": true,
+    "first": {
+      "account_id": "a99e7773-9130-402a-b626-05bad454f901",
+      "address": "WRP4hDANgcDnxvmGnwFck1xmouGn5As6kCe",
+      "child_index": 1,
+      "is_default": false
+    },
+    "second": {
+      "account_id": "a99e7773-9130-402a-b626-05bad454f901",
+      "address": "WRP4hDANgcDnxvmGnwFck1xmouGn5As6kCe",
+      "child_index": 1,
+      "is_default": false
+    }
+  },
+  "coinbase_addresses": [
+    {
+      "account_id": "a99e7773-9130-402a-b626-05bad454f901",
+      "address": "WRHUq9CTLZFa52NmAyHH5usN21Q8jZVskN1",
+      "child_index": 0,
+      "is_default": true
+    },
+    {
+      "account_id": "a99e7773-9130-402a-b626-05bad454f901",
+      "address": "WRP4hDANgcDnxvmGnwFck1xmouGn5As6kCe",
+      "child_index": 1,
+      "is_default": false
+    }
+  ],
+  "combined_shielding": {
+    "branch_id": "c3a6678a",
+    "expiry_height": 142,
+    "fee_zat": 20000,
+    "internal_change_receiver_verified": true,
+    "mined_status": {
+      "status": {
+        "height": 102,
+        "state": "mined"
+      },
+      "txid": "42c118ceada3d86e36b535f173ac587b10cc8f004ea4eb3adaa1b69dbb5e53b3"
+    },
+    "target_height": 102,
+    "txid": "42c118ceada3d86e36b535f173ac587b10cc8f004ea4eb3adaa1b69dbb5e53b3",
+    "wallet_after_confirmation": {
+      "accounts": [
+        {
+          "account_id": "a99e7773-9130-402a-b626-05bad454f901",
+          "ironwood_locked_zat": 0,
+          "ironwood_pending_change_zat": 0,
+          "ironwood_pending_spendability_zat": 1249980000,
+          "ironwood_spendable_zat": 0,
+          "ironwood_total_zat": 1249980000,
+          "orchard_total_zat": 0,
+          "sapling_total_zat": 0,
+          "transparent_coinbase_pending_zat": 61875020000,
+          "transparent_coinbase_spendable_zat": 625000000,
+          "transparent_coinbase_total_zat": 62500020000,
+          "transparent_regular_total_zat": 0,
+          "transparent_total_zat": 62500020000
+        }
+      ],
+      "chain_tip_height": 102,
+      "fully_scanned_height": 102,
+      "synchronized": true
+    }
+  },
+  "maturity": {
+    "premature_shielding_error": {
+      "code": "rejected",
+      "error": "no mature transparent coinbase output is available; coinbase requires 100 blocks and full transaction classification",
+      "protocol_version": 1
+    },
+    "tip_100": {
+      "accounts": [
+        {
+          "account_id": "a99e7773-9130-402a-b626-05bad454f901",
+          "ironwood_locked_zat": 0,
+          "ironwood_pending_change_zat": 0,
+          "ironwood_pending_spendability_zat": 0,
+          "ironwood_spendable_zat": 0,
+          "ironwood_total_zat": 0,
+          "orchard_total_zat": 0,
+          "sapling_total_zat": 0,
+          "transparent_coinbase_pending_zat": 61875000000,
+          "transparent_coinbase_spendable_zat": 625000000,
+          "transparent_coinbase_total_zat": 62500000000,
+          "transparent_regular_total_zat": 0,
+          "transparent_total_zat": 62500000000
+        }
+      ],
+      "chain_tip_height": 100,
+      "fully_scanned_height": 100,
+      "synchronized": true
+    },
+    "tip_101_two_mature": {
+      "accounts": [
+        {
+          "account_id": "a99e7773-9130-402a-b626-05bad454f901",
+          "ironwood_locked_zat": 0,
+          "ironwood_pending_change_zat": 0,
+          "ironwood_pending_spendability_zat": 0,
+          "ironwood_spendable_zat": 0,
+          "ironwood_total_zat": 0,
+          "orchard_total_zat": 0,
+          "sapling_total_zat": 0,
+          "transparent_coinbase_pending_zat": 61875000000,
+          "transparent_coinbase_spendable_zat": 1250000000,
+          "transparent_coinbase_total_zat": 63125000000,
+          "transparent_regular_total_zat": 0,
+          "transparent_total_zat": 63125000000
+        }
+      ],
+      "chain_tip_height": 101,
+      "fully_scanned_height": 101,
+      "synchronized": true
+    },
+    "tip_99": {
+      "accounts": [
+        {
+          "account_id": "a99e7773-9130-402a-b626-05bad454f901",
+          "ironwood_locked_zat": 0,
+          "ironwood_pending_change_zat": 0,
+          "ironwood_pending_spendability_zat": 0,
+          "ironwood_spendable_zat": 0,
+          "ironwood_total_zat": 0,
+          "orchard_total_zat": 0,
+          "sapling_total_zat": 0,
+          "transparent_coinbase_pending_zat": 61875000000,
+          "transparent_coinbase_spendable_zat": 0,
+          "transparent_coinbase_total_zat": 61875000000,
+          "transparent_regular_total_zat": 0,
+          "transparent_total_zat": 61875000000
+        }
+      ],
+      "chain_tip_height": 99,
+      "fully_scanned_height": 99,
+      "synchronized": true
+    }
+  },
+  "regtest_genesis": "70bf0bab17eff361a6331bb825b3b7253c8c96ff96407f948161d2912658bb1c",
+  "scope": "Disposable Wcash Regtest only; no production keys, databases, endpoints, or Mainnet transactions.",
+  "seed_only_recovery": {
+    "fresh_restore_addresses": [
+      {
+        "account_id": "9a237ca1-e116-4bd4-8d33-b2c7d45a76eb",
+        "address": "WRHUq9CTLZFa52NmAyHH5usN21Q8jZVskN1",
+        "child_index": 0,
+        "is_default": true
+      },
+      {
+        "account_id": "9a237ca1-e116-4bd4-8d33-b2c7d45a76eb",
+        "address": "WRP4hDANgcDnxvmGnwFck1xmouGn5As6kCe",
+        "child_index": 1,
+        "is_default": false
+      }
+    ],
+    "fresh_restore_sync": {
+      "accounts": [
+        {
+          "account_id": "9a237ca1-e116-4bd4-8d33-b2c7d45a76eb",
+          "ironwood_locked_zat": 0,
+          "ironwood_pending_change_zat": 0,
+          "ironwood_pending_spendability_zat": 1249980000,
+          "ironwood_spendable_zat": 0,
+          "ironwood_total_zat": 1249980000,
+          "orchard_total_zat": 0,
+          "sapling_total_zat": 0,
+          "transparent_coinbase_pending_zat": 61875020000,
+          "transparent_coinbase_spendable_zat": 625000000,
+          "transparent_coinbase_total_zat": 62500020000,
+          "transparent_regular_total_zat": 0,
+          "transparent_total_zat": 62500020000
+        }
+      ],
+      "chain_tip_height": 102,
+      "fully_scanned_height": 102,
+      "synchronized": true
+    },
+    "late_birthday_addresses": [
+      {
+        "account_id": "2ec70ec1-782a-4cb5-a5e6-03381365ed32",
+        "address": "WRHUq9CTLZFa52NmAyHH5usN21Q8jZVskN1",
+        "child_index": 0,
+        "is_default": true
+      },
+      {
+        "account_id": "2ec70ec1-782a-4cb5-a5e6-03381365ed32",
+        "address": "WRP4hDANgcDnxvmGnwFck1xmouGn5As6kCe",
+        "child_index": 1,
+        "is_default": false
+      }
+    ],
+    "late_birthday_sync": {
+      "accounts": [
+        {
+          "account_id": "2ec70ec1-782a-4cb5-a5e6-03381365ed32",
+          "ironwood_locked_zat": 0,
+          "ironwood_pending_change_zat": 0,
+          "ironwood_pending_spendability_zat": 0,
+          "ironwood_spendable_zat": 0,
+          "ironwood_total_zat": 0,
+          "orchard_total_zat": 0,
+          "sapling_total_zat": 0,
+          "transparent_coinbase_pending_zat": 61875000000,
+          "transparent_coinbase_spendable_zat": 625000000,
+          "transparent_coinbase_total_zat": 62500000000,
+          "transparent_regular_total_zat": 0,
+          "transparent_total_zat": 62500000000
+        }
+      ],
+      "chain_tip_height": 100,
+      "fully_scanned_height": 100,
+      "synchronized": true
+    }
+  },
+  "source_commit": "41a39cab3f259509653c1d4930df3dae3dabba98"
+}

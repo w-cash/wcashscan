@@ -97,7 +97,7 @@ function configureFromEnv({ primary }) {
       // this regardless of what the replica or the network is doing.
       statement_timeout: REPLICA_QUERY_TIMEOUT_MS,
       query_timeout: REPLICA_QUERY_TIMEOUT_MS,
-      application_name: 'cipherscan-api-replica',
+      application_name: 'wcashscan-api-replica',
     });
     replicaPool.on('error', (err) => {
       logSafeError('[pool:replica] Idle client error:', err);

@@ -20,13 +20,8 @@ interface MempoolTransaction {
   time: number;
   vin: number;
   vout: number;
-  vShieldedSpend: number;
-  vShieldedOutput: number;
-  orchardActions?: number;
   ironwoodActions?: number;
   totalOutput?: number;
-  valueBalanceSapling?: number;
-  valueBalanceOrchard?: number;
   valueBalanceIronwood?: number;
   version?: number;
 }
@@ -80,7 +75,7 @@ export default function MempoolClient() {
     if (msg.type === 'mempool_tx' && msg.data?.txid) {
       setData(prev => {
         if (!prev) return prev;
-        const hasShielded = msg.data.hasOrchard || msg.data.hasSapling || msg.data.hasIronwood;
+        const hasShielded = msg.data.hasIronwood;
         const hasTransparent = (msg.data.inputCount || 0) > 0 || (msg.data.outputCount || 0) > 0;
         const type = hasShielded && hasTransparent ? 'mixed' : hasShielded ? 'shielded' : 'transparent';
         const newTx: MempoolTransaction = {
@@ -90,9 +85,6 @@ export default function MempoolClient() {
           time: msg.data.time || Math.floor(Date.now() / 1000),
           vin: msg.data.inputCount || 0,
           vout: msg.data.outputCount || 0,
-          vShieldedSpend: 0,
-          vShieldedOutput: 0,
-          orchardActions: msg.data.orchardActions || 0,
           ironwoodActions: msg.data.ironwoodActions || 0,
           valueBalanceIronwood: msg.data.valueBalanceIronwood || 0,
           totalOutput: msg.data.totalOutput,
@@ -124,15 +116,11 @@ export default function MempoolClient() {
     }
   }, [autoRefresh, wsConnected]);
 
-  // Pool-specific whenever the row data allows, same as confirmed-tx tables;
-  // generic 'shielded' only when per-pool detail is missing.
   const getTypeCategory = (tx: MempoolTransaction): TxCategory => {
     if (tx.type === 'mixed') return 'mixed';
     if (tx.type !== 'shielded') return 'transparent';
     return resolveTxCategory({
       hasIronwood: (tx.ironwoodActions || 0) > 0,
-      hasOrchard: (tx.orchardActions || 0) > 0,
-      hasSapling: (tx.vShieldedSpend || 0) > 0 || (tx.vShieldedOutput || 0) > 0,
     });
   };
 
@@ -143,8 +131,8 @@ export default function MempoolClient() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <PageHeader
           eyebrow="MEMPOOL_VIEWER"
-          title="Zcash Mempool — Pending Transactions"
-          subtitle="Transactions waiting to be mined into the next Zcash block, streamed in real time. Shielded, transparent, and mixed transactions are labeled as they enter the queue."
+          title="W.cash Mempool — Pending Transactions"
+          subtitle="Transactions waiting to be mined into the next W.cash block, streamed in real time. Ironwood, transparent, and mixed transactions are labeled as they enter the queue."
         />
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-10 w-10 border-2 border-cipher-cyan border-t-transparent" />
@@ -174,16 +162,16 @@ export default function MempoolClient() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <PageHeader
         eyebrow="MEMPOOL_VIEWER"
-        title="Zcash Mempool — Pending Transactions"
-        subtitle="Transactions waiting to be mined into the next Zcash block, streamed in real time. Shielded, transparent, and mixed transactions are labeled as they enter the queue."
+        title="W.cash Mempool — Pending Transactions"
+        subtitle="Transactions waiting to be mined into the next W.cash block, streamed in real time. Ironwood, transparent, and mixed transactions are labeled as they enter the queue."
       />
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8 animate-fade-in-up stagger-2">
         <MetricCard label="Total TXs" value={data?.count || 0} />
-        <MetricCard label="Shielded" value={data?.stats.shielded || 0} accent="purple" />
+        <MetricCard label="Ironwood-active" value={data?.stats.shielded || 0} accent="purple" />
         <MetricCard label="Transparent" value={data?.stats.transparent || 0} />
-        <MetricCard label="Privacy Score" value={`${data?.stats.shieldedPercentage.toFixed(0) || 0}%`} accent="cyan" />
+        <MetricCard label="Ironwood share" value={`${data?.stats.shieldedPercentage.toFixed(0) || 0}%`} accent="cyan" />
       </div>
 
       {/* Bubble Visualization - always mounted to avoid layout shift */}
@@ -252,7 +240,7 @@ export default function MempoolClient() {
           <path strokeLinecap="round" d="M12 16v-4M12 8h.01" />
         </svg>
         <p className="leading-relaxed">
-          Each bubble is a pending transaction. <span className="text-secondary">Size</span> reflects byte size; <span className="text-secondary">color &amp; letter</span> mark the privacy type — <span className="text-cipher-cyan font-mono">T</span> transparent, <span className="text-cipher-orange font-mono">M</span> mixed, <span className="text-cipher-purple font-mono">S</span> shielded. Hover to inspect, click to open, drag to fling. When a block is mined, a shockwave clears the confirmed transactions.
+          Each bubble is a pending transaction. <span className="text-secondary">Size</span> reflects byte size; <span className="text-secondary">color &amp; letter</span> mark the W.cash activity type — <span className="text-cipher-cyan font-mono">T</span> transparent, <span className="text-cipher-orange font-mono">M</span> mixed, <span className="text-cipher-purple font-mono">I</span> Ironwood. Hover to inspect, click to open, drag to fling. When a block is mined, a shockwave clears the confirmed transactions.
         </p>
       </div>
 
@@ -318,12 +306,12 @@ export default function MempoolClient() {
                           </td>
                           <td className="px-4 h-[44px] border-b border-cipher-border text-right">
                             {tx.type === 'shielded' ? (
-                              <span className="text-xs text-muted italic" title="Values are encrypted in fully shielded transactions">
+                              <span className="text-xs text-muted italic" title="Values are encrypted in fully Ironwood transactions">
                                 encrypted
                               </span>
                             ) : totalOut > 0 ? (
                               <span className="font-mono text-xs text-primary">
-                                {totalOut.toFixed(4)}<span className="text-muted ml-1">ZEC</span>
+                                {totalOut.toFixed(4)}<span className="text-muted ml-1">TWC</span>
                               </span>
                             ) : (
                               <span className="text-muted">—</span>
@@ -332,10 +320,8 @@ export default function MempoolClient() {
                           <td className="px-4 h-[44px] border-b border-cipher-border text-right hidden md:table-cell">
                             {tx.ironwoodActions && tx.ironwoodActions > 0 ? (
                               <span className="font-mono text-xs text-cipher-yellow">{tx.ironwoodActions}<span className="text-muted ml-1">ironwood</span></span>
-                            ) : tx.orchardActions && tx.orchardActions > 0 ? (
-                              <span className="font-mono text-xs text-cipher-purple">{tx.orchardActions}<span className="text-muted ml-1">orchard</span></span>
-                            ) : tx.vShieldedSpend > 0 ? (
-                              <span className="font-mono text-xs text-cipher-cyan">{tx.vShieldedSpend}<span className="text-muted ml-1">sapling</span></span>
+                            ) : tx.ironwoodActions && tx.ironwoodActions > 0 ? (
+                              <span className="font-mono text-xs text-cipher-yellow">{tx.ironwoodActions}<span className="text-muted ml-1">Ironwood</span></span>
                             ) : (
                               <span className="font-mono text-xs text-muted">{tx.vin}</span>
                             )}
@@ -343,10 +329,8 @@ export default function MempoolClient() {
                           <td className="px-4 h-[44px] border-b border-cipher-border text-right hidden md:table-cell">
                             {tx.ironwoodActions && tx.ironwoodActions > 0 ? (
                               <span className="font-mono text-xs text-cipher-yellow">{tx.ironwoodActions}<span className="text-muted ml-1">ironwood</span></span>
-                            ) : tx.orchardActions && tx.orchardActions > 0 ? (
-                              <span className="font-mono text-xs text-cipher-purple">{tx.orchardActions}<span className="text-muted ml-1">orchard</span></span>
-                            ) : tx.vShieldedOutput > 0 ? (
-                              <span className="font-mono text-xs text-cipher-cyan">{tx.vShieldedOutput}<span className="text-muted ml-1">sapling</span></span>
+                            ) : tx.ironwoodActions && tx.ironwoodActions > 0 ? (
+                              <span className="font-mono text-xs text-cipher-yellow">{tx.ironwoodActions}<span className="text-muted ml-1">Ironwood</span></span>
                             ) : (
                               <span className="font-mono text-xs text-muted">{tx.vout}</span>
                             )}
@@ -378,16 +362,16 @@ export default function MempoolClient() {
               <p className="text-secondary">Memory Pool of unconfirmed transactions waiting to be included in the next block.</p>
             </div>
             <div className="space-y-1">
-              <p className="font-medium text-cipher-purple">Shielded Transactions</p>
-              <p className="text-secondary">Use zero-knowledge proofs to hide sender, receiver, and amount.</p>
+              <p className="font-medium text-cipher-purple">Ironwood Transactions</p>
+              <p className="text-secondary">Expose only the public structure of W.cash private-pool activity; recipients remain private.</p>
             </div>
             <div className="space-y-1">
               <p className="font-medium text-cipher-cyan">Mixed Transactions</p>
-              <p className="text-secondary">Shielding (transparent → shielded) or deshielding (shielded → transparent).</p>
+              <p className="text-secondary">Shielding (transparent → Ironwood) or deshielding (Ironwood → transparent).</p>
             </div>
             <div className="space-y-1">
-              <p className="font-medium text-cipher-green">Privacy Score</p>
-              <p className="text-secondary">Percentage of transactions using shielded pools (higher = better privacy).</p>
+              <p className="font-medium text-cipher-green">Ironwood share</p>
+              <p className="text-secondary">Percentage of indexed non-coinbase transactions that include Ironwood activity.</p>
             </div>
           </div>
         </CardBody>

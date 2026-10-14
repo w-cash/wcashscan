@@ -49,8 +49,8 @@ test('middleware emits only aggregate freshness and timing headers', () => {
 
   assert.equal(req.requestId, 'request-id');
   assert.equal(res.get('x-request-id'), 'request-id');
-  assert.equal(res.get('x-cipherscan-indexed-height'), '3470000');
-  assert.equal(res.get('x-cipherscan-data-age-blocks'), '1');
+  assert.equal(res.get('x-wcashscan-indexed-height'), '3470000');
+  assert.equal(res.get('x-wcashscan-data-age-blocks'), '1');
   assert.equal(res.get('server-timing'), 'app;dur=12.3');
   assert.equal(JSON.stringify([...res.headers]), JSON.stringify([...res.headers]).replace('a'.repeat(64), ''));
 });
@@ -71,8 +71,8 @@ test('middleware appends total timing and omits unavailable freshness values', (
   res.end();
 
   assert.equal(res.get('server-timing'), 'cache;dur=1.0, app;dur=5.0');
-  assert.equal(res.get('x-cipherscan-indexed-height'), undefined);
-  assert.equal(res.get('x-cipherscan-data-age-blocks'), undefined);
+  assert.equal(res.get('x-wcashscan-indexed-height'), undefined);
+  assert.equal(res.get('x-wcashscan-data-age-blocks'), undefined);
 });
 
 test('middleware appends aggregate request timings without query details', () => {

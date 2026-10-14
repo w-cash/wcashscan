@@ -1,9 +1,9 @@
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'Blend Check | CipherScan',
-  description: 'See how common a ZEC amount is on the Zcash blockchain. Use popular amounts to blend in with the crowd.',
-  keywords: ['zcash', 'privacy', 'blend', 'amount', 'shielded', 'transaction', 'common'],
+  title: 'Amount Observations | WcashExplorer',
+  description: 'WcashExplorer does not claim amount blending or wallet ownership.',
+  keywords: ['W.cash', 'TWC', 'public flow observations'],
   path: '/tools/blend-check',
   networks: ['mainnet'],
 });

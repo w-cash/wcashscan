@@ -2,55 +2,26 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
-import dynamic from 'next/dynamic';
 import { getApiUrl } from '@/lib/api-config';
-import { decodeUnifiedAddress } from '@/lib/wasm-loader';
 import type { AddressMeta } from '@/lib/seo';
-import { zatToZec } from '@/lib/format-numbers';
+import { zatToTwc } from '@/lib/format-numbers';
 import { AddressHeader } from './AddressHeader';
 import { AddressHeroCard } from './AddressHeroCard';
 import { AddressTabBar } from './AddressTabBar';
 import { AddressLoadingSkeleton } from './AddressLoadingSkeleton';
 import { EmptyAddressView, IndexingIssueView } from './AddressStateViews';
 import { ShieldedAddressView } from './ShieldedAddressView';
-import { CrossChainTable } from './CrossChainTable';
 import { TransactionTable } from './TransactionTable';
 import { AddressSummary } from './AddressSummary';
 
-// AddressGraph pulls in d3-delaunay (via AddressBubbleMap) for its bubble
-// layout. It's below-fold behind the "Graph" tab (not the default active
-// tab), so most address-page visits never need it — dynamic-import it into
-// its own chunk instead of paying for it on every address-page load.
-const AddressGraph = dynamic(
-  () => import('./AddressGraph').then((mod) => mod.AddressGraph),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        className="h-64 rounded-xl border border-cipher-border bg-cipher-surface animate-pulse"
-        role="status"
-        aria-live="polite"
-      >
-        <span className="sr-only">Loading address graph…</span>
-      </div>
-    ),
-  },
-);
 import {
   transformTransactions,
   getTypeInfo,
-  isShieldedAddress,
+  isPrivateAddress,
   hasNoTransactions,
   hasIndexingIssue,
 } from './helpers';
-import type {
-  AddressData,
-  AddressTab,
-  CrossChainActivity,
-  PriceData,
-  UnifiedAddressTab,
-  UnifiedAddressComponents,
-} from './types';
+import type { AddressData, AddressTab } from './types';
 
 const PAGE_SIZE = 25;
 
@@ -64,17 +35,11 @@ export function AddressDetailClient({ address, initialMeta = null }: AddressDeta
   const searchParams = useSearchParams();
   const [data, setData] = useState<AddressData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [priceData, setPriceData] = useState<PriceData | null>(null);
   const [copiedText, setCopiedText] = useState<string | null>(null);
-  const [crossChain, setCrossChain] = useState<CrossChainActivity | null>(null);
   const [activeTab, setActiveTab] = useState<AddressTab>('transactions');
 
   const currentPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
   const [totalPages, setTotalPages] = useState(1);
-
-  const [uaComponents, setUaComponents] = useState<UnifiedAddressComponents | null>(null);
-  const [uaLoading, setUaLoading] = useState(false);
-  const [selectedAddressTab, setSelectedAddressTab] = useState<UnifiedAddressTab>('unified');
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -92,14 +57,7 @@ export function AddressDetailClient({ address, initialMeta = null }: AddressDeta
 
       const apiUrl = `${getApiUrl()}/api/address/${address}?page=${currentPage}&limit=${PAGE_SIZE}`;
 
-      const crossChainUrl = `${getApiUrl()}/api/crosschain/address/${encodeURIComponent(address)}`;
-      const priceUrl = `${getApiUrl()}/api/price`;
-
-      const [response, crossChainRes, priceRes] = await Promise.all([
-        fetch(apiUrl),
-        fetch(crossChainUrl).catch(() => null),
-        fetch(priceUrl).catch(() => null),
-      ]);
+      const response = await fetch(apiUrl);
 
       if (!response.ok) throw new Error('Failed to fetch address data');
       const apiData = await response.json();
@@ -109,7 +67,7 @@ export function AddressDetailClient({ address, initialMeta = null }: AddressDeta
       const transformedTransactions = transformTransactions(apiData, apiData.transactions || []);
       setData({
         address: apiData.address,
-        balance: apiData.balance == null ? 0 : zatToZec(apiData.balance),
+        balance: apiData.balance == null ? 0 : zatToTwc(apiData.balance),
         type: apiData.type || 'transparent',
         transactions: transformedTransactions,
         transactionCount: apiData.txCount || apiData.transactionCount,
@@ -119,19 +77,6 @@ export function AddressDetailClient({ address, initialMeta = null }: AddressDeta
         firstFunding: apiData.firstFunding ?? null,
       });
 
-      if (crossChainRes?.ok) {
-        try {
-          const ccData = await crossChainRes.json();
-          if (ccData.success && ccData.totalSwaps > 0) setCrossChain(ccData);
-        } catch { /* ignore */ }
-      }
-
-      if (priceRes?.ok) {
-        try {
-          const pData = await priceRes.json();
-          setPriceData({ price: pData.price, change24h: pData.change24h });
-        } catch { /* ignore */ }
-      }
     } catch (error) {
       console.error('Error fetching address data:', error);
       setData(null);
@@ -144,44 +89,18 @@ export function AddressDetailClient({ address, initialMeta = null }: AddressDeta
     fetchPageData();
   }, [fetchPageData]);
 
-  useEffect(() => {
-    const decodeUA = async () => {
-      if (!address.startsWith('u1') && !address.startsWith('utest')) {
-        return;
-      }
-
-      try {
-        setUaLoading(true);
-        const components = await decodeUnifiedAddress(address);
-        setUaComponents(components);
-      } catch (error) {
-        console.error('Failed to decode unified address:', error);
-      } finally {
-        setUaLoading(false);
-      }
-    };
-    decodeUA();
-  }, [address]);
-
   if (loading) {
     return <AddressLoadingSkeleton initialMeta={initialMeta} address={address} />;
   }
 
-  const shielded = isShieldedAddress(data);
+  const shielded = isPrivateAddress(data);
   const noTransactions = hasNoTransactions(data);
   const indexingIssue = hasIndexingIssue(data, shielded, noTransactions);
 
   if (shielded) {
-    const isUnified = address.startsWith('u1') || address.startsWith('utest');
-
     return (
       <ShieldedAddressView
         address={address}
-        isUnified={isUnified}
-        uaComponents={uaComponents}
-        uaLoading={uaLoading}
-        selectedAddressTab={selectedAddressTab}
-        onSelectTab={setSelectedAddressTab}
         copiedText={copiedText}
         onCopy={copyToClipboard}
       />
@@ -223,33 +142,23 @@ export function AddressDetailClient({ address, initialMeta = null }: AddressDeta
 
       <AddressHeroCard
         data={data}
-        priceData={priceData}
-        crossChain={crossChain}
         summary={<AddressSummary data={data} totalTxCount={totalTxCount} />}
       />
 
       <AddressTabBar
         activeTab={activeTab}
         totalTxCount={totalTxCount}
-        crossChain={crossChain}
-        showGraph={data.type === 'transparent'}
         onTabChange={setActiveTab}
       />
 
-      {activeTab === 'graph' && data.type === 'transparent' ? (
-        <AddressGraph address={address} />
-      ) : activeTab === 'crosschain' && crossChain && crossChain.totalSwaps > 0 ? (
-        <CrossChainTable crossChain={crossChain} />
-      ) : (
-        <TransactionTable
-          address={address}
-          data={data}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          pageSize={PAGE_SIZE}
-          totalTxCount={totalTxCount}
-        />
-      )}
+      <TransactionTable
+        address={address}
+        data={data}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        pageSize={PAGE_SIZE}
+        totalTxCount={totalTxCount}
+      />
     </div>
   );
 }

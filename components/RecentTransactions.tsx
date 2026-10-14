@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, memo, useCallback, type ReactNode } from 'react';
 import { parseTransactionListItems, type TransactionListItem as Tx } from '@/lib/transaction-list';
 import { RelativeTime } from '@/components/RelativeTime';
-import { formatZecPrecise, zatToZec } from '@/lib/format-numbers';
+import { formatTwcPrecise, zatToTwc } from '@/lib/format-numbers';
 import { HomeFeedTableSkeleton } from '@/components/HomeFeedTableSkeleton';
 import { getApiUrl } from '@/lib/api-config';
 import { useWebSocket } from '@/hooks/useWebSocket';
@@ -28,7 +28,7 @@ const CoinbaseIcon = () => (
 
 /**
  * Icon + tooltip only — same compact treatment ShieldFlowBadge already uses
- * for shielded rows, extended to the two shapes that fall outside
+ * for Ironwood rows, extended to the two shapes that fall outside
  * ShieldFlowType (coinbase, plain transparent). Labeled "Flow" (direction:
  * shield/deshield/mixed/migration), matching /txs and RecentShieldedTxs —
  * "Type" is reserved app-wide for pool/category (TxTypeBadge), which this
@@ -42,7 +42,7 @@ function FlowCell({ tx }: { tx: Tx }) {
       </IconTooltip>
     );
   }
-  if (!tx.has_orchard && !tx.has_sapling && !tx.has_ironwood && !tx.flow_type) {
+  if (!tx.has_ironwood && !tx.flow_type) {
     return (
       <IconTooltip label="Transparent" className="text-muted">
         <TransparentIcon />
@@ -61,32 +61,27 @@ function FlowCell({ tx }: { tx: Tx }) {
 }
 
 /**
- * Same public-data rule as RecentShieldedTxs / the block page's reward
- * breakdown: a transparent output is always public, a shield/deshield's
- * transparent-side value balance is public (needed for the binding-signature
- * balance equation), and a pool-to-pool migration's destination-pool balance
- * is public. A genuinely fully-shielded self-loop (spend and output in the
- * same pool, nothing else) has no public amount at all.
+ * A transparent output is public, and an Ironwood shield/deshield value
+ * balance is public when it is the transparent-side leg. A fully private
+ * Ironwood transaction remains redacted.
  */
-function knownAmountZec(tx: Tx): number | null {
-  const sap = Number(tx.value_balance_sapling) || 0;
-  const orc = Number(tx.value_balance_orchard) || 0;
+function knownAmountTwc(tx: Tx): number | null {
   const irn = Number(tx.value_balance_ironwood) || 0;
   const transparentOutZat = Number(tx.total_output) || 0;
 
   if (tx.vin_count === 0 && tx.vout_count === 0) {
-    const source = orc > 0 ? 'orchard' : sap > 0 ? 'sapling' : irn > 0 ? 'ironwood' : null;
+    const source = irn > 0 ? 'ironwood' : null;
     if (source) {
-      const destZat = irn < 0 ? Math.abs(irn) : orc < 0 ? Math.abs(orc) : sap < 0 ? Math.abs(sap) : 0;
-      if (destZat > 0) return zatToZec(destZat);
+      const destZat = irn < 0 ? Math.abs(irn) : 0;
+      if (destZat > 0) return zatToTwc(destZat);
     }
   }
 
-  const valueBalanceZat = sap + orc + irn;
+  const valueBalanceZat = irn;
   const shieldedDepositZat = valueBalanceZat < 0 ? Math.abs(valueBalanceZat) : 0;
   const totalZat = transparentOutZat + shieldedDepositZat;
-  if (totalZat > 0) return zatToZec(totalZat);
-  if (tx.is_coinbase) return zatToZec(totalZat); // legitimately zero, not unknown
+  if (totalZat > 0) return zatToTwc(totalZat);
+  if (tx.is_coinbase) return zatToTwc(totalZat); // legitimately zero, not unknown
   return null;
 }
 
@@ -172,7 +167,7 @@ export const RecentTransactions = memo(function RecentTransactions({
           </thead>
           <tbody>
             {txs.map((tx, i) => {
-              const amount = knownAmountZec(tx);
+              const amount = knownAmountTwc(tx);
               return (
                 <tr
                   key={tx.txid}
@@ -194,7 +189,7 @@ export const RecentTransactions = memo(function RecentTransactions({
                   </td>
                   <td className="px-4 sm:px-5 h-12 border-b border-cipher-border text-right">
                     {amount !== null ? (
-                      <span className="font-mono text-sm text-secondary whitespace-nowrap tabular-nums">{formatZecPrecise(amount)} <span className="text-muted/50">ZEC</span></span>
+                      <span className="font-mono text-sm text-secondary whitespace-nowrap tabular-nums">{formatTwcPrecise(amount)} <span className="text-muted/50">TWC</span></span>
                     ) : (
                       <RedactedAmount />
                     )}

@@ -65,10 +65,10 @@ function segmentedClass(active: boolean) {
 
 function chartDescription(view: TrendChartView) {
   if (view === 'adoption') {
-    return 'Daily share of non-coinbase transactions that use shielded pools — transaction count, not ZEC volume.';
+    return 'Daily share of non-coinbase transactions that use the Ironwood pool — transaction count, not TWC volume.';
   }
   if (view === 'activity') {
-    return 'Daily shielded vs transparent transaction counts (coinbase excluded from transparent).';
+    return 'Daily Ironwood vs transparent transaction counts (coinbase excluded from transparent).';
   }
   return 'Privacy Score over time. Step changes may reflect formula updates.';
 }
@@ -80,20 +80,20 @@ function buildShareText(
   chartData: TrendDay[],
 ) {
   const periodLabel = period === 'all' ? 'all time' : period.toUpperCase();
-  const url = 'https://cipherscan.app/privacy';
+  const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/privacy`;
   const latest = chartData[chartData.length - 1];
 
   if (view === 'score') {
     const score = latest?.privacyScore ?? privacyScore;
-    return `Zcash Privacy Score: ${score}/100 (${periodLabel}) on CipherScan\n\n${url}`;
+    return `W.cash Privacy Score: ${score}/100 (${periodLabel}) on WcashExplorer\n\n${url}`;
   }
   if (view === 'adoption' && latest) {
-    return `Zcash shielded tx share: ${latest.shieldedPercentage.toFixed(1)}% (${periodLabel}) on CipherScan\n\n${url}`;
+    return `W.cash Ironwood tx share: ${latest.shieldedPercentage.toFixed(1)}% (${periodLabel}) on WcashExplorer\n\n${url}`;
   }
   if (view === 'activity' && latest) {
-    return `Zcash shielded activity: ${latest.shielded.toLocaleString()} shielded txs (${periodLabel}) on CipherScan\n\n${url}`;
+    return `W.cash Ironwood activity: ${latest.shielded.toLocaleString()} transactions (${periodLabel}) on WcashExplorer\n\n${url}`;
   }
-  return `Zcash privacy metrics on CipherScan (${periodLabel})\n\n${url}`;
+  return `W.cash privacy metrics on WcashExplorer (${periodLabel})\n\n${url}`;
 }
 
 export function PrivacyTrendsSection({
@@ -161,7 +161,7 @@ export function PrivacyTrendsSection({
       title="Historical trends"
       sourceHeight={lastBlockScanned}
       shareText={shareText}
-      fileName="cipherscan-privacy-trends.png"
+      fileName="wcashscan-privacy-trends.png"
       className=""
     >
       <div
@@ -198,7 +198,7 @@ export function PrivacyTrendsSection({
                 <XAxis
                   dataKey="date"
                   tick={{ fill: colors.axis, fontSize: 10 }}
-                  tickFormatter={(value) => formatTrendDate(value)}
+                  tickFormatter={(value) => formatTrendDate(String(value))}
                   angle={-35}
                   textAnchor="end"
                   height={52}
@@ -212,7 +212,7 @@ export function PrivacyTrendsSection({
                 />
                 <RechartsTooltip
                   contentStyle={tooltipStyle}
-                  labelFormatter={(label) => formatTrendDate(label)}
+                  labelFormatter={(label) => formatTrendDate(String(label))}
                   formatter={(v) => [`${Number(v).toFixed(1)}%`, 'Shielded tx share']}
                 />
                 <Line
@@ -233,7 +233,7 @@ export function PrivacyTrendsSection({
                 <XAxis
                   dataKey="date"
                   tick={{ fill: colors.axis, fontSize: 10 }}
-                  tickFormatter={(value) => formatTrendDate(value)}
+                  tickFormatter={(value) => formatTrendDate(String(value))}
                   angle={-35}
                   textAnchor="end"
                   height={52}
@@ -246,10 +246,10 @@ export function PrivacyTrendsSection({
                 />
                 <RechartsTooltip
                   contentStyle={tooltipStyle}
-                  labelFormatter={(label) => formatTrendDate(label)}
+                  labelFormatter={(label) => formatTrendDate(String(label))}
                 />
                 <Legend wrapperStyle={{ fontSize: 11, color: colors.axis }} />
-                <Bar dataKey="shielded" name="Shielded" fill={colors.cyan} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="shielded" name="Ironwood" fill={colors.cyan} radius={[3, 3, 0, 0]} />
                 <Bar
                   dataKey="transparent"
                   name="Transparent"
@@ -272,7 +272,7 @@ export function PrivacyTrendsSection({
                 <XAxis
                   dataKey="date"
                   tick={{ fill: colors.axis, fontSize: 10 }}
-                  tickFormatter={(value) => formatTrendDate(value)}
+                  tickFormatter={(value) => formatTrendDate(String(value))}
                   angle={-35}
                   textAnchor="end"
                   height={52}
@@ -286,7 +286,7 @@ export function PrivacyTrendsSection({
                 />
                 <RechartsTooltip
                   contentStyle={tooltipStyle}
-                  labelFormatter={(label) => formatTrendDate(label)}
+                  labelFormatter={(label) => formatTrendDate(String(label))}
                   formatter={(v) => [`${Number(v).toFixed(0)} / 100`, 'Privacy Score']}
                 />
                 <Area

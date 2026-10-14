@@ -37,10 +37,10 @@ function createRequestObservability({
         const indexedHeight = finiteNonNegativeInteger(getIndexedHeight());
         const dataAgeBlocks = finiteNonNegativeInteger(getDataAgeBlocks());
         if (indexedHeight !== null) {
-          res.set('X-CipherScan-Indexed-Height', String(indexedHeight));
+          res.set('X-WcashScan-Indexed-Height', String(indexedHeight));
         }
         if (dataAgeBlocks !== null) {
-          res.set('X-CipherScan-Data-Age-Blocks', String(dataAgeBlocks));
+          res.set('X-WcashScan-Data-Age-Blocks', String(dataAgeBlocks));
         }
 
         const elapsedMs = Math.max(0, now() - started).toFixed(1);

@@ -1,9 +1,9 @@
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'Rich List — Top Zcash Addresses by Balance | CipherScan',
-  description: 'Explore the top Zcash transparent addresses ranked by balance. See labeled exchanges, mining pools, and supply concentration stats.',
-  keywords: ['zcash rich list', 'zcash top addresses', 'zcash whales', 'ZEC balance', 'zcash exchanges', 'zcash supply distribution'],
+  title: 'Rich List — Top W.cash Addresses by Balance | WcashExplorer',
+  description: 'Explore W.cash transparent addresses ranked by TWC balance and transparent-supply concentration.',
+  keywords: ['W.cash rich list', 'TWC top addresses', 'W.cash supply distribution'],
   path: '/rich-list',
   networks: ['mainnet'],
 });

@@ -13,15 +13,15 @@ import { ChartCard } from './ChartCard';
 type MetricKey = 'solrate' | 'difficulty' | 'blockTime' | 'txFees' | 'txCount';
 
 const METRICS: { key: MetricKey; label: string; color: string; format: (v: number) => string }[] = [
-  { key: 'solrate', label: 'Solrate', color: 'cyan', format: (v) => formatHashrate(v) },
+  { key: 'solrate', label: 'Wolf solution rate', color: 'cyan', format: (v) => formatHashrate(v) },
   { key: 'difficulty', label: 'Difficulty', color: 'yellow', format: (v) => formatDifficulty(v) },
   { key: 'blockTime', label: 'Block time', color: 'green', format: (v) => `~${Math.round(v)}s` },
-  { key: 'txFees', label: 'TX fees', color: 'purple', format: (v) => `${v.toFixed(6)} ZEC` },
+  { key: 'txFees', label: 'TX fees', color: 'purple', format: (v) => `${v.toFixed(8)} TWC` },
   { key: 'txCount', label: 'TX count', color: 'cyan', format: (v) => v.toFixed(1) },
 ];
 
 interface MiningMetricsData {
-  points?: { height: number; solrate: number; difficulty: number; blockTime: number; txFees: number; txCount: number }[];
+  points?: { height: number; solrate: number | null; difficulty: number; blockTime: number; txFees: number; txCount: number }[];
   latest?: Record<string, number>;
   window?: number;
 }
@@ -86,7 +86,7 @@ export function MiningMetricsChart() {
               labelFormatter={(h) => `Block ${h}`}
               formatter={(value) => [metric.format(Number(value)), metric.label]}
             />
-            <Line type="monotone" dataKey={active} stroke={stroke} strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey={active} stroke={stroke} strokeWidth={2} dot={false} connectNulls={false} />
           </LineChart>
         </ResponsiveContainer>
       </ChartCard>

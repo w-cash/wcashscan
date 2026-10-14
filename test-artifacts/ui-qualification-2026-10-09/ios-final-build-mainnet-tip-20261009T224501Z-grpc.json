@@ -1,0 +1,13 @@
+{
+  "chain_name": "main",
+  "consensus_branch_id": "d9c6a7ee",
+  "endpoint": "mainnet.zecwec.com:443",
+  "estimated_height": 23534,
+  "info_height": 23533,
+  "observed_at_utc": "2026-10-09T22:45:01.948008+00:00",
+  "tip_hash": "0c87a12cc388826eddb612057000c07ba930ab9d81277504174e5b6535dca0f2",
+  "tip_height": 23533,
+  "transport": "TLS",
+  "vendor": "ZcashFoundation/zebra",
+  "version": "v6.3.0"
+}

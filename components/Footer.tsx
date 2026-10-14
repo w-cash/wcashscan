@@ -2,10 +2,9 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { DonateButton } from '@/components/DonateButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useTheme } from '@/contexts/ThemeContext';
-import { isMainnet, isCrosslink, MAINNET_URL, TESTNET_URL, NETWORK_LABEL } from '@/lib/config';
+import { isMainnet, MAINNET_URL, TESTNET_URL, NETWORK_LABEL } from '@/lib/config';
 
 export function Footer() {
   const { theme } = useTheme();
@@ -24,37 +23,28 @@ export function Footer() {
               <Link href="/network" className="footer-link text-[11px] font-mono">Network</Link>
               <Link href="/charts" className="footer-link text-[11px] font-mono">Charts</Link>
               <Link href="/mempool" className="footer-link text-[11px] font-mono">Mempool</Link>
-              {!isCrosslink && <Link href="/rich-list" className="footer-link text-[11px] font-mono">Rich List</Link>}
+              <Link href="/rich-list" className="footer-link text-[11px] font-mono">Rich List</Link>
               <Link href="/reorgs" className="footer-link text-[11px] font-mono">Forks & Reorgs</Link>
             </div>
           </div>
 
           {/* Analytics */}
-          {!isCrosslink && (
-            <div>
+          <div>
               <span className="text-[10px] font-mono text-muted/40 uppercase tracking-widest block mb-2">Analytics</span>
               <div className="flex flex-col gap-1">
                 <Link href="/privacy" className="footer-link text-[11px] font-mono">Privacy Score</Link>
                 <Link href="/pools" className="footer-link text-[11px] font-mono">Shielded Pools</Link>
-                <Link href="/turnstile" className="footer-link text-[11px] font-mono">Turnstile</Link>
-                <Link href="/ironwood" className="footer-link text-[11px] font-mono">Zcash Ironwood</Link>
+                <Link href="/ironwood" className="footer-link text-[11px] font-mono">Wcash Ironwood</Link>
                 <Link href="/privacy-risks" className="footer-link text-[11px] font-mono">Risk Scanner</Link>
-                {isMainnet && <Link href="/zodl" className="footer-link text-[11px] font-mono">Miner ZODL</Link>}
-                {isMainnet && <Link href="/crosschain" className="footer-link text-[11px] font-mono">Cross-Chain</Link>}
               </div>
-            </div>
-          )}
+          </div>
 
           {/* Tools */}
           <div>
             <span className="text-[10px] font-mono text-muted/40 uppercase tracking-widest block mb-2">Tools</span>
             <div className="flex flex-col gap-1">
               <Link href="/tools" className="footer-link text-[11px] font-mono">Dev Tools</Link>
-              <Link href="/decrypt" className="footer-link text-[11px] font-mono">Decrypt Memo</Link>
-              <Link href="/tools/blend-check" className="footer-link text-[11px] font-mono">Blend Check</Link>
               <Link href="/docs" className="footer-link text-[11px] font-mono">API Docs</Link>
-              {isMainnet && <a href="https://cipherswap.app/" target="_blank" rel="noopener" className="footer-link text-[11px] font-mono">CipherSwap</a>}
-              <a href="https://www.cipherpay.app/" target="_blank" rel="noopener noreferrer" className="footer-link text-[11px] font-mono">CipherPay</a>
             </div>
           </div>
 
@@ -62,14 +52,11 @@ export function Footer() {
           <div>
             <span className="text-[10px] font-mono text-muted/40 uppercase tracking-widest block mb-2">Resources</span>
             <div className="flex flex-col gap-1">
-              <Link href="/learn" className="footer-link text-[11px] font-mono">Learn Zcash</Link>
+              <Link href="/learn" className="footer-link text-[11px] font-mono">Learn W.cash</Link>
               <Link href="/newsletter" className="footer-link text-[11px] font-mono">Newsletter</Link>
               <Link href="/about" className="footer-link text-[11px] font-mono">About</Link>
               <Link href="/press" className="footer-link text-[11px] font-mono">Press &amp; Brand</Link>
-              <DonateButton variant="link" />
-              <a href="https://twitter.com/cipherscan_app" target="_blank" rel="noopener noreferrer" className="footer-link text-[11px] font-mono">X / Twitter</a>
-              <a href="https://github.com/Kenbak/cipherscan" target="_blank" rel="noopener noreferrer" className="footer-link text-[11px] font-mono">GitHub</a>
-              <a href="https://www.youtube.com/@AtmosphereLabsDev" target="_blank" rel="noopener noreferrer" className="footer-link text-[11px] font-mono">YouTube</a>
+              <a href="https://github.com/w-cash/wcashscan" target="_blank" rel="noopener noreferrer" className="footer-link text-[11px] font-mono">GitHub</a>
             </div>
           </div>
         </div>
@@ -79,19 +66,19 @@ export function Footer() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
             <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 text-[10px] font-mono text-muted/30 text-center">
               <Link href="/" className="inline-flex items-center gap-1 mr-1">
-                <Image src="/logo.png" alt="CipherScan" width={14} height={14} quality={100} unoptimized />
-                <span className="font-bold text-cipher-cyan tracking-wider">CIPHERSCAN</span>
+                <Image src="/logo.png" alt="WcashExplorer" width={14} height={14} quality={100} unoptimized />
+                <span className="font-bold text-cipher-cyan tracking-wider">WCASHEXPLORER</span>
               </Link>
               <span className="text-muted/20">|</span>
-              <span>© {new Date().getFullYear()} CipherScan</span>
+              <span>© {new Date().getFullYear()} WcashExplorer</span>
               <span className="text-muted/20">|</span>
-              <span>Powered by <span className="text-muted/50">Zebrad</span></span>
+              <span>Powered by <span className="text-muted/50">W.cash Wolf</span></span>
               <span className="text-muted/20">|</span>
               <Link href="/privacy-policy" className="hover:text-muted/60 transition-colors">Privacy</Link>
               <span className="text-muted/20">·</span>
               <Link href="/terms" className="hover:text-muted/60 transition-colors">Terms</Link>
               <span className="text-muted/20">·</span>
-              <a href="https://status.cipherscan.app" target="_blank" rel="noopener noreferrer" className="hover:text-muted/60 transition-colors">Status</a>
+              <a href="https://github.com/w-cash/wcashscan/issues" target="_blank" rel="noopener noreferrer" className="hover:text-muted/60 transition-colors">Status</a>
             </div>
 
             <div className="flex items-center gap-3">

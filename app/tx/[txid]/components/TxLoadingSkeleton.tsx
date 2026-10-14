@@ -47,7 +47,7 @@ export function TxLoadingSkeleton({ initialMeta = null }: { initialMeta?: TxMeta
                 Block #{initialMeta.blockHeight.toLocaleString()} · {initialMeta.confirmations.toLocaleString()} confirmation{initialMeta.confirmations === 1 ? '' : 's'} · {formatRelativeTime(initialMeta.timestamp)}
               </span>
             )}
-            {initialMeta.hasShielded && <Badge color="purple">SHIELDED</Badge>}
+            {initialMeta.hasIronwood && <Badge color="amber">IRONWOOD</Badge>}
           </div>
         ) : (
           <div className="flex items-center gap-2 mb-4" aria-hidden="true">

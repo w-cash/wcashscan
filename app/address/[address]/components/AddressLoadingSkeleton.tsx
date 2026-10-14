@@ -36,7 +36,7 @@ export function AddressLoadingSkeleton({
             <Badge color={initialMeta.type === 'shielded' ? 'purple' : 'muted'}>{typeLabel(initialMeta.type)}</Badge>
             {!initialMeta.isShielded && (
               <span className="text-xs font-mono text-secondary">
-                {initialMeta.balance.toFixed(4)} ZEC · {initialMeta.txCount.toLocaleString()} tx{initialMeta.txCount === 1 ? '' : 's'}
+                {initialMeta.balance.toFixed(4)} TWC · {initialMeta.txCount.toLocaleString()} tx{initialMeta.txCount === 1 ? '' : 's'}
               </span>
             )}
           </div>

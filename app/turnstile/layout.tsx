@@ -1,24 +1,12 @@
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'Zcash Turnstile Tracker | CipherScan',
-  description:
-    'Track where deshielded ZEC goes: transparent addresses, reshielding, exchanges, and other transfers. Updated hourly.',
-  keywords: [
-    'zcash turnstile',
-    'zcash deshielding',
-    'zcash shielded pool',
-    'deshielded ZEC',
-    'zcash exchange flow',
-    'zcash privacy analytics',
-    'ZEC turnstile tracker',
-    'CipherScan',
-  ],
+  title: 'Ironwood Activity | WcashExplorer',
+  description: 'W.cash Ironwood value-pool activity.',
   path: '/turnstile',
-  imageAlt: 'CipherScan Turnstile Tracker — Zcash deshielding analytics',
-  networks: ['mainnet'],
+  networks: ['mainnet', 'testnet'],
 });
 
-export default function TurnstileLayout({ children }: { children: React.ReactNode }) {
+export default function TurnstileCompatibilityLayout({ children }: { children: React.ReactNode }) {
   return children;
 }

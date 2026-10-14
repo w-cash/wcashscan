@@ -9,8 +9,6 @@ const disabledListCache = createListCache({ enabled: false });
 const deps = {
   pool: null,
   callZebraRPC: null,
-  CompactTxStreamer: null,
-  grpc: null,
   findLinkedTransactions: null,
   listCache: disabledListCache,
   chainTip: { height: 0, hash: '' },
@@ -55,8 +53,6 @@ async function checkStakingColumns(db) {
 function injectDependencies(req, res, next) {
   deps.pool = req.app.locals.pool;
   deps.callZebraRPC = req.app.locals.callZebraRPC;
-  deps.CompactTxStreamer = req.app.locals.CompactTxStreamer;
-  deps.grpc = req.app.locals.grpc;
   deps.findLinkedTransactions = req.app.locals.findLinkedTransactions;
   deps.listCache = req.app.locals.listCache || disabledListCache;
   deps.chainTip = req.app.locals.chainTip || { height: 0, hash: '' };

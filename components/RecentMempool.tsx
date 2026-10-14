@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, memo, type ReactNode } from 'react';
 import { formatRelativeTime } from '@/lib/utils';
-import { formatZecPrecise, formatBytesCompact } from '@/lib/format-numbers';
+import { formatTwcPrecise, formatBytesCompact } from '@/lib/format-numbers';
 import { getApiUrl } from '@/lib/api-config';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { HashLink, RedactedAmount, SkeletonTable, TxTypeBadge, resolveTxCategory } from '@/components/ui';
@@ -14,10 +14,6 @@ interface MempoolTx {
   time: number;
   totalOutput?: number;
   hasIronwood?: boolean;
-  hasOrchard?: boolean;
-  hasSapling?: boolean;
-  valueBalanceSapling?: number;
-  valueBalanceOrchard?: number;
   valueBalanceIronwood?: number;
 }
 
@@ -27,9 +23,6 @@ interface MempoolStats {
   totalSizeBytes: number;
 }
 
-// Pool-specific whenever the data allows (IRONWOOD/ORCHARD/SAPLING, same as
-// every confirmed-tx table); generic SHIELDED only when the per-pool flags
-// aren't available on this row.
 function getTypeBadge(tx: MempoolTx) {
   if (tx.type === 'mixed') return <TxTypeBadge category="mixed" />;
   if (tx.type !== 'shielded') return <TxTypeBadge category="transparent" />;
@@ -37,15 +30,13 @@ function getTypeBadge(tx: MempoolTx) {
     <TxTypeBadge
       category={resolveTxCategory({
         hasIronwood: tx.hasIronwood,
-        hasOrchard: tx.hasOrchard,
-        hasSapling: tx.hasSapling,
       })}
     />
   );
 }
 
 function classifyTxType(tx: any): 'shielded' | 'mixed' | 'transparent' {
-  const hasShielded = tx.hasOrchard || tx.hasSapling || tx.hasIronwood;
+  const hasShielded = tx.hasIronwood;
   const hasTransparent = (tx.inputCount || 0) > 0 || (tx.outputCount || 0) > 0;
   if (hasShielded && hasTransparent) return 'mixed';
   if (hasShielded) return 'shielded';
@@ -53,19 +44,16 @@ function classifyTxType(tx: any): 'shielded' | 'mixed' | 'transparent' {
 }
 
 /**
- * Amount CipherScan is allowed to show for a pending mempool row — same rule
- * as the confirmed shielded-activity table (see RecentShieldedTxs.tsx):
+ * Amount WcashExplorer is allowed to show for a pending mempool row:
  * transparent value is always public, a shield/deshield's transparent-side
- * value balance is public, a fully-shielded tx's amount is not.
+ * value balance is public, a fully-Ironwood tx's amount is not.
  */
 function getKnownAmount(tx: MempoolTx): number | null {
   if (tx.type === 'transparent') {
     return (tx.totalOutput || 0) > 0 ? tx.totalOutput! : null;
   }
   if (tx.type === 'mixed') {
-    const amount = Math.abs(tx.valueBalanceSapling || 0)
-      + Math.abs(tx.valueBalanceOrchard || 0)
-      + Math.abs(tx.valueBalanceIronwood || 0);
+    const amount = Math.abs(tx.valueBalanceIronwood || 0);
     return amount > 0 ? amount : null;
   }
   return null;
@@ -85,10 +73,6 @@ export const RecentMempool = memo(function RecentMempool({ footer }: { footer?: 
         time: msg.data.time || Math.floor(Date.now() / 1000),
         totalOutput: msg.data.totalOutput || 0,
         hasIronwood: !!msg.data.hasIronwood,
-        hasOrchard: !!msg.data.hasOrchard,
-        hasSapling: !!msg.data.hasSapling,
-        valueBalanceSapling: msg.data.valueBalanceSapling || 0,
-        valueBalanceOrchard: msg.data.valueBalanceOrchard || 0,
         valueBalanceIronwood: msg.data.valueBalanceIronwood || 0,
       };
       setTxs(prev => [tx, ...prev].slice(0, 5));
@@ -114,8 +98,6 @@ export const RecentMempool = memo(function RecentMempool({ footer }: { footer?: 
         const allTxs = (result.transactions || []).map((tx: any) => ({
           ...tx,
           hasIronwood: !!tx.hasIronwood || (tx.ironwoodActions || 0) > 0,
-          hasOrchard: (tx.orchardActions || 0) > 0,
-          hasSapling: (tx.vShieldedSpend || 0) > 0 || (tx.vShieldedOutput || 0) > 0,
         }));
         setTxs(allTxs.slice(0, 5));
         if (result.stats) {
@@ -152,11 +134,11 @@ export const RecentMempool = memo(function RecentMempool({ footer }: { footer?: 
   }
 
   // Mempool txs have no block yet by definition — that's what "pending" means.
-  // Showing the total backlog size (vs. Zcash's block capacity) is a more
+  // Showing the total backlog size is a more
   // honest signal than a fabricated block number: a few KB clears in one
   // block, a multi-MB backlog will take several.
   const summary = stats && stats.total > 0
-    ? `${stats.total.toLocaleString()} pending (${formatBytesCompact(stats.totalSizeBytes)}) · ${stats.shieldedPercentage}% shielded`
+    ? `${stats.total.toLocaleString()} pending (${formatBytesCompact(stats.totalSizeBytes)}) · ${stats.shieldedPercentage}% Ironwood-active`
     : null;
 
   if (txs.length === 0) {
@@ -207,7 +189,7 @@ export const RecentMempool = memo(function RecentMempool({ footer }: { footer?: 
                 </td>
                 <td className="px-4 sm:px-5 h-12 border-b border-cipher-border text-right">
                   {knownAmount !== null ? (
-                    <span className="font-mono text-sm text-secondary whitespace-nowrap tabular-nums">{formatZecPrecise(knownAmount)} <span className="text-muted/50">ZEC</span></span>
+                    <span className="font-mono text-sm text-secondary whitespace-nowrap tabular-nums">{formatTwcPrecise(knownAmount)} <span className="text-muted/50">TWC</span></span>
                   ) : (
                     <RedactedAmount />
                   )}

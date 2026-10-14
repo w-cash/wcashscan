@@ -9,7 +9,7 @@ const { deps } = require('./_helpers');
 const { logSafeError } = require('../../lib/safe-log');
 
 // Runs `fn` over `items` with at most `limit` in flight at once, instead of
-// an unbounded Promise.all — caps concurrent gRPC/RPC fan-out per request.
+// an unbounded Promise.all — caps concurrent Wolf RPC fan-out per request.
 async function mapWithConcurrency(items, limit, fn) {
   const results = new Array(items.length);
   let cursor = 0;
@@ -33,7 +33,7 @@ router.get('/api/tx/:txid/raw', async (req, res) => {
       return res.status(400).json({ error: 'Invalid transaction ID' });
     }
 
-    // Call Zebra RPC to get raw transaction
+    // Call Wolf RPC to get raw transaction
     const rawHex = await deps.callZebraRPC('getrawtransaction', [txid, 0]);
 
     res.json({
@@ -76,7 +76,7 @@ router.get('/api/tx/:txid/verbose', async (req, res) => {
   }
 });
 
-// Batch get raw transactions (for wallet scanning)
+// Batch get raw transactions for explicitly enabled operator tooling.
 router.post('/api/tx/raw/batch', validate('txRawBatch'), async (req, res) => {
   try {
     const { txids } = req.body;
@@ -93,50 +93,17 @@ router.post('/api/tx/raw/batch', validate('txRawBatch'), async (req, res) => {
       return res.status(400).json({ error: 'Maximum 100 transactions per batch' });
     }
 
-    // One shared gRPC client per request (not one per txid), and bounded
-    // concurrency instead of an unbounded Promise.all fan-out.
-    const client = deps.CompactTxStreamer
-      ? new deps.CompactTxStreamer('127.0.0.1:9067', deps.grpc.credentials.createInsecure())
-      : null;
-
-    let results;
-    try {
-      results = await mapWithConcurrency(txids, 8, async (txid) => {
-        try {
-          if (client) {
-            try {
-              const rawTx = await new Promise((resolve, reject) => {
-                client.GetTransaction({ hash: Buffer.from(txid, 'hex') }, (error, response) => {
-                  if (error) {
-                    reject(error);
-                  } else {
-                    resolve(response);
-                  }
-                });
-              });
-
-              if (rawTx && rawTx.data) {
-                return {
-                  txid,
-                  hex: Buffer.from(rawTx.data).toString('hex'),
-                  success: true,
-                  source: 'lightwalletd',
-                };
-              }
-            } catch (lwdError) {
-              // Lightwalletd failed for this txid — fall through to Zebra RPC.
-            }
-          }
-
-          const rawHex = await deps.callZebraRPC('getrawtransaction', [txid, 0]);
-          return { txid, hex: rawHex, success: true, source: 'rpc' };
-        } catch (error) {
-          return { txid, error: 'Failed to fetch transaction', success: false };
-        }
-      });
-    } finally {
-      if (client) client.close();
-    }
+    // Wolf JSON-RPC is the sole explorer transaction source. CompactTxStreamer
+    // is a separate, optional wallet service and must not be implicitly
+    // contacted by public explorer routes.
+    const results = await mapWithConcurrency(txids, 8, async (txid) => {
+      try {
+        const rawHex = await deps.callZebraRPC('getrawtransaction', [txid, 0]);
+        return { txid, hex: rawHex, success: true, source: 'wolf-rpc' };
+      } catch (error) {
+        return { txid, error: 'Failed to fetch transaction', success: false };
+      }
+    });
 
     const successful = results.filter(r => r.success);
     const failed = results.filter(r => !r.success);

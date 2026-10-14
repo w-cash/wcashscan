@@ -2,15 +2,13 @@ import UnitConverterClient from './UnitConverterClient';
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'ZEC / Zatoshi Unit Converter | CipherScan',
-  description: 'Convert between ZEC and zatoshis (1 ZEC = 100,000,000 zatoshis). Free Zcash unit converter for developers and users.',
+  title: 'TWC / Zatoshi Unit Converter | WcashExplorer',
+  description: 'Convert between TWC and zatoshi (1 TWC = 100,000,000 zatoshi) using local integer arithmetic.',
   keywords: [
-    'zcash unit converter',
-    'zec to zatoshi',
-    'zatoshi to zec',
-    'zcash zatoshi',
-    'ZEC converter',
-    'zcash developer tool',
+    'W.cash unit converter',
+    'TWC to zatoshi',
+    'zatoshi to TWC',
+    'W.cash developer tool',
   ],
   path: '/tools/unit-converter',
   networks: ['mainnet'],

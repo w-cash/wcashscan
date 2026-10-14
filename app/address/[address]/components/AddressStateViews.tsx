@@ -39,7 +39,7 @@ export function EmptyAddressView({ address, copiedText, onCopy }: EmptyAddressVi
             </p>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-cipher-surface rounded-lg text-xs text-muted font-mono border border-glass-4">
               <span className="w-1.5 h-1.5 rounded-full bg-cipher-cyan" />
-              Balance: 0 ZEC
+              Balance: 0 TWC
             </div>
           </div>
         </CardBody>
@@ -100,7 +100,7 @@ export function IndexingIssueView({ address, copiedText, onCopy }: IndexingIssue
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-muted mt-0.5">$</span>
-                <span>Zebrad may not support these methods</span>
+                <span>Wolf may not support these methods</span>
               </li>
             </ul>
           </div>

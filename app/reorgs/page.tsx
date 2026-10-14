@@ -69,27 +69,6 @@ interface Stats {
   deepestReorg: number;
 }
 
-interface MonitoredNode {
-  name: string;
-  host: string;
-  nodeImpl: string | null;
-  version: string | null;
-  height: number | null;
-  hash: string | null;
-  ourHash: string | null;
-  status: 'pending' | 'agree' | 'behind' | 'ahead' | 'fork' | 'syncing' | 'offline';
-  lastChecked: string | null;
-  error: string | null;
-  forkHeight: number | null;
-  commonAncestor: number | null;
-}
-
-interface NodesSummary {
-  total: number;
-  online: number;
-  forking: number;
-}
-
 const forkColumns: DataTableColumn<ForkEvent>[] = [
   {
     id: 'height',
@@ -151,116 +130,11 @@ const forkColumns: DataTableColumn<ForkEvent>[] = [
   },
 ];
 
-const NODE_STATUS_COLOR: Record<string, string> = {
-  agree: 'text-cipher-green',
-  behind: 'text-cipher-yellow',
-  ahead: 'text-cipher-cyan',
-  fork: 'text-cipher-orange',
-  offline: 'text-red-500',
-  pending: 'text-muted',
-  syncing: 'text-muted',
-};
-
-const NODE_STATUS_LABEL: Record<string, string> = {
-  agree: 'Agrees',
-  behind: 'Behind',
-  ahead: 'Ahead',
-  fork: 'FORK',
-  offline: 'Offline',
-  pending: 'Pending',
-  syncing: 'Syncing',
-};
-
-const nodeColumns: DataTableColumn<MonitoredNode>[] = [
-  {
-    id: 'node',
-    header: 'Node',
-    cell: (node) => (
-      <span className="font-mono text-xs text-primary font-medium">{node.name}</span>
-    ),
-  },
-  {
-    id: 'host',
-    header: 'Host',
-    className: 'hidden sm:table-cell',
-    cell: (node) => <code className="text-xs text-muted font-mono">{node.host}</code>,
-  },
-  {
-    id: 'version',
-    header: 'Version',
-    align: 'center',
-    className: 'hidden sm:table-cell',
-    cell: (node) =>
-      node.version ? (
-        <span className="text-xs font-mono text-secondary">
-          {node.nodeImpl ? `${node.nodeImpl} ` : ''}{node.version}
-        </span>
-      ) : (
-        <span className="text-xs text-muted">—</span>
-      ),
-  },
-  {
-    id: 'height',
-    header: 'Height',
-    align: 'center',
-    cell: (node) => (
-      <span className="font-mono text-xs text-secondary">
-        {node.height ? node.height.toLocaleString() : '—'}
-      </span>
-    ),
-  },
-  {
-    id: 'tipHash',
-    header: 'Tip Hash',
-    className: 'hidden md:table-cell',
-    cell: (node) =>
-      node.hash ? (
-        <HashLink
-          value={node.hash}
-          lead={10}
-          tail={6}
-          linkClassName={`text-xs font-mono ${node.status === 'fork' ? 'text-cipher-orange' : 'text-secondary'}`}
-        />
-      ) : (
-        <span className="text-xs text-muted">—</span>
-      ),
-  },
-  {
-    id: 'status',
-    header: 'Status',
-    align: 'center',
-    cell: (node) => (
-      <>
-        <span className={`text-xs font-mono font-bold ${NODE_STATUS_COLOR[node.status] || 'text-muted'}`}>
-          {NODE_STATUS_LABEL[node.status] || node.status}
-        </span>
-        {node.status === 'fork' && node.commonAncestor != null && node.height != null && (
-          <span className="block text-[10px] text-muted mt-0.5">
-            depth: {node.height - node.commonAncestor} · split @ #{node.commonAncestor.toLocaleString()}
-          </span>
-        )}
-      </>
-    ),
-  },
-  {
-    id: 'lastCheck',
-    header: 'Last Check',
-    align: 'right',
-    cell: (node) => (
-      <span className="text-xs text-muted font-mono">
-        {node.lastChecked ? formatRelativeTime(new Date(node.lastChecked).getTime() / 1000) : '—'}
-      </span>
-    ),
-  },
-];
-
 export default function UnclesPage() {
-  const [tab, setTab] = useState<'forks' | 'orphans' | 'nodes'>('forks');
+  const [tab, setTab] = useState<'forks' | 'orphans'>('forks');
   const [orphans, setOrphans] = useState<OrphanedBlock[]>([]);
   const [forks, setForks] = useState<ForkEvent[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [nodes, setNodes] = useState<MonitoredNode[]>([]);
-  const [nodesSummary, setNodesSummary] = useState<NodesSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedOrphan, setExpandedOrphan] = useState<number | null>(null);
@@ -270,11 +144,10 @@ export default function UnclesPage() {
       setLoading(true);
       setError(null);
 
-      const [statsRes, orphansRes, forksRes, nodesRes] = await Promise.all([
+      const [statsRes, orphansRes, forksRes] = await Promise.all([
         fetch(`${API_URL}/api/uncles/stats`),
         fetch(`${API_URL}/api/uncles?limit=50`),
         fetch(`${API_URL}/api/uncles/forks?limit=100`),
-        fetch(`${API_URL}/api/uncles/nodes`),
       ]);
 
       if (statsRes.ok) {
@@ -292,13 +165,6 @@ export default function UnclesPage() {
         if (forksData.success) setForks(forksData.forks || []);
       }
 
-      if (nodesRes.ok) {
-        const nodesData = await nodesRes.json();
-        if (nodesData.success) {
-          setNodes(nodesData.nodes || []);
-          setNodesSummary(nodesData.summary || null);
-        }
-      }
     } catch (err) {
       console.error('Error fetching reorg data:', err);
       setError('Failed to load reorg data');
@@ -418,12 +284,12 @@ export default function UnclesPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       {/* Header */}
       <div className="mb-8">
-        <span className="text-[10px] font-mono text-muted tracking-wider">&gt; FORK_WATCH</span>
+        <span className="text-[10px] font-mono text-muted tracking-wider">&gt; POW_REORG_WATCH</span>
         <h1 className="text-2xl sm:text-3xl font-bold font-mono text-primary mt-1">
-          Fork Watch
+          PoW Reorg Watch
         </h1>
         <p className="text-xs text-muted mt-2 max-w-2xl">
-          Monitor chain forks, orphaned blocks, and competing tips on the Zcash network.
+          Monitor W.cash proof-of-work forks, orphaned blocks, and competing tips.
           When miners produce blocks at the same height, the network resolves to a single chain — losing blocks become orphans.
         </p>
       </div>
@@ -434,7 +300,7 @@ export default function UnclesPage() {
           <StatCard label="Fork Events" value={stats.totalForkEvents} />
           <StatCard label="Orphaned Blocks" value={stats.totalOrphanedBlocks} />
           <StatCard label="Longest Reorg" value={stats.deepestReorg > 0 ? `${stats.deepestReorg} blocks` : '—'} color={stats.deepestReorg > 3 ? 'text-cipher-orange' : 'text-primary'} />
-          <StatCard label="Nodes Monitored" value={nodesSummary ? `${nodesSummary.online}/${nodesSummary.total}` : '—'} color={nodesSummary && nodesSummary.forking > 0 ? 'text-cipher-orange' : 'text-primary'} />
+          <StatCard label="Canonical source" value="Wolf + index" color="text-primary" />
         </div>
       )}
 
@@ -459,16 +325,6 @@ export default function UnclesPage() {
           }`}
         >
           Orphaned Blocks ({orphans.length})
-        </button>
-        <button
-          onClick={() => setTab('nodes')}
-          className={`px-4 py-2 text-xs font-mono transition-colors border-b-2 ${
-            tab === 'nodes'
-              ? 'border-cipher-cyan text-cipher-cyan'
-              : 'border-transparent text-muted hover:text-secondary'
-          }`}
-        >
-          Monitored Nodes ({nodes.length})
         </button>
       </div>
 
@@ -501,7 +357,7 @@ export default function UnclesPage() {
             <EmptyState
               icon="🛡️"
               title="No Reorg Events Recorded"
-              description={<>Chain reorganization events will appear here when detected. External nodes can report competing tips via the <code className="text-cipher-cyan">POST /api/uncle/report</code> endpoint.</>}
+              description={<>Chain reorganization events will appear here when detected. W.cash operators can report competing proof-of-work tips via the <code className="text-cipher-cyan">POST /api/uncle/report</code> endpoint.</>}
             />
           </CardBody>
         </Card>
@@ -637,21 +493,12 @@ export default function UnclesPage() {
         </div>
       )}
 
-      {/* Monitored Nodes Table */}
-      {!loading && !error && tab === 'nodes' && (
-        <DataTable
-          columns={nodeColumns}
-          rows={nodes}
-          rowKey={(node) => node.name}
-        />
-      )}
-
       {/* Report Endpoint Info */}
       <Card className="mt-8">
         <CardBody>
-          <h3 className="text-sm font-bold font-mono text-primary mb-3">Report Competing Tips</h3>
+          <h3 className="text-sm font-bold font-mono text-primary mb-3">Report a Competing PoW Tip</h3>
           <p className="text-xs text-secondary mb-3">
-            Node operators can help monitor chain health by reporting their tip block hash.
+            W.cash node operators can help monitor chain health by reporting their tip block hash.
             If your node sees a different block at the same height, it will be recorded as a potential fork.
           </p>
           <div className="bg-cipher-surface rounded-lg p-4 border border-cipher-border">

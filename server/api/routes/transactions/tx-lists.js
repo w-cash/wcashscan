@@ -14,6 +14,14 @@ const {
   finiteOrNull,
 } = require('./_helpers');
 
+const WCASH_POOLS = ['all', 'ironwood'];
+const WCASH_FLOW_TYPES = ['all', 'shield', 'deshield', 'fully_shielded'];
+
+function parseMinTwc(req) {
+  const raw = req.query.min_twc;
+  return { raw, value: parseFloat(raw) || 0 };
+}
+
 router.get('/api/transactions/list', async (req, res) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 100);
@@ -46,9 +54,9 @@ router.get('/api/transactions/list', async (req, res) => {
         // Build type filter
         let typeCondition = '';
         if (typeFilter === 'shielded') {
-          typeCondition = 'AND (t.has_sapling = true OR t.has_orchard = true OR t.has_ironwood = true)';
+          typeCondition = 'AND t.has_ironwood = true';
         } else if (typeFilter === 'transparent') {
-          typeCondition = 'AND t.has_sapling = false AND t.has_orchard = false AND t.has_ironwood = false AND t.is_coinbase = false';
+          typeCondition = 'AND t.has_ironwood = false AND t.is_coinbase = false';
         } else if (typeFilter === 'coinbase') {
           typeCondition = 'AND t.is_coinbase = true';
         }
@@ -71,12 +79,15 @@ router.get('/api/transactions/list', async (req, res) => {
           return parseInt(countResult.rows[0]?.count) || 0;
         });
 
+        // The shared parser still accepts the old field names, but W.cash
+        // returns only its real Ironwood balance and constant false/zero for
+        // unsupported legacy pools.
         const txCols = `t.txid, t.block_height, t.block_hash, t.block_time, t.tx_index,
                     t.size, t.vin_count, t.vout_count,
-                    t.has_sapling, t.has_orchard, t.has_ironwood, t.has_sprout,
-                    t.is_coinbase, t.value_balance,
-                    t.value_balance_sapling, t.value_balance_orchard, t.value_balance_ironwood,
-                    t.ironwood_actions, t.flow_type,
+                    false AS has_sapling, false AS has_orchard, t.has_ironwood,
+                    false AS has_sprout, t.is_coinbase, t.value_balance,
+                    0::bigint AS value_balance_sapling, 0::bigint AS value_balance_orchard,
+                    t.value_balance_ironwood, t.flow_type,
                     t.fee, t.total_input, t.total_output`;
         const result = await measure('db_rows', async () => {
           if (cursor === null) {
@@ -150,17 +161,28 @@ router.get('/api/shielded/list', async (req, res) => {
     const cursor = req.query.cursor ? parseInt(req.query.cursor) : null;
     const cursorId = req.query.cursor_id ? parseInt(req.query.cursor_id) : null;
     const direction = req.query.direction || 'next';
-    const flowType = req.query.flow_type || 'all'; // all, shield, deshield, fully_shielded
-    const poolFilter = req.query.pool || 'all'; // all, sapling, orchard, ironwood, mixed
-    const minZec = parseFloat(req.query.min_zec) || 0;
+    const flowType = req.query.flow_type || 'all';
+    const poolFilter = req.query.pool || 'all';
+    const { raw: rawMinTwc, value: minTwc } = parseMinTwc(req);
+    const minZatoshi = Math.max(0, Math.round(minTwc * 1e8));
     const isLatest = cursor === null;
     const cacheable = isCanonicalIntegerQuery(req.query.limit)
       && isCanonicalIntegerQuery(req.query.cursor)
       && isCanonicalIntegerQuery(req.query.cursor_id)
       && isKnownQueryValue(req.query.direction, ['next', 'prev'])
-      && isKnownQueryValue(req.query.flow_type, ['all', 'shield', 'deshield', 'fully_shielded'])
-      && isKnownQueryValue(req.query.pool, ['all', 'sapling', 'orchard', 'ironwood', 'mixed'])
-      && isCanonicalDecimalQuery(req.query.min_zec);
+      && isKnownQueryValue(req.query.flow_type, WCASH_FLOW_TYPES)
+      && isKnownQueryValue(req.query.pool, WCASH_POOLS)
+      && (rawMinTwc == null || isCanonicalDecimalQuery(rawMinTwc));
+
+    if (!WCASH_FLOW_TYPES.includes(flowType) || !WCASH_POOLS.includes(poolFilter)) {
+      return res.status(400).json({
+        success: false,
+        error: 'W.cash shielded filters support flow all/shield/deshield/fully_shielded and pool all/ironwood',
+      });
+    }
+    if (minTwc < 0 || !Number.isFinite(minTwc)) {
+      return res.status(400).json({ success: false, error: 'min_twc must be a non-negative decimal' });
+    }
 
     const outcome = await deps.listCache.getOrLoad({
       family: 'shielded-flows',
@@ -171,7 +193,7 @@ router.get('/api/shielded/list', async (req, res) => {
         direction: isLatest ? 'next' : (direction === 'prev' ? 'prev' : 'next'),
         flowType: typeof flowType === 'string' ? flowType : null,
         pool: typeof poolFilter === 'string' ? poolFilter : null,
-        minZec: finiteOrNull(minZec),
+        minTwc: finiteOrNull(minTwc),
         tipHeight: deps.chainTip.height,
       },
       freshTtlSeconds: isLatest ? 15 : 300,
@@ -186,25 +208,23 @@ router.get('/api/shielded/list', async (req, res) => {
         't.vin_count = 0',
         't.vout_count = 0',
         't.is_coinbase = false',
-        '(t.has_sapling = true OR t.has_orchard = true OR t.has_ironwood = true)',
+        't.has_ironwood = true',
       ];
       const params = [];
       let paramIdx = 1;
 
-      if (poolFilter === 'orchard') conditions.push('t.has_orchard = true');
-      else if (poolFilter === 'sapling') conditions.push('t.has_sapling = true');
-      else if (poolFilter === 'ironwood') conditions.push('t.has_ironwood = true');
+      if (poolFilter === 'ironwood') conditions.push('t.has_ironwood = true');
 
-      if (minZec > 0) {
+      if (minZatoshi > 0) {
         conditions.push(`t.fee >= $${paramIdx++}`);
-        params.push(Math.round(minZec * 1e8));
+        params.push(minZatoshi);
       }
 
       const whereBase = 'WHERE ' + conditions.join(' AND ');
 
       // Estimate count from pg_class for unfiltered, exact count for filtered
       let total;
-      if (poolFilter === 'all' && minZec === 0) {
+        if (poolFilter === 'all' && minZatoshi === 0) {
         const countResult = await deps.pool.query(
           `SELECT COUNT(*) as count FROM transactions t ${whereBase}`,
           params
@@ -219,8 +239,8 @@ router.get('/api/shielded/list', async (req, res) => {
       }
 
       let result;
-      const selectCols = `t.txid, t.block_height, t.block_time, t.has_sapling, t.has_orchard, t.has_ironwood,
-        t.orchard_actions, t.ironwood_actions, t.sapling_spend_count, t.sapling_output_count, t.fee`;
+      const selectCols = `t.txid, t.block_height, t.block_time, t.has_ironwood,
+        t.ironwood_actions, t.fee`;
 
       if (cursor === null) {
         result = await deps.pool.query(
@@ -255,10 +275,7 @@ router.get('/api/shielded/list', async (req, res) => {
 
       // Determine pool for each tx
       const resolvePool = (r) => {
-        if (r.has_ironwood) return 'ironwood';
-        if (r.has_orchard) return 'orchard';
-        if (r.has_sapling) return 'sapling';
-        return 'unknown';
+        return r.has_ironwood ? 'ironwood' : 'unknown';
       };
 
       return {
@@ -269,9 +286,9 @@ router.get('/api/shielded/list', async (req, res) => {
           blockHeight: parseInt(r.block_height),
           blockTime: parseInt(r.block_time),
           flowType: 'fully_shielded',
-          amountZec: null,
+          amountTwc: null,
           pool: resolvePool(r),
-          actions: parseInt(r.orchard_actions || 0) + parseInt(r.ironwood_actions || 0) + parseInt(r.sapling_spend_count || 0) + parseInt(r.sapling_output_count || 0),
+          actions: parseInt(r.ironwood_actions || 0),
           addresses: [],
         })),
         pagination: {
@@ -304,9 +321,9 @@ router.get('/api/shielded/list', async (req, res) => {
       conditions.push(`sf.pool = $${paramIdx++}`);
       params.push(poolFilter);
     }
-    if (minZec > 0) {
+    if (minZatoshi > 0) {
       conditions.push(`sf.amount_zat >= $${paramIdx++}`);
-      params.push(Math.round(minZec * 1e8));
+      params.push(minZatoshi);
     }
 
     const whereBase = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
@@ -319,7 +336,7 @@ router.get('/api/shielded/list', async (req, res) => {
     if (isAllView && conditions.length === 0) {
       const [flowCount, fsCount] = await Promise.all([
         deps.pool.query(`SELECT reltuples::bigint AS count FROM pg_class WHERE relname = 'shielded_flows'`),
-        deps.pool.query(`SELECT COUNT(*) as count FROM transactions t WHERE t.vin_count = 0 AND t.vout_count = 0 AND t.is_coinbase = false AND (t.has_sapling = true OR t.has_orchard = true OR t.has_ironwood = true)`),
+        deps.pool.query(`SELECT COUNT(*) as count FROM transactions t WHERE t.vin_count = 0 AND t.vout_count = 0 AND t.is_coinbase = false AND t.has_ironwood = true`),
       ]);
       total = (parseInt(flowCount.rows[0]?.count) || 0) + (parseInt(fsCount.rows[0]?.count) || 0);
     } else if (conditions.length === 0) {
@@ -337,7 +354,7 @@ router.get('/api/shielded/list', async (req, res) => {
 
     let result;
 
-    if (isAllView && poolFilter === 'all' && minZec === 0) {
+    if (isAllView && poolFilter === 'all' && minZatoshi === 0) {
       // UNION: shielded_flows + fully shielded txs, ordered by time
       const unionQuery = `
         (SELECT sf.id, sf.txid, sf.block_height, sf.block_time,
@@ -347,11 +364,11 @@ router.get('/api/shielded/list', async (req, res) => {
         UNION ALL
         (SELECT 0 as id, t.txid, t.block_height, t.block_time,
           'fully_shielded' as flow_type, NULL as amount_zat,
-          CASE WHEN t.has_ironwood THEN 'ironwood' WHEN t.has_orchard THEN 'orchard' ELSE 'sapling' END as pool,
+          'ironwood' as pool,
           ARRAY[]::text[] as transparent_addresses
          FROM transactions t
          WHERE t.vin_count = 0 AND t.vout_count = 0 AND t.is_coinbase = false
-           AND (t.has_sapling = true OR t.has_orchard = true OR t.has_ironwood = true))
+           AND t.has_ironwood = true)
       `;
 
       if (cursor === null) {
@@ -419,8 +436,8 @@ router.get('/api/shielded/list', async (req, res) => {
         blockHeight: parseInt(r.block_height),
         blockTime: parseInt(r.block_time),
         flowType: r.flow_type,
-        amountZec: r.amount_zat != null ? parseInt(r.amount_zat) / 1e8 : null,
-        pool: r.pool,
+        amountTwc: r.amount_zat != null ? parseInt(r.amount_zat) / 1e8 : null,
+        pool: 'ironwood',
         addresses: r.transparent_addresses || [],
       })),
       pagination: {

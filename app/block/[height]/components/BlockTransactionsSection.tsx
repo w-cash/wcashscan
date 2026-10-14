@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import { Badge, DataTable, HashLink, RedactedAmount, TxTypeBadge, type DataTableColumn, type TxCategory } from '@/components/ui';
 import { StakingActionBadge } from '@/components/StakingActionBadge';
-import { zatToZec } from '@/lib/format-numbers';
+import { zatToTwc } from '@/lib/format-numbers';
 import { CURRENCY } from '@/lib/config';
 import type { BlockData } from './types';
 
@@ -10,38 +10,23 @@ function poolBadge(tx: any) {
   if (tx.staking_action_type) return <StakingActionBadge type={tx.staking_action_type} compact />;
   const category: TxCategory = tx.vin?.[0]?.coinbase
     ? 'coinbase'
-    : tx.has_ironwood
-      ? 'ironwood'
-      : tx.has_orchard
-        ? 'orchard'
-        : tx.has_sapling
-          ? 'sapling'
-          : 'transparent';
+      : tx.has_ironwood ? 'ironwood' : 'transparent';
   return <TxTypeBadge category={category} />;
 }
 
-/** Sapling/Orchard/Ironwood pool label -> the same category TxTypeBadge uses
- *  elsewhere, so a "From: Orchard" cell here carries the exact color/icon as
- *  the Type badge on this same row instead of a separate, uncoordinated
- *  color scale. */
+/** Ironwood pool label -> the same category TxTypeBadge uses elsewhere. */
 function poolLabelCategory(pool: string): TxCategory {
-  if (pool === 'Ironwood') return 'ironwood';
-  if (pool === 'Orchard') return 'orchard';
-  return 'sapling';
+  return pool === 'Ironwood' ? 'ironwood' : 'transparent';
 }
 
 function poolBalances(tx: any) {
   return {
-    sap: parseInt(tx.value_balance_sapling || 0),
-    orc: parseInt(tx.value_balance_orchard || 0),
     irn: parseInt(tx.value_balance_ironwood || 0),
   };
 }
 
 function sourcePoolLabel(tx: any): string | null {
-  const { sap, orc, irn } = poolBalances(tx);
-  if (orc > 0) return 'Orchard';
-  if (sap > 0) return 'Sapling';
+  const { irn } = poolBalances(tx);
   if (irn > 0) return 'Ironwood';
   return null;
 }
@@ -62,10 +47,8 @@ function firstOutputAddress(tx: any): string | undefined {
 }
 
 function destPoolLabel(tx: any): string | null {
-  const { sap, orc, irn } = poolBalances(tx);
+  const { irn } = poolBalances(tx);
   if (irn < 0) return 'Ironwood';
-  if (orc < 0) return 'Orchard';
-  if (sap < 0) return 'Sapling';
 
   // No pool shows a net arrival and no transparent output exists either —
   // by the binding-signature balance equation (public, even for fully-shielded
@@ -86,25 +69,14 @@ function destPoolLabel(tx: any): string | null {
  * as the tx-detail and homepage tables. A fully-shielded tx has genuinely no
  * known amount and gets RedactedAmount instead of a fabricated number.
  *
- * Pool-to-pool migrations (Orchard -> Ironwood) are a special case: source
- * and destination value balances net to ~0 when summed, but the destination
- * pool's balance alone is the publicly-known migration amount — same rule
- * tx-summary/TxHeroFlow use for the MIGRATION tx type.
+ * The only native private pool is Ironwood. A transparent-side value balance
+ * is public consensus data; a pure Ironwood transaction remains redacted.
  */
 function knownAmount(tx: any): number | null {
   const isCoinbase = Boolean(tx.vin?.[0]?.coinbase);
   const transparentOut = (tx.vout || []).reduce((sum: number, o: any) => sum + (o.value || 0), 0);
-  const { sap, orc, irn } = poolBalances(tx);
-
-  const source = sourcePoolLabel(tx);
-  const dest = destPoolLabel(tx);
-  if (source && dest && source !== dest && transparentOut === 0) {
-    const destVb = dest === 'Ironwood' ? irn : dest === 'Orchard' ? orc : sap;
-    return zatToZec(Math.abs(destVb));
-  }
-
-  const valueBalanceZat = sap + orc + irn;
-  const shieldedDeposit = valueBalanceZat < 0 ? zatToZec(Math.abs(valueBalanceZat)) : 0;
+  const { irn } = poolBalances(tx);
+  const shieldedDeposit = irn < 0 ? zatToTwc(Math.abs(irn)) : 0;
   const total = transparentOut + shieldedDeposit;
   if (total > 0) return total;
   if (isCoinbase) return total; // legitimately zero
@@ -180,7 +152,7 @@ const columns: DataTableColumn<any>[] = [
       const isCoinbase = Boolean(tx.vin?.[0]?.coinbase);
       if (isCoinbase) return <span className="text-xs font-mono text-secondary tabular-nums">0</span>;
       const transparentIns = tx.vin?.length || 0;
-      const shieldedIns = (tx.sapling_spend_count || 0) + (tx.orchard_actions || 0) + (tx.ironwood_actions || 0);
+      const shieldedIns = tx.ironwood_actions || 0;
       const total = transparentIns + shieldedIns;
       return <span className="text-xs font-mono text-secondary tabular-nums">{total}</span>;
     },
@@ -192,7 +164,7 @@ const columns: DataTableColumn<any>[] = [
     skeletonWidth: 'w-4',
     cell: (tx) => {
       const transparentOuts = tx.vout?.length || 0;
-      const shieldedOuts = (tx.sapling_output_count || 0) + (tx.orchard_actions || 0) + (tx.ironwood_actions || 0);
+      const shieldedOuts = tx.ironwood_actions || 0;
       const total = transparentOuts + shieldedOuts;
       return <span className="text-xs font-mono text-secondary tabular-nums">{total}</span>;
     },
@@ -218,10 +190,10 @@ const columns: DataTableColumn<any>[] = [
       const feeZat = parseInt(tx.fee || 0);
       if (feeZat === 0) return <span className="text-xs text-muted">—</span>;
       if (feeZat === 10000) return <span className="text-[10px] text-muted font-mono">Standard</span>;
-      const feeZec = zatToZec(feeZat);
+      const feeTwc = zatToTwc(feeZat);
       return (
         <span className="text-[10px] text-muted font-mono tabular-nums">
-          {feeZec < 0.001 ? feeZec.toFixed(5) : feeZec.toFixed(4)}
+          {feeTwc < 0.001 ? feeTwc.toFixed(5) : feeTwc.toFixed(4)} TWC
         </span>
       );
     },

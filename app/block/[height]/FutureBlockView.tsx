@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { getApiUrl } from '@/lib/api-config';
 import { NETWORK_UPGRADES } from '@/lib/config';
 
-const ZCASH_BLOCK_INTERVAL = 75; // seconds
+const WCASH_BLOCK_INTERVAL = 75; // seconds
 
 function formatDuration(seconds: number): string {
   if (seconds < 60) return `${Math.round(seconds)}s`;
@@ -71,7 +71,7 @@ export function FutureBlockView({
 
   const upgrade = NETWORK_UPGRADES[targetHeight] ?? null;
   const blocksRemaining = targetHeight - currentHeight;
-  const secondsRemaining = blocksRemaining * ZCASH_BLOCK_INTERVAL;
+  const secondsRemaining = blocksRemaining * WCASH_BLOCK_INTERVAL;
   const estimatedDate = new Date(now + secondsRemaining * 1000);
   const progress = currentHeight / targetHeight;
 
@@ -87,11 +87,11 @@ export function FutureBlockView({
             </h1>
             {upgrade ? (
               <p className="text-secondary mb-6">
-                <span className="text-cipher-yellow-bright font-semibold">{upgrade.name}</span> has reached on the Zcash network.
+                <span className="text-cipher-yellow-bright font-semibold">{upgrade.name}</span> has reached on the W.cash network.
               </p>
             ) : (
               <p className="text-secondary mb-6">
-                This block is now part of the Zcash blockchain.
+                This block is now part of the W.cash blockchain.
               </p>
             )}
             <div className="flex flex-wrap items-center justify-center gap-3">
@@ -106,7 +106,7 @@ export function FutureBlockView({
                   href={upgrade.link}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-cipher-yellow-bright/10 border border-cipher-yellow-bright/30 text-cipher-yellow-bright font-mono text-sm hover:bg-cipher-yellow-bright/20 transition-colors"
                 >
-                  {upgrade.linkText || 'Migration Tracker →'}
+                  {upgrade.linkText || 'Ironwood details →'}
                 </Link>
               )}
             </div>
@@ -123,7 +123,7 @@ export function FutureBlockView({
         <span className="text-[10px] font-mono text-muted tracking-wider">&gt; FUTURE_BLOCK</span>
         <div className="flex flex-wrap items-center gap-3 mt-1">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold font-mono text-primary">
-            Zcash Block #{targetHeight.toLocaleString()}
+            W.cash Block #{targetHeight.toLocaleString()}
           </h1>
           {upgrade ? (
             <Badge color="amber">{upgrade.badge || 'NETWORK UPGRADE'}</Badge>
@@ -132,7 +132,7 @@ export function FutureBlockView({
           )}
         </div>
         <p className="mt-3 text-xs sm:text-sm text-secondary">
-          This block has not been mined yet. Below is an estimate based on Zcash&apos;s
+          This block has not been mined yet. Below is an estimate based on W.cash&apos;s
           75-second target block interval.
         </p>
       </div>
@@ -161,7 +161,7 @@ export function FutureBlockView({
                   href={upgrade.link}
                   className="inline-flex items-center gap-1.5 mt-3 text-xs font-mono text-cipher-yellow-bright hover:text-cipher-yellow-glow transition-colors"
                 >
-                  {upgrade.linkText || 'Migration tracker →'}
+                  {upgrade.linkText || 'Ironwood details →'}
                 </Link>
               )}
             </div>

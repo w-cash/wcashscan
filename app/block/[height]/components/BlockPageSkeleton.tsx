@@ -22,8 +22,8 @@ export function BlockPageSkeleton({
         <div className="flex flex-wrap items-center gap-3 mt-1">
           <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold font-mono ${initialSummary?.isOrphaned ? 'text-cipher-orange' : 'text-primary'}`}>
             {initialSummary
-              ? `${initialSummary.isOrphaned ? 'Orphaned Zcash Block' : 'Zcash Block'} #${initialSummary.height.toLocaleString()}`
-              : 'Zcash Block'}
+              ? `${initialSummary.isOrphaned ? 'Orphaned W.cash Block' : 'W.cash Block'} #${initialSummary.height.toLocaleString()}`
+              : 'W.cash Block'}
           </h1>
           {initialSummary && (
             <Badge color={initialSummary.isOrphaned ? 'orange' : 'green'}>
@@ -35,8 +35,8 @@ export function BlockPageSkeleton({
           {initialSummary ? (
             <>
               {initialSummary.isOrphaned
-                ? 'This block is no longer part of the canonical Zcash chain.'
-                : 'This block is part of the canonical Zcash chain.'}{' '}
+                ? 'This block is no longer part of the canonical W.cash chain.'
+                : 'This block is part of the canonical W.cash chain.'}{' '}
               Full block hash:{' '}
               <code className="font-mono text-primary break-all">{initialSummary.hash}</code>
             </>

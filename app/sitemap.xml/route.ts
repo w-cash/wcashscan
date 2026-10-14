@@ -22,10 +22,6 @@ function xmlResponse(xml: string, maxAge: number): Response {
 export function GET(): Response {
   const network = getNetwork();
 
-  if (network === 'crosslink-testnet') {
-    return xmlResponse(serializeUrlSet([]), 86_400);
-  }
-
   const baseUrl = getBaseUrl();
   if (network === 'testnet') {
     return xmlResponse(serializeUrlSet([{ url: `${baseUrl}/` }]), 86_400);

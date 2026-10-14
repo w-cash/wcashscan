@@ -7,17 +7,33 @@ const router = express.Router();
 const { validate } = require('../../validation');
 const { deps } = require('./_helpers');
 const { logSafeError } = require('../../lib/safe-log');
+const { getWcashProfile } = require('../../lib/wcash-profile');
 
 /**
  * POST /api/tx/broadcast
- * Broadcast a raw signed transaction to the Zcash network
+ * Broadcast a raw signed transaction to the W.cash network
  * Body: { "rawTx": "hex-encoded-raw-transaction" }
  *
- * Note: This only accepts a raw transaction hex (already signed).
+ * Note: This only accepts a raw W.cash transaction hex (already signed).
  * No private keys or viewing keys are involved - the TX is fully
  * constructed and signed client-side before being sent here.
  */
 router.post('/api/tx/broadcast', validate('txBroadcast'), async (req, res) => {
+  let enabled = false;
+  try {
+    enabled = process.env.WCASH_ENABLE_BROADCAST === 'true'
+      && getWcashProfile().capabilities.broadcast === true;
+  } catch {
+    enabled = false;
+  }
+  if (!enabled) {
+    return res.status(403).json({
+      success: false,
+      code: 'BROADCAST_DISABLED',
+      error: 'Transaction broadcast is disabled for this W.cash explorer deployment',
+    });
+  }
+
   try {
     const { rawTx } = req.body;
 

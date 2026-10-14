@@ -15,9 +15,8 @@ type Period = typeof PERIODS[number];
 
 interface HashratePoint {
   date: string;
-  avgDifficulty: number;
   blockCount: number;
-  hashrate: number;
+  solutionRate: number | null;
 }
 
 interface HashrateHistoryResponse {
@@ -46,9 +45,8 @@ function HashratePeriodSelector({ value, onChange }: { value: Period; onChange: 
 }
 
 /**
- * Long-range network hashrate trend (daily buckets from /api/network/hashrate-history).
- * Complements MiningMetricsChart, which shows short-range per-block solrate/difficulty —
- * this one is for spotting week-to-month-scale ramps (new fleets, pool migrations, etc).
+ * Wolf solution-rate observations. Historical values are intentionally empty
+ * until the node sampler persists them; block timestamps are not a substitute.
  */
 export function NetworkHashrateChart() {
   const { theme } = useTheme();
@@ -70,9 +68,9 @@ export function NetworkHashrateChart() {
       watermarkSize="lg"
       controls={<HashratePeriodSelector value={period} onChange={setPeriod} />}
     >
-      {latest && (
+      {latest && latest.solutionRate != null && (
         <p className="text-xs font-mono text-muted mb-3">
-          Latest: <span className="text-cipher-cyan font-bold">{formatHashrate(latest.hashrate)}</span>
+          Latest: <span className="text-cipher-cyan font-bold">{formatHashrate(latest.solutionRate)}</span>
           <span className="text-muted/60"> ({latest.date}, {latest.blockCount} blocks)</span>
         </p>
       )}
@@ -80,7 +78,7 @@ export function NetworkHashrateChart() {
         <div className="flex items-center justify-center h-[260px]">
           <div className="animate-pulse text-muted font-mono text-xs">Loading...</div>
         </div>
-      ) : (
+      ) : points.some((point) => point.solutionRate != null) ? (
         <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height={260}>
           <AreaChart data={points}>
             <CartesianGrid strokeDasharray="2 6" stroke={colors.grid} opacity={0.5} />
@@ -108,7 +106,7 @@ export function NetworkHashrateChart() {
                 fontFamily: 'monospace',
               }}
               labelFormatter={(d) => String(d)}
-              formatter={(value) => [formatHashrate(Number(value)), 'Network hashrate']}
+              formatter={(value) => [formatHashrate(Number(value)), 'Wolf solution rate']}
             />
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -118,7 +116,7 @@ export function NetworkHashrateChart() {
             </defs>
             <Area
               type="monotone"
-              dataKey="hashrate"
+              dataKey="solutionRate"
               stroke={colors.cyan}
               strokeWidth={2}
               fill={`url(#${gradientId})`}
@@ -126,6 +124,10 @@ export function NetworkHashrateChart() {
             />
           </AreaChart>
         </ResponsiveContainer>
+      ) : (
+        <div className="flex h-[260px] items-center justify-center px-6 text-center text-xs font-mono text-muted">
+          Historical Wolf solution-rate samples are not available yet. The current rate is shown on the network overview when Wolf responds.
+        </div>
       )}
     </ChartCard>
   );

@@ -1,6 +1,7 @@
 /**
- * Analytics routes — anonymity set, shielding distribution, fee distribution.
- * All endpoints query pre-existing indexed tables. Cached for 1 hour.
+ * W.cash analytics routes — anonymity set, shielding distribution, and fee
+ * distribution. All amounts are integer zatoshis in SQL and are labelled in
+ * the response; only the native Ironwood pool is queried.
  */
 
 const express = require('express');
@@ -8,6 +9,7 @@ const { logSafeError } = require('../lib/safe-log');
 const router = express.Router();
 
 const CACHE_TTL = 3600; // 1 hour
+const FLOW_POOL = 'ironwood';
 
 async function getCached(redisClient, key) {
   try {
@@ -29,22 +31,9 @@ async function setCache(redisClient, key, data) {
 // ============================================================================
 
 const AMOUNT_THRESHOLDS_ZAT = [
-  1000,          // 0.00001 ZEC
-  100000,        // 0.001 ZEC
-  1000000,       // 0.01 ZEC
-  10000000,      // 0.1 ZEC
-  25000000,      // 0.25 ZEC
-  50000000,      // 0.5 ZEC
-  100000000,     // 1 ZEC
-  200000000,     // 2 ZEC
-  500000000,     // 5 ZEC
-  1000000000,    // 10 ZEC
-  2500000000,    // 25 ZEC
-  5000000000,    // 50 ZEC
-  10000000000,   // 100 ZEC
-  50000000000,   // 500 ZEC
-  100000000000,  // 1000 ZEC
-  1000000000000, // 10000 ZEC
+  1000, 100000, 1000000, 10000000, 25000000, 50000000,
+  100000000, 200000000, 500000000, 1000000000, 2500000000,
+  5000000000, 10000000000, 50000000000, 100000000000, 1000000000000,
 ];
 
 router.get('/api/analytics/anonymity-set', async (req, res) => {
@@ -74,7 +63,8 @@ router.get('/api/analytics/anonymity-set', async (req, res) => {
       SELECT flow_type,
       ${thresholdCases}
       FROM shielded_flows
-      WHERE flow_type IN ('shield', 'deshield') ${timeFilter}
+      WHERE pool = '${FLOW_POOL}'
+        AND flow_type IN ('shield', 'deshield') ${timeFilter}
       GROUP BY flow_type
     `, params);
 
@@ -83,12 +73,12 @@ router.get('/api/analytics/anonymity-set', async (req, res) => {
 
     const data = AMOUNT_THRESHOLDS_ZAT.map((threshold, i) => ({
       thresholdZat: threshold,
-      thresholdZec: threshold / 1e8,
+      thresholdTwc: threshold / 1e8,
       shieldCount: parseInt(shield[`t${i}`] || '0'),
       deshieldCount: parseInt(deshield[`t${i}`] || '0'),
     }));
 
-    const response = { period, thresholds: data, updatedAt: new Date().toISOString() };
+    const response = { success: true, network: 'wcash', ticker: 'TWC', period, thresholds: data, updatedAt: new Date().toISOString() };
     await setCache(redisClient, cacheKey, response);
     res.json(response);
   } catch (error) {
@@ -102,16 +92,16 @@ router.get('/api/analytics/anonymity-set', async (req, res) => {
 // ============================================================================
 
 const LOG_BUCKETS = [
-  { min: 1, max: 100000, label: '<0.001' },
-  { min: 100000, max: 1000000, label: '0.001-0.01' },
-  { min: 1000000, max: 10000000, label: '0.01-0.1' },
-  { min: 10000000, max: 100000000, label: '0.1-1' },
-  { min: 100000000, max: 500000000, label: '1-5' },
-  { min: 500000000, max: 1000000000, label: '5-10' },
-  { min: 1000000000, max: 5000000000, label: '10-50' },
-  { min: 5000000000, max: 10000000000, label: '50-100' },
-  { min: 10000000000, max: 100000000000, label: '100-1000' },
-  { min: 100000000000, max: null, label: '1000+' },
+  { min: 1, max: 100000, label: '<0.001 TWC' },
+  { min: 100000, max: 1000000, label: '0.001–0.01 TWC' },
+  { min: 1000000, max: 10000000, label: '0.01–0.1 TWC' },
+  { min: 10000000, max: 100000000, label: '0.1–1 TWC' },
+  { min: 100000000, max: 500000000, label: '1–5 TWC' },
+  { min: 500000000, max: 1000000000, label: '5–10 TWC' },
+  { min: 1000000000, max: 5000000000, label: '10–50 TWC' },
+  { min: 5000000000, max: 10000000000, label: '50–100 TWC' },
+  { min: 10000000000, max: 100000000000, label: '100–1000 TWC' },
+  { min: 100000000000, max: null, label: '1000+ TWC' },
 ];
 
 router.get('/api/analytics/shielding-distribution', async (req, res) => {
@@ -148,7 +138,8 @@ router.get('/api/analytics/shielding-distribution', async (req, res) => {
       ${bucketCases},
       ${volumeCases}
       FROM shielded_flows
-      WHERE flow_type IN ('shield', 'deshield') ${timeFilter}
+      WHERE pool = '${FLOW_POOL}'
+        AND flow_type IN ('shield', 'deshield') ${timeFilter}
       GROUP BY flow_type
     `, params);
 
@@ -165,7 +156,7 @@ router.get('/api/analytics/shielding-distribution', async (req, res) => {
       deshieldVolumeZat: parseInt(deshield[`v${i}`] || '0'),
     }));
 
-    const response = { period, buckets, updatedAt: new Date().toISOString() };
+    const response = { success: true, network: 'wcash', ticker: 'TWC', period, buckets, updatedAt: new Date().toISOString() };
     await setCache(redisClient, cacheKey, response);
     res.json(response);
   } catch (error) {
@@ -188,8 +179,12 @@ router.get('/api/network/fee-distribution', async (req, res) => {
     const cached = await getCached(redisClient, cacheKey);
     if (cached) return res.json(cached);
 
-    const days = period === '7d' ? 7 : period === '90d' ? 90 : period === '1y' ? 365 : 30;
-    const cutoff = Math.floor(Date.now() / 1000) - (days * 86400);
+    const params = [];
+    const timeFilter = period === 'all' ? '' : 'AND block_time >= $1';
+    if (period !== 'all') {
+      const days = period === '7d' ? 7 : period === '90d' ? 90 : period === '1y' ? 365 : 30;
+      params.push(Math.floor(Date.now() / 1000) - (days * 86400));
+    }
 
     const result = await pool.query(`
       SELECT
@@ -202,10 +197,10 @@ router.get('/api/network/fee-distribution', async (req, res) => {
         AVG(fee) AS avg_fee,
         COUNT(*) AS tx_count
       FROM transactions
-      WHERE fee > 0 AND is_coinbase = false AND block_time >= $1
+      WHERE fee > 0 AND is_coinbase = false ${timeFilter}
       GROUP BY day
       ORDER BY day
-    `, [cutoff]);
+    `, params);
 
     const data = result.rows.map(row => ({
       date: row.day,
@@ -218,7 +213,7 @@ router.get('/api/network/fee-distribution', async (req, res) => {
       txCount: parseInt(row.tx_count),
     }));
 
-    const response = { period, daily: data, updatedAt: new Date().toISOString() };
+    const response = { success: true, network: 'wcash', ticker: 'TWC', period, unit: 'zatoshi', daily: data, updatedAt: new Date().toISOString() };
     await setCache(redisClient, cacheKey, response);
     res.json(response);
   } catch (error) {

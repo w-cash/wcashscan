@@ -1,9 +1,9 @@
-const COINBASE_CLIENT_MARKERS = [
-  { hex: 'f09f8cb8', emoji: '🌸', name: 'Zakura' },
-  { hex: 'f09fa693', emoji: '🦓', name: 'Zebra' },
-] as const;
+// W.cash currently has no authenticated miner-client marker table. Keep the
+// collection explicitly typed so the empty initial table remains extensible
+// without narrowing `.find()`'s callback parameter to `never`.
+const COINBASE_CLIENT_MARKERS: ReadonlyArray<{ hex: string; emoji: string }> = [];
 
-export type CoinbaseClientEmoji = (typeof COINBASE_CLIENT_MARKERS)[number]['emoji'];
+export type CoinbaseClientEmoji = string;
 
 export interface CoinbaseClientInfo {
   emoji: CoinbaseClientEmoji | null;
@@ -30,7 +30,7 @@ export function getCoinbaseClientEmoji(
   return COINBASE_CLIENT_MARKERS.find(({ hex }) => normalizedHex.includes(hex))?.emoji ?? null;
 }
 
-const VERSION_PATTERN = /\/(Zakura|Zebra|zcashd)[:\s]?v?(\d+\.\d+(?:\.\d+)?(?:-[a-zA-Z0-9.]+)?)\//i;
+const VERSION_PATTERN = /\/(Wolf|Wcash)[:\s]?v?(\d+\.\d+(?:\.\d+)?(?:-[a-zA-Z0-9.]+)?)\//i;
 
 function hexToAscii(hex: string): string {
   let result = '';
@@ -43,8 +43,8 @@ function hexToAscii(hex: string): string {
 
 /**
  * Extract client name and version from coinbase hex.
- * Looks for patterns like /Zakura:1.0.0/ or /Zebra:2.4.0/ in the decoded text,
- * and falls back to emoji-based detection for the client name.
+ * Looks for a W.cash Wolf marker in the decoded text. Miner coinbase tags are
+ * self-reported and are never treated as authenticated node identity.
  */
 export function getCoinbaseClientInfo(
   coinbaseHex?: string | null,
@@ -66,10 +66,5 @@ export function getCoinbaseClientInfo(
     return { emoji, name: match[1], version: match[2] };
   }
 
-  // Fall back to emoji-based name detection
-  const marker = COINBASE_CLIENT_MARKERS.find(({ hex }) =>
-    coinbaseHex.toLowerCase().includes(hex),
-  );
-
-  return { emoji, name: marker?.name ?? null, version: null };
+  return { emoji, name: null, version: null };
 }

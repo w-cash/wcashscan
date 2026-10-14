@@ -1,0 +1,59 @@
+{
+  "apk": "/tmp/wcash-wallet-runtime-20261009/wallet-mobile/android/app/build/outputs/apk/beta/debug/app-beta-arm64-v8a-debug.apk",
+  "apk_sha256": "bce0cc98a30511480c0bd2350f4ba30eab2591e6fd9508364b2d74f0dbfe27fd",
+  "app_version": "2.0.23",
+  "chain_name": "main",
+  "consensus_branch_id": "d9c6a7ee",
+  "emulator": "sdk_gphone64_arm64 API 34",
+  "endpoint": "https://mainnet.zecwec.com:443",
+  "estimated_height": 23512,
+  "info_height": 23512,
+  "lightwalletd_version": "v6.3.0",
+  "node_observed_at_utc": "2026-10-09T22:19:19.136723+00:00",
+  "notes": [
+    "Fresh wallet created by the installed app after package data clear.",
+    "UI wallet-range label is latestBlock minus birthday, not a second chain tip.",
+    "The scan queue uses an exclusive end height: [1, tip+1).",
+    "No Mainnet transaction was created or broadcast."
+  ],
+  "package": "com.wcashwallet.wallet.beta",
+  "platform": "Android emulator",
+  "post_proof_ui_checks": [
+    "Fresh basic-mode wallet creation completed after package-data clear.",
+    "WEC balance branding and Wcash QR mark visible.",
+    "Send screen opened with Address Field and WEC Amount Field.",
+    "Receive screen opened with a wu1 Ironwood address.",
+    "Blank seed/viewing-key import screen opened; no private input entered.",
+    "Create New Wallet entry point rendered; the fresh-wallet boot path already exercised wallet creation.",
+    "Wallet Seed/export screen opened and was immediately closed without screenshot, hierarchy dump, or logs while private data was visible.",
+    "Restore Last Wallet Backup completed and returned the wallet to a synced state.",
+    "Settings displayed Automatic https://mainnet.zecwec.com:443 and Block Explorer None.",
+    "Address Book new-contact chain selector displayed Wcash."
+  ],
+  "privacy_evidence": {
+    "seed_or_viewing_key_recorded": false,
+    "transaction_broadcast": false
+  },
+  "relaunch": {
+    "height_after": 23512,
+    "height_before": 23512,
+    "screenshot": "/Users/rustdev/Documents/ChatGPT/wcashwallet/test-artifacts/ui-qualification-2026-10-09/android-mainnet-relaunch-persisted.png",
+    "screenshot_sha256": "7d1ad160d25b48850b5ecdf52eca980e9ce62c5182f7395d9ca4b7dd04947e28",
+    "sync_indicator": "header.checkicon",
+    "verified_at_utc": "2026-10-09T22:20:03+00:00"
+  },
+  "screenshot": "/Users/rustdev/Documents/ChatGPT/wcashwallet/test-artifacts/ui-qualification-2026-10-09/android-mainnet-synced-23512.png",
+  "screenshot_captured_at_utc": "2026-10-09T22:19:19.300565+00:00",
+  "screenshot_sha256": "bdcdbc552b095b811ca91d883e9604a2845c70006d5f69f3258480ec7b301835",
+  "tip_hash": "272217c99a6fa30a8e3f4a78345840b584b00b81e67412982c93a0380cc043fb",
+  "tip_height": 23512,
+  "ui_server_blocks": 23512,
+  "ui_sync_status": "Fully Synced",
+  "ui_wallet_range_blocks": 23511,
+  "vendor": "ZcashFoundation/zebra",
+  "version_code": 30331,
+  "wallet_db_max_scanned_height": 23512,
+  "wallet_db_scan_queue": [
+    "1|23513|10"
+  ]
+}

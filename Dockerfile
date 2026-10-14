@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-# CipherScan Next.js frontend - multi-stage build producing a standalone server.
+# WcashScan Next.js frontend - multi-stage build producing a standalone server.
 # Base image is pinned by digest; override with --build-arg NODE_IMAGE=... to
 # build against a specific Node image / commit.
 ARG NODE_IMAGE=node:22.14.0-bookworm-slim
@@ -23,9 +23,23 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Bake the source git commit into the image for traceability.
 ARG GIT_COMMIT=unknown
 ARG NEXT_PUBLIC_NETWORK
+ARG NEXT_PUBLIC_DATA_NETWORK=wcash-testnet-v5
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_TESTNET_API_URL
+ARG NEXT_PUBLIC_MAINNET_API_URL
+ARG NEXT_PUBLIC_TESTNET_URL
+ARG NEXT_PUBLIC_MAINNET_URL
 ENV NEXT_PUBLIC_GIT_COMMIT=${GIT_COMMIT}
 ENV NEXT_PUBLIC_NETWORK=${NEXT_PUBLIC_NETWORK}
-ENV CIPHERSCAN_ALLOW_BUILD_UPSTREAM_FALLBACK=1
+ENV NEXT_PUBLIC_DATA_NETWORK=${NEXT_PUBLIC_DATA_NETWORK}
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_TESTNET_API_URL=${NEXT_PUBLIC_TESTNET_API_URL}
+ENV NEXT_PUBLIC_MAINNET_API_URL=${NEXT_PUBLIC_MAINNET_API_URL}
+ENV NEXT_PUBLIC_TESTNET_URL=${NEXT_PUBLIC_TESTNET_URL}
+ENV NEXT_PUBLIC_MAINNET_URL=${NEXT_PUBLIC_MAINNET_URL}
+# A production image must never hydrate itself from the upstream CipherScan
+# API.  The only source of chain data is the W.cash API built in this repo.
+ENV WCASH_ALLOW_BUILD_UPSTREAM_FALLBACK=0
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
@@ -40,8 +54,8 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 ARG GIT_COMMIT=unknown
-LABEL org.opencontainers.image.title="cipherscan-web" \
-      org.opencontainers.image.source="https://github.com/dannywillems/cipherscan" \
+LABEL org.opencontainers.image.title="wcashscan-web" \
+      org.opencontainers.image.source="https://github.com/w-cash/wcashscan" \
       org.opencontainers.image.revision="${GIT_COMMIT}"
 
 # Run as the non-root user that the base image already provides.

@@ -1,9 +1,9 @@
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'Latest Zcash Blocks - Block Explorer | CipherScan',
-  description: 'Browse the latest Zcash blocks with transaction counts, sizes, mining rewards, and timestamps. Real-time block explorer data.',
-  keywords: ['zcash blocks', 'zcash block explorer', 'zcash latest blocks', 'ZEC blocks', 'zcash block height'],
+  title: 'Latest W.cash Blocks | WcashExplorer',
+  description: 'Browse W.cash Testnet blocks with transaction counts, sizes, mining rewards, and timestamps.',
+  keywords: ['W.cash blocks', 'WcashExplorer', 'TWC blocks', 'W.cash block height'],
   path: '/blocks',
 });
 

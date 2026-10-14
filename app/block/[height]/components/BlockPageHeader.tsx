@@ -44,7 +44,7 @@ export function BlockPageHeader({
 }: {
   data: BlockData;
 }) {
-  const isDeepOrFinalized = data.finality ? data.finality === 'Finalized' : data.confirmations > 6;
+  const isDeeplyConfirmed = data.confirmations > 6;
 
   return (
     <div className="mb-6 animate-fade-in-up">
@@ -58,7 +58,7 @@ export function BlockPageHeader({
       <h1
         className={`mt-1 text-xl sm:text-2xl md:text-3xl font-bold font-mono ${data.isOrphaned ? 'text-cipher-orange' : 'text-primary'}`}
       >
-        {data.isOrphaned ? 'Orphaned Zcash Block' : 'Zcash Block'} #{data.height.toLocaleString()}
+        {data.isOrphaned ? 'Orphaned W.cash Block' : 'W.cash Block'} #{data.height.toLocaleString()}
       </h1>
 
       {/* Facts (left) + controls (right), one row directly above the facts
@@ -73,8 +73,8 @@ export function BlockPageHeader({
           </Badge>
           <StatusBadge status={data.isOrphaned ? 'orphan' : 'canonical'} variant="subtle" />
           {!data.isOrphaned && (
-            <Badge color={isDeepOrFinalized ? 'green' : 'orange'} icon={<ClockIcon />} variant="subtle">
-              {data.finality ?? `${data.confirmations.toLocaleString()} CONFIRMATION${data.confirmations !== 1 ? 'S' : ''}`}
+            <Badge color={isDeeplyConfirmed ? 'green' : 'orange'} icon={<ClockIcon />} variant="subtle">
+              {data.confirmations.toLocaleString()} CONFIRMATION{data.confirmations !== 1 ? 'S' : ''}
             </Badge>
           )}
         </div>
@@ -96,7 +96,7 @@ export function BlockPageHeader({
                 nextBlockHash: data.nextBlockHash,
                 version: data.version,
                 merkleRoot: data.merkleRoot,
-                finalSaplingRoot: data.finalSaplingRoot,
+                finalIronwoodRoot: data.finalIronwoodRoot,
                 bits: data.bits,
                 nonce: data.nonce,
                 solution: data.solution,
@@ -114,10 +114,10 @@ export function BlockPageHeader({
               filename={`block-${data.height}`}
               type="both"
               label="Export"
-              csvHeaders={['TXID', 'Type', 'Inputs', 'Outputs', 'Amount (ZEC)']}
+              csvHeaders={['TXID', 'Type', 'Inputs', 'Outputs', 'Amount (TWC)']}
               csvMapper={(tx: any) => [
                 tx.txid,
-                tx.vin?.[0]?.coinbase ? 'Coinbase' : tx.hasShieldedActivity ? 'Shielded' : 'Regular',
+                tx.vin?.[0]?.coinbase ? 'Coinbase' : tx.hasShieldedActivity ? 'Ironwood' : 'Regular',
                 String(tx.vin?.length || 0),
                 String(tx.vout?.length || 0),
                 tx.vout?.reduce((sum: number, out: any) => sum + (out.value || 0), 0).toFixed(8) || '0'

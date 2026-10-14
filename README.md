@@ -1,313 +1,144 @@
-<p align="center">
-  <img src="public/logo.png" alt="CipherScan Logo" width="120" />
-</p>
+# WcashExplorer
 
-<h1 align="center">CipherScan</h1>
+WcashExplorer is the W.cash blockchain scanner built from the
+[W.cash `wcashscan` UI and logic](https://github.com/w-cash/wcashscan). It is a
+serverful explorer: the browser renders data from the local W.cash API and
+never connects directly to Wolf, PostgreSQL, or a wallet.
 
-<p align="center">
-  <strong>⚡ The Privacy-First Zcash Blockchain Explorer</strong>
-</p>
+The current public data profile is **W.cash Testnet** (`TWC`). The Mainnet
+build is intentionally a labeled preview that reads the same Testnet API until
+W.cash mainnet infrastructure is separately provisioned and verified.
 
-<p align="center">
-  <a href="https://cipherscan.app">Mainnet</a> •
-  <a href="https://testnet.cipherscan.app">Testnet</a> •
-  <a href="https://cipherscan.app/docs">API Docs</a> •
-  <a href="https://cipherscan.app/learn">Learn Zcash</a>
-</p>
+## Data path
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16" />
-  <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Rust-WASM-orange?logo=rust" alt="Rust WASM" />
-  <img src="https://img.shields.io/badge/License-AGPL%20v3%20+%20Commons%20Clause-blue" alt="License AGPL v3 + Commons Clause" />
-</p>
+```text
+W.cash Wolf node
+    ↓ authenticated JSON-RPC / optional gRPC
+Wcash-adapted Rust indexer
+    ↓ canonical blocks, transactions, UTXOs and W.cash accounting
+PostgreSQL
+    ↓ queries and cache/pubsub
+Express API + WebSocket
+    ↓
+Next.js Testnet UI + Mainnet-preview UI
+```
 
----
+The frontend is therefore only one layer of the scanner. The backend is
+implemented in `server/api`, the ingestion binary is in `server/wcash-indexer`,
+and the deployment contract is `compose.wcash.yml`.
 
-## 📖 Table of Contents
+## What is enabled
 
-- [About](#-about)
-- [Features](#-features)
-- [Live Demo](#-live-demo)
-- [Quick Start](#-quick-start)
-- [Tech Stack](#️-tech-stack)
-- [Public Infrastructure](#-public-infrastructure)
-- [API Documentation](#-api-documentation)
-- [Configuration](#️-configuration)
-- [Contributing](#-contributing)
-- [Support the Project](#-support-the-project)
-- [License](#-license)
+- blocks, transactions, transparent addresses and rich-list views;
+- mempool and network status from Wolf;
+- W.cash Ironwood activity and transparent/Ironwood accounting;
+- mining attribution only when an operator supplies verified mappings;
+- ordinary proof-of-work reorg detection and orphan evidence;
+- explicit empty, partial, syncing, stale and unavailable states;
+- Testnet and Mainnet-preview builds using the WcashExplorer branding.
 
----
+Wallet scanning, arbitrary raw transaction decoding, broadcasting, pricing,
+cross-chain/bridge views, governance, and unvalidated ownership inference are
+closed or marked unavailable. No inherited Zcash/CipherScan value is used as a
+W.cash fact.
 
-## 🎯 About
-
-CipherScan is a blockchain explorer for Zcash that makes privacy technology accessible to everyone. No jargon, no confusion — just clear, simple explanations of what's happening on-chain.
-
-**Mission:** Make the Zcash blockchain accessible to everyone, not just developers.
-
----
-
-## ✨ Features
-
-### 🔍 Core Explorer
-| Feature | Description |
-|---------|-------------|
-| **Search** | Find addresses, transactions, and blocks instantly |
-| **Balances** | View transaction history and balances |
-| **Block Explorer** | Navigate blocks with full transaction details |
-| **Mempool Viewer** | Real-time pending transactions |
-| **Live Updates** | WebSocket for real-time block notifications |
-| **CSV/JSON Export** | Export address, block, and transaction data from the UI |
-| **Fork Watch** | Chain reorganizations and orphaned block comparison |
-
-### 🛡️ Privacy Tools
-| Feature | Description |
-|---------|-------------|
-| **Privacy Dashboard** | Real-time shielded adoption metrics |
-| **Pool Analytics** | Per-pool supply, shield/deshield flows, and deltas |
-| **Turnstile Tracker** | Where deshielded ZEC goes (held, exchange, bridge) |
-| **Decrypt Memos** | Client-side Orchard memo decryption (WASM) |
-| **Privacy Risks** | Round-trip transaction linkability detection |
-| **100% Private** | Viewing keys never leave your browser |
-
-### 🔗 Cross-Chain
-| Feature | Description |
-|---------|-------------|
-| **ZEC Flows** | Real-time cross-chain swaps via NEAR Intents |
-| **Inflows/Outflows** | Track ZEC moving to/from BTC, ETH, SOL + 15 chains |
-
-### 📚 Education & UX
-| Feature | Description |
-|---------|-------------|
-| **Learn Zcash** | Comprehensive guide to addresses, viewing keys, wallets |
-| **Address Labels** | Tag addresses with custom labels (localStorage) |
-| **Light/Dark Mode** | Theme toggle with system preference support |
-| **Mobile Responsive** | Full mobile support |
-
-### 🔧 Developer Tools
-| Feature | Description |
-|---------|-------------|
-| **API Documentation** | 43 endpoints — interactive REST docs at [`/docs`](https://cipherscan.app/docs) |
-| **Public Infrastructure** | Free Lightwalletd gRPC + REST API |
-| **Deployment Guide** | Operational docs in [`DEPLOYMENT.md`](DEPLOYMENT.md) |
-
----
-
-## 🌐 Live Demo
-
-| Network | URL |
-|---------|-----|
-| **Mainnet** | [cipherscan.app](https://cipherscan.app) |
-| **Testnet** | [testnet.cipherscan.app](https://testnet.cipherscan.app) |
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js 22.14.x (see `.node-version`)
-- npm or yarn
-- PostgreSQL (optional, for full indexer)
-
-### Installation
+## Local frontend preview
 
 ```bash
-# Clone the repository
-git clone https://github.com/Kenbak/cipherscan.git
-cd cipherscan
-
-# Install dependencies
 npm ci
-
-# Run development server
 npm run dev
-
-# Open http://localhost:3000
 ```
 
-### Production Build
+This starts the Next.js UI on `http://localhost:3000`. It is useful for layout
+and route checks, but dashboards show empty/unavailable states until the API
+has indexed W.cash data.
+
+Build each UI explicitly:
 
 ```bash
-npm run build
-npm start
+NEXT_PUBLIC_NETWORK=testnet WCASH_ALLOW_BUILD_UPSTREAM_FALLBACK=0 npm run build
+NEXT_PUBLIC_NETWORK=mainnet WCASH_ALLOW_BUILD_UPSTREAM_FALLBACK=0 npm run build
 ```
 
-### Verify Before Push
+## Full local stack
+
+The supported serverful stack is in `compose.wcash.yml`:
+
+| Service | Local address |
+| --- | --- |
+| Testnet UI | `http://localhost:3000` |
+| Mainnet preview UI | `http://localhost:3002` |
+| Express API/WebSocket | `http://localhost:3001` |
+| Wolf RPC | `http://localhost:38232` (operator-only) |
+
+PostgreSQL and Redis remain private to the Compose network. Wolf must be built
+from the pinned W.cash revision in `server/wcash-indexer/UPSTREAM.md`, or an
+operator must provide an image built from that revision. The Compose file
+refuses to invent a node image.
+
+Use the deployment runbook for startup order and secrets:
+
+- [`docs/wcashscan-architecture.md`](docs/wcashscan-architecture.md)
+- [`docs/wcashscan-deployment.md`](docs/wcashscan-deployment.md)
+- [`docs/wcashscan-endpoints.md`](docs/wcashscan-endpoints.md)
+- [`docs/wcashscan-implementation-status.md`](docs/wcashscan-implementation-status.md)
+
+## Local W.cash regtest
+
+The same stack supports W.cash regtest. Set these values together in a private
+`.env.wcash.local`:
+
+```dotenv
+WCASH_CHAIN=wcash-regtest
+WCASH_EXPECTED_GENESIS=70bf0bab17eff361a6331bb825b3b7253c8c96ff96407f948161d2912658bb1c
+WCASH_WOLF_NETWORK=regtest
+WCASH_WOLF_RPC_BIND_PORT=48232
+WCASH_RPC_URL=http://wolf:48232
+WCASH_RPC_PORT=48232
+WCASH_DB_NAME=wcashscan_regtest
+WCASH_WOLF_IMAGE=<image-built-from-pinned-wolf>
+```
+
+Validate identity before writes, then migrate, backfill and start the API:
 
 ```bash
-# Fast lint, design-token, and TypeScript checks
-make verify-fast
-
-# The full local contract used by CI (all subprojects/toolchains)
-make verify-full
-
-# Optional responsive/light-dark browser audit
-npx playwright install chromium  # once per machine
-npm run visual:audit             # run while the app is serving on port 3000
+node scripts/wcash-rpc-preflight.mjs --profile wcash-regtest --rpc-url http://127.0.0.1:48232
+docker compose --env-file .env.wcash.local -f compose.wcash.yml up -d postgres redis
+docker compose --env-file .env.wcash.local -f compose.wcash.yml run --rm migrate
+docker compose --env-file .env.wcash.local -f compose.wcash.yml run --rm indexer
+docker compose --env-file .env.wcash.local -f compose.wcash.yml up -d api web-testnet web-mainnet-preview
+WCASH_CHAIN=wcash-regtest WCASH_E2E_REQUIRE_LIVE=true node scripts/verify-wcash-local.mjs
 ```
 
----
+The required regtest identity is genesis
+`70bf0bab17eff361a6331bb825b3b7253c8c96ff96407f948161d2912658bb1c` and
+post-genesis branch `c3a6678a`. A successful frontend build without those
+services is not a live regtest test.
 
-## 🏗️ Tech Stack
+## Verification
 
-| Layer | Technology |
-|-------|------------|
-| **Frontend** | Next.js 16, React 19, TypeScript |
-| **Styling** | Tailwind CSS |
-| **Database** | PostgreSQL |
-| **API Server** | Express.js + WebSocket |
-| **Cryptography** | Rust + WebAssembly |
-| **Zcash Node** | Zebra |
-
----
-
-## 🔌 Public Infrastructure
-
-CipherScan provides **free public infrastructure** for Zcash developers:
-
-### Mainnet
-
-| Service | Endpoint |
-|---------|----------|
-| **Lightwalletd gRPC** | `lightwalletd.mainnet.cipherscan.app:443` |
-| **REST API** | `https://api.mainnet.cipherscan.app/api/*` |
-
-### Testnet
-
-| Service | Endpoint |
-|---------|----------|
-| **Lightwalletd gRPC** | `lightwalletd.testnet.cipherscan.app:443` |
-| **REST API** | `https://api.testnet.cipherscan.app/api/*` |
-
----
-
-## 📖 API Documentation
-
-Full interactive documentation available at [cipherscan.app/docs](https://cipherscan.app/docs)
-
-### Quick Examples
-
-```javascript
-// Fetch block data
-const block = await fetch('https://api.mainnet.cipherscan.app/api/block/2500000');
-const data = await block.json();
-
-// Fetch privacy stats
-const stats = await fetch('https://api.mainnet.cipherscan.app/api/privacy-stats');
-const privacy = await stats.json();
+```bash
+npm run verify                 # design-token and TypeScript checks
+npm run test                   # W.cash profile and RPC-preflight tests
+npm run test:wcash:e2e         # local web/API smoke; live mode is opt-in
+git diff --check
 ```
 
-```python
-import requests
+`npm run verify:wcash` is a read-only Wolf identity check. It fails closed on a
+genesis or consensus-branch mismatch. `WCASH_E2E_REQUIRE_LIVE=true` additionally
+requires `/health/deep` to be healthy.
 
-# Fetch mempool
-response = requests.get('https://api.mainnet.cipherscan.app/api/mempool')
-print(f"Pending transactions: {response.json()['count']}")
-```
+## Source and safety boundary
 
-**Rate limits:** Deployment-specific. Successful responses expose standard
-rate-limit headers; clients should honor those headers and `Retry-After` on
-HTTP 429 responses.
+The W.cash source revisions and the adapted indexer boundary are documented in
+[`server/wcash-indexer/UPSTREAM.md`](server/wcash-indexer/UPSTREAM.md). W.cash
+network constants live in [`config/wcash-networks.json`](config/wcash-networks.json).
 
----
+Never commit private keys, viewing keys, RPC cookies, passwords, API tokens,
+service keys, or other credentials. The environment examples contain
+placeholders only.
 
-## ⚙️ Configuration
+## License
 
-The frontend works out of the box with CipherScan's public API. Running
-against a custom node requires the Express API and indexer; configure those
-services using [DEPLOYMENT.md](DEPLOYMENT.md) rather than placing node RPC
-credentials in the browser-facing frontend environment.
-
----
-
-## 📋 Roadmap
-
-See [GitHub Issues](https://github.com/Kenbak/cipherscan/issues) for upcoming features and improvements.
-
-**In progress:** Sapling memo decryption, Tor hidden service (.onion), batch transaction scanning.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Here's how you can help:
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
-
-### Development Guidelines
-
-- Follow the existing code style
-- Write meaningful commit messages
-- Add tests for new features when applicable
-- Update documentation as needed
-
----
-
-## ☕ Support the Project
-
-CipherScan is free, source-available, and community-driven. If you find it useful, consider supporting development:
-
-### Zcash Donation Address (Shielded)
-
-```
-u1fh3kwyl9hq9q907rx9j8mdy2r7gz4xh0y4yt63dxykk2856gr0238vxsegemyfu8s5a77ycq72tcnzkxa75ykjtcn6wp2w9rtuu3ssdzpe2fyghl8wlk3vh6f67304xe4lrxtvywtudy5t434zc07u6mh27ekufx7ssr55l8875z7f4k76c3tk23s3jzf8rxdlkequlta8lwsv09gxm
-```
-
-> 🛡️ This is a **Unified Address** — your donation is private and encrypted.
-
-Your support helps us:
-- Keep the infrastructure running 24/7
-- Add new features and improvements
-- Maintain free public APIs for developers
-
----
-
-## 🔐 Privacy Principles
-
-CipherScan is built with **privacy-first** principles:
-
-| Principle | Implementation |
-|-----------|----------------|
-| **No Tracking** | No Google Analytics or third-party trackers |
-| **No IP Logging** | Aligned with Zcash privacy values |
-| **No Cookies** | No unnecessary data collection |
-| **Client-Side Decryption** | Viewing keys never leave your browser |
-| **Source Available** | Verify our privacy claims yourself |
-
----
-
-## 📄 License
-
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)** with the **Commons Clause** restriction — see the [LICENSE](LICENSE) file for details.
-
-**What this means:**
-- ✅ You can view, fork, and modify the code
-- ✅ You must share your modifications under the same license
-- ❌ You cannot sell this software or offer it as a paid service
-
----
-
-## 🙏 Acknowledgments
-
-- [Zcash Foundation](https://zfnd.org/) — Zebra node
-- [Electric Coin Company](https://electriccoin.co/) — librustzcash
-- [NEAR Protocol](https://near.org/) — Cross-chain intents
-- [Zingo Labs](https://github.com/zingolabs) — zingolib inspiration
-
----
-
-<p align="center">
-  <strong>Built with ⚡ for the Zcash community</strong>
-</p>
-
-<p align="center">
-  <a href="https://github.com/Kenbak/cipherscan">GitHub</a> •
-  <a href="https://discord.gg/zcash">Discord</a> •
-  <a href="https://forum.zcashcommunity.com/">Forum</a>
-</p>
+See [`LICENSE`](LICENSE) for the repository license and the applicable upstream
+licenses in the vendored indexer sources.

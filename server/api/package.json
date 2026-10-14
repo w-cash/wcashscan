@@ -1,7 +1,7 @@
 {
-  "name": "zcash-explorer-api",
+  "name": "wcashscan-api",
   "version": "1.0.0",
-  "description": "Zcash Explorer API Server with PostgreSQL and WebSocket",
+  "description": "WcashExplorer API Server with PostgreSQL and WebSocket",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -12,7 +12,8 @@
     "verify": "find . -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check && npm test && npm run test:v1"
   },
   "keywords": [
-    "zcash",
+    "wcash",
+    "wcashexplorer",
     "blockchain",
     "explorer",
     "api",
@@ -24,6 +25,7 @@
     "@cipherpay/x402": "^0.6.0",
     "@grpc/grpc-js": "^1.14.1",
     "@grpc/proto-loader": "^0.8.0",
+    "@noble/hashes": "^2.2.0",
     "bech32": "^2.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",

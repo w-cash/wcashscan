@@ -17,13 +17,13 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { getChartColors } from '@/lib/chart-theme';
 import { formatChartDate } from '@/lib/chart-dates';
 import { getFlowColors } from '@/lib/flow-colors';
-import { formatZecCompact } from '@/lib/format-numbers';
+import { formatTwcCompact } from '@/lib/format-numbers';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { ShareableCard } from '@/components/ShareableCard';
 import { PeriodPillTags } from '@/components/ui/PeriodPillTags';
 
 type Period = '30d' | '90d' | '1y';
-type PoolFilter = 'all' | 'ironwood' | 'sapling' | 'orchard';
+type PoolFilter = 'all' | 'ironwood';
 
 interface FlowPoint {
   date: string;
@@ -37,8 +37,6 @@ const CHART_HEIGHT = 320;
 const POOL_OPTIONS: { key: PoolFilter; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'ironwood', label: 'Ironwood' },
-  { key: 'orchard', label: 'Orchard' },
-  { key: 'sapling', label: 'Sapling' },
 ];
 
 const PERIOD_OPTIONS: { key: Period; label: string }[] = [
@@ -82,7 +80,7 @@ function FlowTooltip({
           <p key={key} className="tabular-nums text-secondary">
             <span style={{ color: entry.color }}>{entryLabel}</span>
             {': '}
-            {abs.toFixed(2)} ZEC
+            {abs.toFixed(2)} TWC
           </p>
         );
       })}
@@ -108,7 +106,7 @@ export function FlowVolumeChart() {
   );
 
   const poolLabel = POOL_OPTIONS.find((p) => p.key === poolFilter)?.label ?? 'All';
-  const shareText = `Zcash shielding and deshielding flow (${poolLabel}, ${period.toUpperCase()}) on CipherScan.\n\nhttps://cipherscan.app/pools#flows`;
+  const shareText = `W.cash Ironwood shielding and unshielding flow (${poolLabel}, ${period.toUpperCase()}) on WcashExplorer.`;
 
   const barSize = useMemo(
     () => Math.max(4, Math.floor(600 / Math.max(points.length, 1))),
@@ -160,7 +158,7 @@ export function FlowVolumeChart() {
         <YAxis
           stroke={colors.axis}
           tick={{ fill: colors.axis, fontSize: 10 }}
-          tickFormatter={(v) => formatZecCompact(Math.abs(v))}
+          tickFormatter={(v) => formatTwcCompact(Math.abs(v))}
           width={54}
         />
         <Tooltip content={<FlowTooltip colors={colors} />} />
@@ -229,13 +227,13 @@ export function FlowVolumeChart() {
       sourceHeight={0}
       isLive
       shareText={shareText}
-      fileName="cipherscan-flow-volume.png"
+      fileName="wcashscan-flow-volume.png"
       watermark
       className=""
       footerNote={`${poolLabel} · ${period.toUpperCase()}`}
     >
       <p className="mb-4 max-w-2xl text-xs leading-relaxed text-secondary font-sans">
-        Shielding means moving ZEC into a private pool. Deshielding means moving it back to a public address. Bars up
+        Shielding means moving TWC into Ironwood. Unshielding means moving it back to a public address. Bars up
         = into privacy. Bars down = out of privacy.
       </p>
       {controls}

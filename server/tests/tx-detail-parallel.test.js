@@ -7,35 +7,27 @@ const txDetailRouter = require('../api/routes/transactions/tx-detail');
 
 const TXID = 'c'.repeat(64);
 
-function createFakePool({ txRow, bridgeThrows = false }) {
-  const calls = { tx: 0, inputs: 0, outputs: 0, height: 0, bridge: 0, staking: 0 };
+function createFakePool({ txRow }) {
+  const calls = { tx: 0, inputs: 0, outputs: 0, height: 0 };
   return {
     calls,
     async query(sql, params) {
-      if (sql.includes('information_schema.columns')) {
-        calls.staking++;
-        return { rows: [] }; // no staking columns in this fixture
-      }
-      if (sql.includes('FROM transactions t') && sql.includes('LEFT JOIN blocks b')) {
+      const normalizedSql = sql.toLowerCase();
+      if (normalizedSql.includes('from transactions t') && normalizedSql.includes('left join blocks b')) {
         calls.tx++;
         return { rows: [txRow] };
       }
-      if (sql.includes('FROM transaction_inputs')) {
+      if (normalizedSql.includes('from transaction_inputs')) {
         calls.inputs++;
         return { rows: [{ prev_txid: 'p1', prev_vout: 0, address: 'addrIn', value: 500000, vout_index: 0 }] };
       }
-      if (sql.includes('FROM transaction_outputs')) {
+      if (normalizedSql.includes('from transaction_outputs')) {
         calls.outputs++;
         return { rows: [{ address: 'addrOut', value: 490000, vout_index: 0, spent: false }] };
       }
-      if (sql.includes('SELECT MAX(height) as max_height FROM blocks')) {
+      if (normalizedSql.includes('select max(height) as max_height from blocks')) {
         calls.height++;
         return { rows: [{ max_height: 1000000 }] };
-      }
-      if (sql.includes('FROM cross_chain_swaps')) {
-        calls.bridge++;
-        if (bridgeThrows) throw new Error('bridge table unavailable');
-        return { rows: [] };
       }
       throw new Error(`Unexpected SQL in test: ${sql}`);
     },
@@ -94,7 +86,7 @@ const baseTxRow = {
   is_canonical: true,
 };
 
-test('runs the independent tx-detail lookups exactly once each (parallel batch, not N sequential retries)', async () => {
+test('runs the independent W.cash tx-detail lookups exactly once each (parallel batch, not N sequential retries)', async () => {
   const pool = createFakePool({ txRow: baseTxRow });
   const result = await requestTx(pool);
 
@@ -110,15 +102,8 @@ test('runs the independent tx-detail lookups exactly once each (parallel batch, 
   assert.equal(pool.calls.inputs, 1);
   assert.equal(pool.calls.outputs, 1);
   assert.equal(pool.calls.height, 1);
-  assert.equal(pool.calls.bridge, 1);
-});
-
-test('a bridge-table error does not fail the whole tx-detail request (bridge stays null)', async () => {
-  const pool = createFakePool({ txRow: baseTxRow, bridgeThrows: true });
-  const result = await requestTx(pool);
-
-  assert.equal(result.status, 200);
   assert.equal(result.body.bridge, null);
+  assert.deepEqual(result.body.bridges, []);
 });
 
 test('preserves a valid zero fee instead of reporting it as unavailable', async () => {

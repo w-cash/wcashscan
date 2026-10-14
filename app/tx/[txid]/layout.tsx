@@ -13,7 +13,6 @@ import {
 } from '@/lib/seo';
 import { fetchWithDeadline } from '@/lib/server-fetch';
 import { CopyButton } from '@/components/CopyButton';
-import { retainLastGoodOrBuildFallback } from '@/lib/isr-fallback';
 
 type Props = {
   params: Promise<{ txid: string }>;
@@ -27,16 +26,15 @@ export function generateStaticParams(): Array<{ txid: string }> {
   return [];
 }
 
-function getTxType(meta: { isCoinbase: boolean; hasShielded: boolean; orchardActions: number }): string {
+function getTxType(meta: { isCoinbase: boolean; hasIronwood: boolean }): string {
   if (meta.isCoinbase) return 'Coinbase';
-  if (meta.orchardActions > 0 && !meta.hasShielded) return 'Orchard Shielded';
-  if (meta.hasShielded) return 'Shielded';
+  if (meta.hasIronwood) return 'Ironwood';
   return 'Transparent';
 }
 
 type TransactionStatus = 'Confirmed' | 'Pending' | 'Reorganized' | 'Unknown';
 
-type AlternateHashResolution = 'block' | 'finalizer' | 'absent' | 'unavailable';
+type AlternateHashResolution = 'block' | 'absent' | 'unavailable';
 
 const resolveAlternateHash = cache(async (hash: string): Promise<AlternateHashResolution> => {
   try {
@@ -46,14 +44,7 @@ const resolveAlternateHash = cache(async (hash: string): Promise<AlternateHashRe
     if (blockResponse.ok) return 'block';
     if (blockResponse.status !== 404 && blockResponse.status !== 410) return 'unavailable';
 
-    if (getNetwork() !== 'crosslink-testnet') return 'absent';
-
-    const finalizerResponse = await fetchWithDeadline(`${getApiUrl()}/api/finalizer/${hash}`, {
-      next: { revalidate: 300 },
-    });
-    if (finalizerResponse.ok) return 'finalizer';
-    if (finalizerResponse.status === 404 || finalizerResponse.status === 410) return 'absent';
-    return 'unavailable';
+    return 'absent';
   } catch {
     return 'unavailable';
   }
@@ -69,25 +60,24 @@ function getTransactionStatus(meta: TxMeta | null): TransactionStatus {
 
 function getStatusDescription(status: TransactionStatus, meta: TxMeta | null): string {
   if (status === 'Confirmed' && meta) {
-    return `Included in canonical Zcash block #${formatNumber(meta.blockHeight)} with ${formatNumber(meta.confirmations)} confirmation${meta.confirmations === 1 ? '' : 's'}.`;
+    return `Included in canonical W.cash block #${formatNumber(meta.blockHeight)} with ${formatNumber(meta.confirmations)} confirmation${meta.confirmations === 1 ? '' : 's'}.`;
   }
 
   if (status === 'Pending') {
-    return 'Waiting in the Zcash mempool with 0 confirmations. This page updates after the transaction is mined.';
+    return 'Waiting in the W.cash mempool with 0 confirmations. This page updates after the transaction is mined.';
   }
 
   if (status === 'Reorganized' && meta) {
     return `Previously recorded in block #${formatNumber(meta.blockHeight)}, but that block is no longer on the canonical chain.`;
   }
 
-  return 'CipherScan cannot currently verify this transaction state. The transaction may be unindexed, absent, or temporarily unavailable from the data service.';
+  return 'WcashExplorer cannot currently verify this transaction state. The transaction may be unindexed, absent, or temporarily unavailable from the W.cash data service.';
 }
 
 function getNetworkName(): string {
   const network = getNetwork();
-  if (network === 'mainnet') return 'Zcash mainnet';
-  if (network === 'testnet') return 'Zcash testnet (TAZ)';
-  return 'Zcash Crosslink testnet';
+  if (network === 'mainnet') return 'W.cash mainnet preview';
+  return 'W.cash Testnet (TWC)';
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -97,8 +87,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!/^[a-fA-F0-9]{64}$/.test(txid)) {
     return buildPageMetadata({
-      title: 'Invalid Zcash Transaction | CipherScan',
-      description: 'This transaction identifier is not a valid 64-character Zcash transaction hash.',
+      title: 'Invalid W.cash Transaction | WcashExplorer',
+      description: 'This transaction identifier is not a valid 64-character W.cash transaction hash.',
       path,
       index: false,
       canonical: false,
@@ -108,24 +98,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolution = await getTxResolution(normalizedTxid);
 
   if (resolution.state === 'unavailable') {
-    const fallback = buildPageMetadata({
-      title: `Zcash Transaction ${truncateHash(normalizedTxid)} Status Unknown | CipherScan`,
-      description: `CipherScan cannot currently verify the status of Zcash transaction ${truncateHash(normalizedTxid)} because a required data service is temporarily unavailable.`,
+    return buildPageMetadata({
+      title: `W.cash Transaction ${truncateHash(normalizedTxid)} Status Unknown | WcashExplorer`,
+      description: `WcashExplorer cannot currently verify the status of W.cash transaction ${truncateHash(normalizedTxid)} because a required data service is temporarily unavailable.`,
       path,
       index: false,
       canonical: true,
     });
-    return retainLastGoodOrBuildFallback(
-      fallback,
-      new Error(`Transaction ${normalizedTxid} metadata is unavailable`),
-      'transaction detail metadata',
-    );
   }
 
   if (resolution.state === 'absent') {
     return buildPageMetadata({
-      title: `Zcash Transaction ${truncateHash(normalizedTxid)} Not Found | CipherScan`,
-      description: `CipherScan could not find Zcash transaction ${truncateHash(normalizedTxid)} in the confirmed index or mempool.`,
+      title: `W.cash Transaction ${truncateHash(normalizedTxid)} Not Found | WcashExplorer`,
+      description: `WcashExplorer could not find W.cash transaction ${truncateHash(normalizedTxid)} in the confirmed index or mempool.`,
       path,
       index: false,
       canonical: false,
@@ -139,26 +124,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const isPending = status === 'Pending';
   const isConfirmed = status === 'Confirmed';
   const title = isPending
-    ? `Pending Zcash Transaction ${truncateHash(tx.txid)} | CipherScan`
+    ? `Pending W.cash Transaction ${truncateHash(tx.txid)} | WcashExplorer`
     : isConfirmed
-      ? `Zcash Transaction ${truncateHash(tx.txid)} | CipherScan`
+      ? `W.cash Transaction ${truncateHash(tx.txid)} | WcashExplorer`
       : status === 'Reorganized'
-        ? `Reorganized Zcash Transaction ${truncateHash(tx.txid)} | CipherScan`
-        : `Zcash Transaction ${truncateHash(tx.txid)} Status Unknown | CipherScan`;
+        ? `Reorganized W.cash Transaction ${truncateHash(tx.txid)} | WcashExplorer`
+        : `W.cash Transaction ${truncateHash(tx.txid)} Status Unknown | WcashExplorer`;
   const description = isPending
-    ? `${txType} Zcash transaction currently pending in the mempool with 0 confirmations. This page updates when the transaction is mined.`
+    ? `${txType} W.cash transaction currently pending in the mempool with 0 confirmations. This page updates when the transaction is mined.`
     : isConfirmed
-      ? `${txType} Zcash transaction in block #${formatNumber(tx.blockHeight)} with ${formatNumber(tx.confirmations)} confirmation${tx.confirmations !== 1 ? 's' : ''}. ${tx.saplingSpendCount + tx.saplingOutputCount + tx.orchardActions > 0 ? 'Includes shielded components.' : 'Transparent transaction.'}`
+      ? `${txType} W.cash transaction in block #${formatNumber(tx.blockHeight)} with ${formatNumber(tx.confirmations)} confirmation${tx.confirmations !== 1 ? 's' : ''}.`
       : status === 'Reorganized'
-        ? `This Zcash transaction is no longer verified in its recorded block after a chain reorganization. CipherScan will update this page if it returns to the mempool or confirms again.`
-        : `CipherScan has a record for this Zcash transaction but cannot currently verify its canonical-chain status.`;
+        ? `This W.cash transaction is no longer verified in its recorded block after a chain reorganization. WcashExplorer will update this page if it returns to the mempool or confirms again.`
+        : `WcashExplorer has a record for this W.cash transaction but cannot currently verify its canonical-chain status.`;
 
   return buildPageMetadata({
     title,
     description,
     path,
     index: isPending || isConfirmed,
-    imageAlt: `${status} Zcash transaction ${truncateHash(tx.txid)}`,
+    imageAlt: `${status} W.cash transaction ${truncateHash(tx.txid)}`,
   });
 }
 
@@ -176,23 +161,16 @@ export default async function TxLayout({ params, children }: Props) {
   const resolution = await getTxResolution(normalizedTxid);
 
   if (resolution.state === 'unavailable') {
-    retainLastGoodOrBuildFallback(
-      undefined,
-      new Error(`Transaction ${normalizedTxid} is unavailable`),
-      'transaction detail',
-    );
+    // Render the client shell with an unknown status. The browser can retry
+    // the W.cash API without turning an API outage into an HTTP 500.
   }
 
   if (resolution.state === 'absent') {
     const alternate = await resolveAlternateHash(normalizedTxid);
     if (alternate === 'block') redirect(`/block/${normalizedTxid}`);
-    if (alternate === 'finalizer') redirect(`/finalizer/${normalizedTxid}`);
     if (alternate === 'absent') notFound();
-    retainLastGoodOrBuildFallback(
-      undefined,
-      new Error(`Alternate hash resolution for ${normalizedTxid} is unavailable`),
-      'transaction alternate hash resolution',
-    );
+    // Keep the unknown transaction shell; the alternate lookup can be retried
+    // by the client once the W.cash API is available again.
   }
 
   const tx = resolution.state === 'found' ? resolution.meta : null;
@@ -245,20 +223,20 @@ export default async function TxLayout({ params, children }: Props) {
     '@type': 'WebPage',
     '@id': `${canonicalUrl}#webpage`,
     url: canonicalUrl,
-    name: `Zcash transaction ${normalizedTxid}`,
+    name: `W.cash transaction ${normalizedTxid}`,
     description: statusDescription,
     isPartOf: { '@id': `${baseUrl}/#website` },
     mainEntity: {
       '@type': 'Dataset',
       '@id': `${canonicalUrl}#transaction`,
-      name: `Zcash transaction ${normalizedTxid}`,
+      name: `W.cash transaction ${normalizedTxid}`,
       url: canonicalUrl,
       description: statusDescription,
-      creator: { '@id': 'https://cipherscan.app/#organization' },
+      creator: { '@id': `${baseUrl}/#organization` },
       isPartOf: { '@id': `${baseUrl}/#website` },
       identifier: {
         '@type': 'PropertyValue',
-        propertyID: 'Zcash transaction ID',
+        propertyID: 'W.cash transaction ID',
         value: normalizedTxid,
       },
       variableMeasured,
@@ -280,7 +258,7 @@ export default async function TxLayout({ params, children }: Props) {
         <p className="text-xs font-mono text-muted tracking-wider">&gt; TX_LOOKUP</p>
         <h1 id="transaction-heading" className="mt-2">
           <span className="block text-lg sm:text-xl font-semibold tracking-tight text-primary">
-            Zcash Transaction
+            W.cash Transaction
           </span>
           <span className="mt-2 flex items-center gap-2 min-w-0">
             <span className="text-sm sm:text-base font-mono font-normal text-primary break-all">

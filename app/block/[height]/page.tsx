@@ -9,7 +9,6 @@ import {
 import { fetchWithDeadline } from '@/lib/server-fetch';
 import BlockPageClient, { type BlockPageSummary } from './BlockPageClient';
 import { FutureBlockView } from './FutureBlockView';
-import { retainLastGoodOrBuildFallback } from '@/lib/isr-fallback';
 
 function blockDescription(block: BlockRecord, height: number, hash: string): string {
   const transactionCount = Number(
@@ -21,7 +20,7 @@ function blockDescription(block: BlockRecord, height: number, hash: string): str
   const count = Number.isFinite(transactionCount) ? transactionCount : 0;
   const status = block.isOrphaned === true ? 'orphaned' : 'canonical';
 
-  return `Zcash block ${height.toLocaleString('en-US')} is ${status}, has hash ${hash}, and records ${count.toLocaleString('en-US')} transaction${count === 1 ? '' : 's'}.`;
+  return `W.cash block ${height.toLocaleString('en-US')} is ${status}, has hash ${hash}, and records ${count.toLocaleString('en-US')} transaction${count === 1 ? '' : 's'}.`;
 }
 
 async function getCurrentTipHeight(): Promise<number> {
@@ -60,13 +59,13 @@ export default async function BlockPage({
   }
 
   if (resolution.state === 'unavailable') {
-    return retainLastGoodOrBuildFallback(
+    // The detail client owns the retryable unavailable state. Returning the
+    // shell here keeps a local/API outage from becoming an HTTP 500.
+    return (
       <BlockPageClient
         identifier={normalizeBlockIdentifier(identifier)}
         initialSummary={null}
-      />,
-      new Error(`Block ${identifier} is unavailable`),
-      'block detail',
+      />
     );
   }
 
@@ -97,7 +96,7 @@ export default async function BlockPage({
     `${baseUrl}/`,
   ).toString();
   const statusLabel = isOrphaned ? 'Orphaned' : 'Canonical';
-  const name = `${statusLabel} Zcash Block #${height.toLocaleString('en-US')}`;
+  const name = `${statusLabel} W.cash Block #${height.toLocaleString('en-US')}`;
   const description = blockDescription(block, height, hash);
   const structuredData = {
     '@context': 'https://schema.org',
@@ -110,7 +109,7 @@ export default async function BlockPage({
       '@type': 'WebSite',
       '@id': `${baseUrl}/#website`,
       url: `${baseUrl}/`,
-      name: 'CipherScan',
+      name: 'WcashExplorer',
     },
     mainEntity: {
       '@type': 'Thing',
@@ -120,7 +119,7 @@ export default async function BlockPage({
       description,
       identifier: {
         '@type': 'PropertyValue',
-        propertyID: 'Zcash block hash',
+        propertyID: 'W.cash block hash',
         value: hash,
       },
     },

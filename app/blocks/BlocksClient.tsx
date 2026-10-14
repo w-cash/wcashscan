@@ -19,7 +19,6 @@ interface Block {
   transaction_count: number;
   size: number;
   difficulty: number;
-  finality_status?: string | null;
   miner_pool?: string | null;
   coinbase_hex?: string | null;
   total_fees?: number | string | null;
@@ -55,9 +54,6 @@ function blockColumns(blocks: Block[], trailingBlock: Block | null): DataTableCo
           <Link href={`/block/${block.height}`} className="font-mono text-sm text-primary hover:text-primary transition-colors">
             {block.height.toLocaleString()}
           </Link>
-          {block.finality_status === 'Finalized' && (
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-cipher-green/70" title="Finalized" />
-          )}
         </div>
       ),
     },
@@ -264,7 +260,6 @@ export default function BlocksClient({
   });
 
   const [summary, setSummary] = useState<{ height: number | null; blocks24h: number | null; avgBlockTime: number | null; avgBlockFee: number | null; txsPerBlock: number | null }>({ height: null, blocks24h: null, avgBlockTime: null, avgBlockFee: null, txsPerBlock: null });
-  const [zecPriceUsd, setZecPriceUsd] = useState<number | null>(null);
 
   useEffect(() => {
     const base = getApiUrl();
@@ -286,10 +281,6 @@ export default function BlocksClient({
         });
       })
       .catch(() => {});
-    fetch(`${base}/api/price`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => setZecPriceUsd(data?.price ?? null))
-      .catch(() => {});
   }, []);
 
   // /api/network/stats is cached up to 2 minutes server-side, while the
@@ -308,7 +299,7 @@ export default function BlocksClient({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 animate-fade-in">
       <PageHeader
         eyebrow="ALL_BLOCKS"
-        title={page > 1 ? `Zcash Blocks - Page ${page}` : 'Latest Zcash Blocks'}
+        title={page > 1 ? `W.cash Blocks - Page ${page}` : 'Latest W.cash Blocks'}
         actions={
           <span className="text-xs font-mono text-muted">
             {!dataAvailable && blocks.length === 0
@@ -340,7 +331,7 @@ export default function BlocksClient({
         <MetricCard size="compact"
           label="Avg Block Fee (24h)"
           value={summary.avgBlockFee != null ? `${summary.avgBlockFee.toFixed(8)} ${CURRENCY}` : '—'}
-          hint={summary.avgBlockFee != null && zecPriceUsd != null ? `≈ $${(summary.avgBlockFee * zecPriceUsd).toFixed(2)}` : undefined}
+          hint="W.cash transparent fees"
         />
         <MetricCard size="compact"
           label="Txs Per Block"

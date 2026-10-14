@@ -1,0 +1,65 @@
+[package]
+name = "wcashscan-indexer"
+version = "0.1.0"
+edition = "2021"
+description = "WcashScan's W.cash blockchain indexer"
+authors = ["WcashScan contributors"]
+license = "MIT"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio", "postgres", "chrono"] }
+rocksdb = "0.22"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# W.cash parsing and consensus types. This is intentionally pinned to the
+# reviewed Wolf commit used by the WcashScan implementation plan. The
+# wcash-consensus feature selects W.cash's block identity, address network
+# parameters, transaction branch IDs, and monetary rules.
+zebra-chain = { git = "https://github.com/w-cash/wolf", rev = "e83d1da5f288bdf25d99afab321a2faa37099e5f", package = "zebra-chain", features = ["wcash-consensus"] }
+
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+
+# Utils
+hex = "0.4"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Crypto
+sha2 = "0.10"
+ripemd = "0.1"
+bs58 = "0.5"
+base64 = "0.22"
+
+# Environment
+dotenvy = "0.15"
+
+# HTTP client for RPC verification
+reqwest = { version = "0.11", features = ["json"] }
+
+# gRPC client for Zebra indexer streaming
+tonic = "0.12"
+prost = "0.13"
+
+[build-dependencies]
+tonic-build = "0.12"
+
+[profile.release]
+opt-level = 3
+lto = true
+
+[patch.crates-io]
+# Keep the W.cash transaction primitives aligned with the pinned Wolf source
+# when Cargo resolves this package outside the Wolf workspace. These local
+# copies retain Wolf's reviewed patches; an unpatched Zcash primitive can
+# deserialize a W.cash transaction but compute the wrong branch-domain hash.
+zcash_primitives = { path = "vendor/zcash_primitives" }
+zcash_protocol = { path = "vendor/zcash_protocol" }
+pczt = { path = "vendor/pczt" }

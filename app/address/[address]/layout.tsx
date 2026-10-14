@@ -17,9 +17,8 @@ export function generateStaticParams(): Array<{ address: string }> {
 }
 
 function getAddressTypeLabel(addr: string, type: string): string {
-  if (addr.startsWith('u1') || addr.startsWith('utest')) return 'Unified';
-  if (addr.startsWith('zs') || addr.startsWith('ztestsapling')) return 'Sapling Shielded';
-  if (type === 'shielded') return 'Shielded';
+  if (addr.startsWith('wu1') || addr.startsWith('wutest') || addr.startsWith('wure')) return 'Wcash Unified';
+  if (type === 'shielded') return 'Ironwood Shielded';
   return 'Transparent';
 }
 
@@ -30,15 +29,10 @@ function isValidAddressSyntax(address: string): boolean {
     return address.length === 35 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(address);
   }
 
-  if (type === 'shielded') {
-    return address.length === 78
-      && /^(?:zs|ztestsapling)1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/.test(address);
-  }
-
   if (type === 'unified') {
     return address.length >= 16
       && address.length <= 512
-      && /^(?:u|utest)1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/.test(address);
+      && /^(?:wu|wutest|wure)1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/.test(address);
   }
 
   return false;
@@ -49,18 +43,18 @@ function getAddressSummary(address: string, meta: AddressMeta | null): string {
   const typeLabel = getAddressTypeLabel(address, meta?.type || detectedType);
 
   if (!meta) {
-    return `${typeLabel} Zcash address lookup. Public activity details are temporarily unavailable.`;
+    return `${typeLabel} W.cash address lookup. Public activity details are temporarily unavailable.`;
   }
 
   if (meta.isShielded) {
-    return `${typeLabel} Zcash address. Its balance and transaction history are private.`;
+    return `${typeLabel} W.cash address. Its balance and transaction history are private.`;
   }
 
   const transactionSummary = meta.txCount === 0
     ? 'no indexed transactions'
     : `${formatNumber(meta.txCount)} indexed transaction${meta.txCount === 1 ? '' : 's'}`;
 
-  return `${typeLabel} Zcash address with a public balance of ${meta.balance.toFixed(4)} ZEC and ${transactionSummary}.`;
+  return `${typeLabel} W.cash address with a public balance of ${meta.balance.toFixed(4)} TWC and ${transactionSummary}.`;
 }
 
 function serializeJsonLd(value: unknown): string {
@@ -82,8 +76,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (resolution.state === 'unavailable') {
     const fallback = buildPageMetadata({
-      title: `Zcash Address ${shortAddr} | CipherScan`,
-      description: `CipherScan cannot currently verify public activity for Zcash address ${shortAddr} because the address index is temporarily unavailable.`,
+      title: `W.cash Address ${shortAddr} | WcashExplorer`,
+      description: `WcashExplorer cannot currently verify public activity for W.cash address ${shortAddr} because the address index is temporarily unavailable.`,
       path,
       index: false,
     });
@@ -97,18 +91,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const meta = resolution.meta;
 
   const typeLabel = getAddressTypeLabel(address, meta.type);
-  const title = `Zcash Address ${shortAddr} | CipherScan`;
+  const title = `W.cash Address ${shortAddr} | WcashExplorer`;
 
-  const descParts = [`${typeLabel} Zcash address.`];
+  const descParts = [`${typeLabel} W.cash address.`];
   if (!meta.isShielded) {
-    descParts.push(`Balance: ${meta.balance.toFixed(4)} ZEC.`);
+    descParts.push(`Balance: ${meta.balance.toFixed(4)} TWC.`);
     if (meta.txCount > 0) {
       descParts.push(`${formatNumber(meta.txCount)} transaction${meta.txCount !== 1 ? 's' : ''}.`);
     }
   } else {
     descParts.push('Balance and transaction history are encrypted with zero-knowledge proofs.');
   }
-  descParts.push('View on CipherScan.');
+  descParts.push('View on WcashExplorer.');
 
   const description = descParts.join(' ');
 
@@ -119,7 +113,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     path,
     index: hasPublicActivity,
-    imageAlt: `${typeLabel} Zcash address ${shortAddr}`,
+    imageAlt: `${typeLabel} W.cash address ${shortAddr}`,
   });
 }
 
@@ -149,13 +143,13 @@ export default async function AddressLayout({
     '@type': 'WebPage',
     '@id': `${canonical}#webpage`,
     url: canonical,
-    name: `${typeLabel} Zcash address ${address}`,
+    name: `${typeLabel} W.cash address ${address}`,
     description: summary,
     isPartOf: { '@id': `${getBaseUrl()}/#website` },
     mainEntity: {
       '@type': 'Thing',
       '@id': `${canonical}#address`,
-      name: `${typeLabel} Zcash address`,
+      name: `${typeLabel} W.cash address`,
       identifier: address,
       description: summary,
       url: canonical,
@@ -165,9 +159,9 @@ export default async function AddressLayout({
   return (
     <>
       <header className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-12">
-        <span className="text-[10px] font-mono text-muted tracking-wider">&gt; ZCASH_ADDRESS</span>
+        <span className="text-[10px] font-mono text-muted tracking-wider">&gt; WCASH_ADDRESS</span>
         <h1 className="mt-2 text-primary break-all">
-          <span className="block text-lg sm:text-xl font-semibold">Zcash Address</span>
+          <span className="block text-lg sm:text-xl font-semibold">W.cash Address</span>
           <span className="block mt-2 text-sm sm:text-base font-mono font-normal">{address}</span>
         </h1>
         <p className="mt-2 text-sm text-secondary">{summary}</p>

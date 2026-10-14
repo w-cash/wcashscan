@@ -1,0 +1,11 @@
+target/release/wcash-wallet 69923856 bytes
+wcash-wallet 0.1.0
+rustc 1.91.0 (f8297e351 2025-10-28)
+binary: rustc
+commit-hash: f8297e351a40c1439a467bbbb6879088047f50b3
+commit-date: 2025-10-28
+host: aarch64-apple-darwin
+release: 1.91.0
+LLVM version: 21.1.2
+host_target=aarch64-apple-darwin
+source_commit=41a39cab3f259509653c1d4930df3dae3dabba98

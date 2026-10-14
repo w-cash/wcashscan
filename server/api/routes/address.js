@@ -15,8 +15,8 @@ const { parseSafeListPagination, parseSafePagePagination, offsetExceededError } 
 const { logSafeError } = require('../lib/safe-log');
 const {
   isValidBase58CheckAddress,
-  isValidSaplingAddress,
   isValidUnifiedAddress,
+  isValidWcashTexAddress,
 } = require('../lib/zcash-address');
 
 const disabledListCache = createListCache({ enabled: false });
@@ -315,10 +315,10 @@ router.get('/api/address/:address', validate('addressById'), async (req, res) =>
       }));
     }
 
-    // Unified addresses can contain transparent and/or shielded receivers.
+    // Wcash Unified addresses can contain transparent and/or Ironwood receivers.
     // Their receiver composition and activity cannot be inferred from the
     // prefix, so do not claim they are fully shielded.
-    if (address.startsWith('u')) {
+    if (address.startsWith('wu')) {
       if (!isValidUnifiedAddress(address)) {
         return res.status(404).json({ error: 'Invalid unified address' });
       }
@@ -327,36 +327,27 @@ router.get('/api/address/:address', validate('addressById'), async (req, res) =>
         type: 'unified',
         balance: null,
         transactions: [],
-        note: 'Unified address - receiver composition, balance, and transaction history are not publicly inferable from the address alone'
+        note: 'Wcash Unified address - Ironwood receiver composition, balance, and transaction history are not publicly inferable from the address alone'
       });
     }
 
-    // Check if it's a shielded-only address family.
-    const isShielded = address.startsWith('zs') ||
-                       address.startsWith('zc') ||
-                       address.startsWith('ztestsapling');
-
-    if (isShielded) {
-      if ((address.startsWith('zs') || address.startsWith('ztestsapling'))
-          && !isValidSaplingAddress(address)) {
-        return res.status(404).json({ error: 'Invalid shielded address' });
+    // Wcash has no standalone Sapling/Sprout address namespace. Ironwood
+    // receivers are carried by a Wcash Unified Address and are intentionally
+    // not treated as publicly queryable balances.
+    if (address.startsWith('wtex')) {
+      if (!isValidWcashTexAddress(address)) {
+        return res.status(404).json({ error: 'Invalid Wcash TEX address' });
       }
-      if (address.startsWith('zc') && !isValidBase58CheckAddress(address)) {
-        return res.status(404).json({ error: 'Invalid shielded address' });
-      }
-      const addressType = 'shielded';
-      const noteMessage = 'Shielded address - balance and transactions are private';
-
       return res.status(200).json({
         address,
-        type: addressType,
-        balance: null,
+        type: 'transparent',
+        balance: 0,
         transactions: [],
-        note: noteMessage
+        note: 'Wcash TEX address - transparent-source-only receiver; activity is indexed by its derived public key when present',
       });
     }
 
-    const isTransparent = /^(t1|t3|tm|t2)/.test(address);
+    const isTransparent = /^W[13TURS][1-9A-HJ-NP-Za-km-z]+$/.test(address);
     if (!isTransparent || !isValidBase58CheckAddress(address)) {
       return res.status(404).json({ error: 'Invalid transparent address' });
     }
@@ -377,14 +368,6 @@ router.get('/api/address/:address', validate('addressById'), async (req, res) =>
     );
 
     if (summaryResult.rows.length === 0) {
-      // Check if this is a valid Zcash address format
-      const isValidTransparent = /^t[13][a-zA-Z0-9]{32,34}$/.test(address) || // mainnet t1/t3
-                                  /^tm[a-zA-Z0-9]{32,34}$/.test(address);      // testnet
-
-      if (!isValidTransparent) {
-        return res.status(404).json({ error: 'Invalid address format' });
-      }
-
       // Address is valid but has no transactions yet
       return res.status(200).json({
         address,
@@ -457,7 +440,7 @@ router.get('/api/address/:address', validate('addressById'), async (req, res) =>
         firstFunding = {
           txid: row.txid,
           blockTime: parseInt(row.block_time),
-          amountZec: parseFloat(row.amount_zat) / 1e8,
+          amountTwc: parseFloat(row.amount_zat) / 1e8,
           funderAddress: row.funder_address || null,
           funderLabel: row.funder_label || null,
           isCoinbase: row.is_coinbase === true,
@@ -485,8 +468,6 @@ router.get('/api/address/:address', validate('addressById'), async (req, res) =>
           p.block_time,
           t.size,
           p.tx_index,
-          t.has_sapling,
-          t.has_orchard,
           t.has_ironwood,
           COALESCE(p.value_in, 0) as input_value,
           COALESCE(p.value_out, 0) as output_value,
@@ -522,8 +503,6 @@ router.get('/api/address/:address', validate('addressById'), async (req, res) =>
             t.block_time,
             t.size,
             t.tx_index,
-            t.has_sapling,
-            t.has_orchard,
             t.has_ironwood
           FROM transactions t
           WHERE t.txid IN (SELECT txid FROM address_txids)
@@ -536,8 +515,6 @@ router.get('/api/address/:address', validate('addressById'), async (req, res) =>
           tv.block_time,
           tv.size,
           tv.tx_index,
-          tv.has_sapling,
-          tv.has_orchard,
           tv.has_ironwood,
           COALESCE(my_in.value, 0) as input_value,
           COALESCE(my_out.value, 0) as output_value,
@@ -584,8 +561,6 @@ router.get('/api/address/:address', validate('addressById'), async (req, res) =>
         blockTime: tx.block_time,
         size: tx.size,
         txIndex: tx.tx_index,
-        hasSapling: tx.has_sapling,
-        hasOrchard: tx.has_orchard,
         hasIronwood: tx.has_ironwood,
         inputValue: parseFloat(tx.input_value),
         outputValue: parseFloat(tx.output_value),
@@ -633,7 +608,18 @@ router.get('/api/address/:address', validate('addressById'), async (req, res) =>
  * Counterparties are sampled from the 300 most recent transactions to keep
  * the query bounded for high-activity addresses (exchanges, pools).
  */
-router.get('/api/address/:address/graph', validate('addressGraph'), async (req, res) => {
+router.get('/api/address/:address/graph', async (req, res) => {
+  return res.status(404).json({
+    success: false,
+    code: 'WCASH_FEATURE_UNAVAILABLE',
+    feature: 'address-entity-graph',
+    error: 'W.cash address ownership graphs are disabled until native heuristics are validated',
+    available: false,
+  });
+
+  /* Legacy implementation intentionally unreachable; retained temporarily
+   * only to keep the diff reviewable while the W.cash replacement is scoped. */
+  /* istanbul ignore next */
   try {
     const { address } = req.params;
 

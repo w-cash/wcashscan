@@ -320,26 +320,17 @@ router.get('/api/uncles/stats', async (req, res) => {
   }
 });
 
-// GET /api/uncles/nodes — Status of monitored external lightwalletd nodes
+// GET /api/uncles/nodes — compatibility response; no external fork monitor
 router.get('/api/uncles/nodes', (req, res) => {
-  const forkMonitor = req.app.locals.forkMonitor;
-  if (!forkMonitor) {
-    return res.json({ success: true, nodes: [], message: 'Fork monitor not initialized' });
-  }
-
-  const nodes = forkMonitor.getStatus();
-  const online = nodes.filter(n => n.status !== 'offline' && n.status !== 'pending').length;
-  const forking = nodes.filter(n => n.status === 'fork').length;
-
-  res.json({
+  return res.json({
     success: true,
-    nodes,
+    nodes: [],
     summary: {
-      total: nodes.length,
-      online,
-      forking,
-      lastPoll: nodes[0]?.lastChecked || null,
+      total: 0,
+      online: 0,
+      forking: 0,
     },
+    message: 'External node comparison is disabled; reorgs come from the canonical W.cash PoW index.',
   });
 });
 

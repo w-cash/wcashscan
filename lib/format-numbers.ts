@@ -1,10 +1,16 @@
 /** Compact number formatting for dashboard stat cards */
 
 export const ZATOSHI_PER_ZEC = 100_000_000;
+/** W.cash keeps the Zcash-compatible 1e8 base unit, called zatoshi. */
+export const ZATOSHI_PER_TWC = ZATOSHI_PER_ZEC;
 
 /** Convert zatoshis to ZEC. Accepts number, string, or bigint. */
 export const zatToZec = (zat: number | string | bigint): number =>
   Number(zat) / ZATOSHI_PER_ZEC;
+
+/** Convert W.cash zatoshi to TWC. */
+export const zatToTwc = (zat: number | string | bigint): number =>
+  Number(zat) / ZATOSHI_PER_TWC;
 
 export function formatDifficulty(value: number): string {
   if (!Number.isFinite(value)) return '—';
@@ -15,13 +21,14 @@ export function formatDifficulty(value: number): string {
 }
 
 /** Zcash's Equihash PoW is measured in solutions/sec (Sol/s), not raw hashes/sec. */
-export function formatHashrate(hashrate: number): string {
-  if (!Number.isFinite(hashrate)) return '—';
-  if (hashrate >= 1e12) return `${(hashrate / 1e12).toFixed(2)} TSol/s`;
-  if (hashrate >= 1e9) return `${(hashrate / 1e9).toFixed(2)} GSol/s`;
-  if (hashrate >= 1e6) return `${(hashrate / 1e6).toFixed(2)} MSol/s`;
-  if (hashrate >= 1e3) return `${(hashrate / 1e3).toFixed(2)} KSol/s`;
-  return `${hashrate.toFixed(2)} Sol/s`;
+export function formatHashrate(hashrate: number | null | undefined): string {
+  const value = typeof hashrate === 'number' && Number.isFinite(hashrate) ? hashrate : null;
+  if (value === null) return '—';
+  if (value >= 1e12) return `${(value / 1e12).toFixed(2)} TSol/s`;
+  if (value >= 1e9) return `${(value / 1e9).toFixed(2)} GSol/s`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(2)} MSol/s`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(2)} KSol/s`;
+  return `${value.toFixed(2)} Sol/s`;
 }
 
 export function formatZecCompact(zec: number): string {
@@ -47,6 +54,10 @@ export function formatZecPrecise(zec: number): string {
   const decimals = Math.abs(zec) < 0.0001 ? 8 : 4;
   return zec.toFixed(decimals).replace(/0+$/, '').replace(/\.$/, '');
 }
+
+/** W.cash-named aliases kept beside the old helper names during migration. */
+export const formatTwcCompact = (twc: number): string => formatZecCompact(twc);
+export const formatTwcPrecise = (twc: number): string => formatZecPrecise(twc);
 
 export function formatBytesCompact(bytes: number): string {
   if (!Number.isFinite(bytes)) return '—';

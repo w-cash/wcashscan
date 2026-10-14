@@ -6,8 +6,7 @@ import { NavBar } from "@/components/NavBar";
 import { StatsBar } from "@/components/StatsBar";
 import { Footer } from "@/components/Footer";
 import { MaintenanceBanner } from "@/components/MaintenanceBanner";
-import { ChainSyncBanner } from "@/components/ChainSyncBanner";
-import { NU7VoteBanner } from "@/components/NU7VoteBanner";
+import { WcashNetworkBanner } from "@/components/WcashNetworkBanner";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { buildPageMetadata, getBaseUrl, getNetwork } from "@/lib/seo";
@@ -30,23 +29,23 @@ const baseUrl = getBaseUrl();
 
 const siteCopy = network === 'mainnet'
   ? {
-      title: 'CipherScan: Zcash Block Explorer & Privacy Analytics',
-      description: 'CipherScan is a Zcash block explorer for searching blocks, transactions, and addresses, with live shielded pool, privacy, and network analytics.',
-      keywords: ['zcash block explorer', 'zcash explorer', 'ZEC explorer', 'zcash blockchain explorer', 'zcash transactions', 'zcash shielded pool', 'privacy', 'ZEC', 'CipherScan', 'zcash rich list', 'zcash network'],
-      imageAlt: 'CipherScan - Zcash Block Explorer',
+      title: 'WcashExplorer Mainnet Preview — W.cash Block Explorer',
+      description: 'WcashExplorer mainnet preview showing W.cash Testnet blocks, transactions, mining and network activity in TWC.',
+      keywords: ['W.cash explorer', 'WcashExplorer', 'W.cash Testnet', 'TWC explorer'],
+      imageAlt: 'WcashExplorer Mainnet Preview',
     }
   : network === 'testnet'
     ? {
-        title: 'CipherScan Testnet - Zcash Testnet Explorer for TAZ',
-        description: 'Explore the Zcash testnet with CipherScan. Search TAZ blocks, transactions, and addresses, monitor pending transactions, and inspect testnet network activity.',
-        keywords: ['zcash testnet', 'TAZ', 'TAZ explorer', 'zcash testnet explorer', 'zcash testnet transactions', 'CipherScan testnet'],
-        imageAlt: 'CipherScan - Zcash Testnet Explorer for TAZ',
+        title: 'WcashExplorer Testnet — W.cash Block Explorer',
+        description: 'Explore W.cash Testnet blocks, transactions, transparent addresses, Ironwood activity and mining metrics in TWC.',
+        keywords: ['W.cash Testnet', 'WcashExplorer', 'TWC explorer', 'W.cash blocks'],
+        imageAlt: 'WcashExplorer Testnet',
       }
     : {
-        title: 'CipherScan Crosslink - Zcash Crosslink Explorer',
-        description: 'Explore the Zcash Crosslink feature network, including blocks, finality, staking, and validators.',
-        keywords: ['zcash crosslink', 'crosslink explorer', 'zcash finality', 'cTAZ'],
-        imageAlt: 'CipherScan - Zcash Crosslink Explorer',
+        title: 'WcashExplorer Testnet — W.cash Block Explorer',
+        description: 'Explore W.cash Testnet blocks, transactions, transparent addresses, Ironwood activity and mining metrics in TWC.',
+        keywords: ['W.cash Testnet', 'WcashExplorer', 'TWC explorer', 'W.cash blocks'],
+        imageAlt: 'WcashExplorer Testnet',
       };
 
 const rootPageMetadata = buildPageMetadata({
@@ -57,9 +56,9 @@ const rootPageMetadata = buildPageMetadata({
 
 export const metadata: Metadata = {
   ...rootPageMetadata,
-  authors: [{ name: "Kenbak" }],
-  creator: "Kenbak",
-  publisher: "CipherScan",
+  authors: [{ name: "W.cash" }],
+  creator: "W.cash",
+  publisher: "WcashExplorer",
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
@@ -76,14 +75,11 @@ export const metadata: Metadata = {
 };
 
 // Site-wide JSON-LD structured data.
-// WebSite.name + alternateName teach Google the site-name entity for the
-// "cipherscan" brand query; Organization with sameAs links the domain to
-// our social/code profiles for entity disambiguation.
+// WebSite.name + alternateName establish the WcashExplorer site-name entity;
+// Organization with sameAs links the domain to the W.cash source repository.
 const websiteAlternateNames = network === 'mainnet'
-  ? ['CipherScan Zcash Explorer', 'cipherscan.app']
-  : network === 'testnet'
-    ? ['CipherScan Testnet', 'Zcash Testnet Explorer', 'TAZ Explorer']
-    : ['CipherScan Crosslink', 'Zcash Crosslink Explorer'];
+  ? ['WcashExplorer Mainnet Preview', 'W.cash Explorer']
+  : ['WcashExplorer Testnet', 'W.cash Testnet Explorer', 'TWC Explorer'];
 
 const siteJsonLd = {
   '@context': 'https://schema.org',
@@ -91,22 +87,19 @@ const siteJsonLd = {
     {
       '@type': 'WebSite',
       '@id': `${baseUrl}/#website`,
-      name: 'CipherScan',
+      name: 'WcashExplorer',
       alternateName: websiteAlternateNames,
       description: siteCopy.description,
       url: `${baseUrl}/`,
-      publisher: { '@id': 'https://cipherscan.app/#organization' },
+      publisher: { '@id': `${baseUrl}/#organization` },
     },
     {
       '@type': 'Organization',
-      '@id': 'https://cipherscan.app/#organization',
-      name: 'CipherScan',
-      url: 'https://cipherscan.app',
-      logo: 'https://cipherscan.app/apple-touch-icon.png',
-      sameAs: [
-        'https://twitter.com/cipherscan_app',
-        'https://github.com/Kenbak/cipherscan',
-      ],
+      '@id': `${baseUrl}/#organization`,
+      name: 'W.cash',
+      url: baseUrl,
+      logo: `${baseUrl}/apple-touch-icon.png`,
+      sameAs: ['https://github.com/w-cash/wcashscan'],
     },
   ],
 };
@@ -125,10 +118,9 @@ function AppContent({ children }: { children: React.ReactNode }) {
         Skip to main content
       </a>
       <MaintenanceBanner />
-      <ChainSyncBanner />
+      <WcashNetworkBanner />
       <NavBar />
       <StatsBar />
-      <NU7VoteBanner />
       <main id="main-content" tabIndex={-1} className="min-h-screen">{children}</main>
       <Footer />
     </>

@@ -57,7 +57,12 @@ artifacts/perf/*.json
 # private docs
 /docs/*
 !/docs/ttfb-performance.md
+!/docs/wcashscan-*.md
 server/DEPLOYMENT.md
+
+# Wcash local operator inputs and validation output
+artifacts/wcashscan-validation/
+.env.wcash.local
 
 # test directories
 test-ufvk-parse/

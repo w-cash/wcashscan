@@ -170,8 +170,8 @@ test('transaction list preserves its payload and skips PostgreSQL on a cache hit
       prevCursorIdx: 2,
     },
   });
-  assert.equal(miss.headers.get('x-cipherscan-cache'), 'MISS');
-  assert.equal(hit.headers.get('x-cipherscan-cache'), 'HIT');
+  assert.equal(miss.headers.get('x-wcashscan-cache'), 'MISS');
+  assert.equal(hit.headers.get('x-wcashscan-cache'), 'HIT');
   assert.deepEqual(
     [listCache.calls[0].freshTtlSeconds, listCache.calls[0].staleTtlSeconds],
     [15, 300],
@@ -194,12 +194,12 @@ test('shielded list preserves its payload and skips PostgreSQL on a cache hit', 
     block_height: '88',
     block_time: '1700000000',
     has_sapling: false,
-    has_orchard: true,
-    has_ironwood: false,
-    orchard_actions: '2',
-    ironwood_actions: '0',
-    sapling_spend_count: '1',
-    sapling_output_count: '1',
+    has_orchard: false,
+    has_ironwood: true,
+    orchard_actions: '0',
+    ironwood_actions: '2',
+    sapling_spend_count: '0',
+    sapling_output_count: '0',
   };
   let queryCount = 0;
   const pool = {
@@ -229,9 +229,9 @@ test('shielded list preserves its payload and skips PostgreSQL on a cache hit', 
       blockHeight: 88,
       blockTime: 1700000000,
       flowType: 'fully_shielded',
-      amountZec: null,
-      pool: 'orchard',
-      actions: 4,
+      amountTwc: null,
+      pool: 'ironwood',
+      actions: 2,
       addresses: [],
     }],
     pagination: {
@@ -246,13 +246,13 @@ test('shielded list preserves its payload and skips PostgreSQL on a cache hit', 
       prevCursorId: row.txid,
     },
   });
-  assert.equal(miss.headers.get('x-cipherscan-cache'), 'MISS');
-  assert.equal(hit.headers.get('x-cipherscan-cache'), 'HIT');
+  assert.equal(miss.headers.get('x-wcashscan-cache'), 'MISS');
+  assert.equal(hit.headers.get('x-wcashscan-cache'), 'HIT');
   assert.equal(listCache.calls[0].params.cursorId, null);
   assert.equal(listCache.calls[0].params.direction, 'next');
 });
 
-test('block list caches the exact response, including finalized state', async () => {
+test('block list caches the exact W.cash PoW response', async () => {
   const captured = captureRoutes('routes/blocks.js', {
     '../mining-pools': { ...miningPools, POOL_BY_ADDRESS: {},
       getPoolName: () => 'Example Pool',
@@ -277,12 +277,10 @@ test('block list caches the exact response, including finalized state', async ()
         : { rows: [{ ...block }] };
     },
   };
-  let rpcCount = 0;
   const locals = {
     pool,
     listCache,
     redisClient: null,
-    async callZebraRPC() { rpcCount += 1; return { height: 99 }; },
   };
 
   const query = { limit: '1', direction: 'prev' };
@@ -290,11 +288,10 @@ test('block list caches the exact response, including finalized state', async ()
   const hit = await invoke(captured, '/api/blocks/list', { query, locals });
 
   assert.equal(queryCount, 2);
-  assert.equal(rpcCount, 1);
   assert.deepEqual(hit.body, miss.body);
   assert.deepEqual(miss.body, {
     success: true,
-    blocks: [{ ...block, finality_status: 'NotYetFinalized', miner_pool: 'Example Pool' }],
+    blocks: [{ ...block, miner_pool: 'Example Pool' }],
     pagination: {
       page: 1,
       totalPages: 100,
@@ -306,7 +303,7 @@ test('block list caches the exact response, including finalized state', async ()
       prevCursor: 100,
     },
   });
-  assert.equal(hit.headers.get('x-cipherscan-cache'), 'HIT');
+  assert.equal(hit.headers.get('x-wcashscan-cache'), 'HIT');
   assert.equal(listCache.calls[0].params.direction, 'next');
 });
 
@@ -362,7 +359,7 @@ test('rich list preserves calculations and skips all three queries on a cache hi
     top10Pct: 50,
     top100Pct: 50,
   });
-  assert.equal(hit.headers.get('x-cipherscan-cache'), 'HIT');
+  assert.equal(hit.headers.get('x-wcashscan-cache'), 'HIT');
   assert.deepEqual(
     [listCache.calls[0].freshTtlSeconds, listCache.calls[0].staleTtlSeconds],
     [60, 600],
@@ -415,7 +412,7 @@ test('malformed list identities are normalized safely and marked uncacheable', a
     locals,
   });
   await invoke(transactions, '/api/shielded/list', {
-    query: { min_zec: '1e2' },
+    query: { min_twc: '1e2' },
     locals,
   });
   await invoke(blocks, '/api/blocks/list', {

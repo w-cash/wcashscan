@@ -15,15 +15,10 @@ function isValidAddressSyntax(address: string): boolean {
     return address.length === 35 && /^[1-9A-HJ-NP-Za-km-z]+$/.test(address);
   }
 
-  if (type === 'shielded') {
-    return address.length === 78
-      && /^(?:zs|ztestsapling)1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/.test(address);
-  }
-
   if (type === 'unified') {
     return address.length >= 16
       && address.length <= 512
-      && /^(?:u|utest)1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/.test(address);
+      && /^(?:wu|wutest|wure)1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]+$/.test(address);
   }
 
   return false;

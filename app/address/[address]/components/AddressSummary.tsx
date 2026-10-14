@@ -8,7 +8,7 @@ function shortAddr(addr: string) {
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
-function fmtZec(v: number) {
+function fmtTwc(v: number) {
   if (v >= 1) return v.toLocaleString(undefined, { maximumFractionDigits: 4 });
   return v.toLocaleString(undefined, { maximumFractionDigits: 8 });
 }
@@ -61,14 +61,14 @@ export function AddressSummary({ data, totalTxCount }: AddressSummaryProps) {
       {funding && funding.isCoinbase && (
         <>
           {' '}
-          It first received {fmtZec(funding.amountZec)} ZEC as a mining reward on{' '}
+          It first received {fmtTwc(funding.amountTwc)} TWC as a mining reward on{' '}
           {formatHumanDate(funding.blockTime)}.
         </>
       )}
       {funding && !funding.isCoinbase && (
         <>
           {' '}
-          It first received {fmtZec(funding.amountZec)} ZEC from {funderNode} on{' '}
+          It first received {fmtTwc(funding.amountTwc)} TWC from {funderNode} on{' '}
           {formatHumanDate(funding.blockTime)}.
         </>
       )}

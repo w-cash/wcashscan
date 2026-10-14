@@ -42,11 +42,11 @@ const metricColumns = {
 };
 function metricValue(value, name, fees) {
   if (typeof value !== 'string' || !(fees ? /^\d{1,8}(?:\.\d{1,8})?$/ : /^\d{1,10}$/).test(value))
-    throw new SoftwareQueryError(`${name} must be a non-negative ${fees ? 'ZEC amount with at most 8 decimals' : 'integer'}`);
+    throw new SoftwareQueryError(`${name} must be a non-negative ${fees ? 'TWC amount with at most 8 decimals' : 'integer'}`);
   if (fees) {
     const [whole, fraction = ''] = value.split('.');
     const zats = BigInt(whole) * 100000000n + BigInt(fraction.padEnd(8, '0'));
-    if (zats > 2100000000000000n) throw new SoftwareQueryError(`${name} exceeds 21 million ZEC`);
+    if (zats > 2100000000000000n) throw new SoftwareQueryError(`${name} exceeds the W.cash monetary ceiling`);
     return zats.toString();
   }
   const n = Number(value);
@@ -238,8 +238,7 @@ async function softwareHistory(pool, query, now = Date.now()) {
       "1y",
       "all",
       "custom",
-      "since-zebra",
-      "since-zakura",
+      "since-wolf",
     ].includes(period)
   )
     throw new SoftwareQueryError("Invalid period");

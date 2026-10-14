@@ -1,0 +1,44 @@
+{
+  "apk": "/tmp/wcash-wallet-runtime-20261009/wallet-mobile/android/app/build/outputs/apk/beta/debug/app-beta-arm64-v8a-debug.apk",
+  "apk_sha256": "1c2775522caf375f5fbe1191c4c9a74ca3ecb3b5dd68fc46fa8cd53130db0d1f",
+  "app_version": "2.0.23",
+  "chain_name": "main",
+  "consensus_branch_id": "d9c6a7ee",
+  "emulator": "sdk_gphone64_arm64 API 34",
+  "endpoint": "https://mainnet.zecwec.com:443",
+  "estimated_height": 23528,
+  "info_height": 23527,
+  "install_mode": "adb install -r; existing wallet data preserved",
+  "launcher": {
+    "icon_verified": "green Wcash W mark",
+    "label": "Wcash Wallet",
+    "screenshot": "/Users/rustdev/Documents/ChatGPT/wcashwallet/test-artifacts/ui-qualification-2026-10-09/android-final-apk-launcher-icon.png",
+    "screenshot_sha256": "a6143dc4387e8294bad821041c51128b89b985de48d33d793ccee8fd63f15b91"
+  },
+  "lightwalletd_version": "v6.3.0",
+  "node_observed_at_utc": "2026-10-09T22:37:00.823202+00:00",
+  "notes": [
+    "Final rebuilt beta ARM64 APK installed over the existing wallet without clearing data.",
+    "UI wallet-range label is latestBlock minus birthday, not a second chain tip.",
+    "The scan range uses an exclusive end height: [1, tip+1).",
+    "No seed screen was opened and no Mainnet transaction was created or broadcast."
+  ],
+  "package": "com.wcashwallet.wallet.beta",
+  "platform": "Android emulator",
+  "screenshot": "/Users/rustdev/Documents/ChatGPT/wcashwallet/test-artifacts/ui-qualification-2026-10-09/android-final-apk-mainnet-synced-23527.png",
+  "screenshot_captured_at_utc": "2026-10-09T22:37:00.967746+00:00",
+  "screenshot_sha256": "e9da511a465ae2346fab45ac86dae5fcc5a42afad4080aa2f91d8e18a6eb1e3a",
+  "tip_hash": "a5c13d839226ef6a6e9a378d68ba921df5e58ba32df5ac1f6c2ef19524780f4b",
+  "tip_height": 23527,
+  "ui_server_blocks": 23527,
+  "ui_sync_status": "Fully Synced",
+  "ui_wallet_range_blocks": 23526,
+  "vendor": "ZcashFoundation/zebra",
+  "version_code": 30331,
+  "wallet_db_height_before_install": 23527,
+  "wallet_db_height_immediately_after_install": 23527,
+  "wallet_db_max_scanned_height": 23527,
+  "wallet_db_scan_queue": [
+    "1|23528|10"
+  ]
+}

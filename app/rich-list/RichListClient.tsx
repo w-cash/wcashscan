@@ -51,14 +51,13 @@ type BadgeColor = 'cyan' | 'purple' | 'green' | 'orange' | 'muted';
 function categoryColor(cat: string | null): BadgeColor {
   if (!cat) return 'muted';
   const c = cat.toLowerCase();
-  if (c === 'exchange') return 'cyan';
   if (c === 'mining' || c === 'mining_pool') return 'orange';
-  if (c === 'defi' || c === 'bridge') return 'green';
-  if (c === 'custodian' || c === 'fund') return 'purple';
+  if (c === 'service' || c === 'operator') return 'green';
+  if (c === 'fund' || c === 'treasury') return 'purple';
   return 'muted';
 }
 
-function formatZec(amount: number): string {
+function formatTwc(amount: number): string {
   if (amount >= 1e6) return `${(amount / 1e6).toFixed(2)}M`;
   if (amount >= 1e3) return `${(amount / 1e3).toFixed(1)}K`;
   return amount.toFixed(2);
@@ -83,15 +82,6 @@ export default function RichListClient({
   const [loading, setLoading] = useState(!hasInitialData);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [zecPrice, setZecPrice] = useState<number | null>(null);
-
-  useEffect(() => {
-    fetch(`${getApiUrl()}/api/price`)
-      .then(r => r.json())
-      .then(d => setZecPrice(d.price))
-      .catch(() => {});
-  }, []);
-
   useEffect(() => {
     if (page === 1 && skipInitialRefresh.current) {
       skipInitialRefresh.current = false;
@@ -117,7 +107,7 @@ export default function RichListClient({
 
   const labeledCount = addresses.filter(a => a.label).length;
 
-  // Columns close over zecPrice/concentration state for USD values and share %.
+  // Columns close over concentration state for percentage-of-transparent-supply.
   const richListColumns: DataTableColumn<RichListEntry>[] = [
     {
       id: 'rank',
@@ -173,13 +163,8 @@ export default function RichListClient({
       cell: (entry) => (
         <>
           <div className="font-mono text-sm text-primary font-bold">
-            {entry.balance >= 1000 ? formatZec(entry.balance) : entry.balance.toFixed(2)} ZEC
+            {entry.balance >= 1000 ? formatTwc(entry.balance) : entry.balance.toFixed(2)} TWC
           </div>
-          {zecPrice && (
-            <div className="text-[10px] text-muted font-mono">
-              ${(entry.balance * zecPrice).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </div>
-          )}
         </>
       ),
     },
@@ -255,7 +240,7 @@ export default function RichListClient({
                 {concentration.top10Pct.toFixed(1)}%
               </div>
               <div className="text-[10px] text-muted mt-0.5">
-                {formatZec(concentration.top10)} of {formatZec(concentration.totalTransparent)} transparent ZEC
+                {formatTwc(concentration.top10)} of {formatTwc(concentration.totalTransparent)} transparent TWC
               </div>
             </CardBody>
           </Card>
@@ -269,7 +254,7 @@ export default function RichListClient({
                 {concentration.top100Pct.toFixed(1)}%
               </div>
               <div className="text-[10px] text-muted mt-0.5">
-                {formatZec(concentration.top100)} of {formatZec(concentration.totalTransparent)} transparent ZEC
+                {formatTwc(concentration.top100)} of {formatTwc(concentration.totalTransparent)} transparent TWC
               </div>
             </CardBody>
           </Card>
@@ -280,7 +265,7 @@ export default function RichListClient({
                 Transparent Supply
               </div>
               <div className="text-2xl font-bold text-primary font-mono">
-                {formatZec(concentration.totalTransparent)} ZEC
+                {formatTwc(concentration.totalTransparent)} TWC
               </div>
               <div className="text-xs text-muted mt-0.5">
                 {labeledCount > 0 && (

@@ -32,7 +32,7 @@ const SIZE_CONFIG: Record<WatermarkSize, { fontSize: string; letterSpacing: stri
 };
 
 /** Subtle brand watermark for charts and maps */
-export function ChartWatermark({ className = '', label = 'cipherscan.app', size = 'md' }: ChartWatermarkProps) {
+export function ChartWatermark({ className = '', label = 'WcashExplorer', size = 'md' }: ChartWatermarkProps) {
   const config = SIZE_CONFIG[size];
 
   return (

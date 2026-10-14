@@ -46,51 +46,19 @@ router.use((req, res, next) => {
   next();
 });
 
-const CROSSLINK_CACHE_KEY = 'crosslink:stats';
-
-let hasStakingColumns = null;
-async function checkStakingColumns(db) {
-  if (hasStakingColumns !== null) return hasStakingColumns;
-  try {
-    const result = await db.query(
-      `SELECT column_name FROM information_schema.columns
-       WHERE table_name = 'transactions' AND column_name = 'staking_action_type'`
-    );
-    hasStakingColumns = result.rows.length > 0;
-  } catch {
-    hasStakingColumns = false;
-  }
-  return hasStakingColumns;
-}
-
-async function getFinalizedHeight() {
-  if (redisClient && redisClient.isOpen) {
-    try {
-      const cached = await redisClient.get(CROSSLINK_CACHE_KEY);
-      if (cached) {
-        const data = JSON.parse(cached);
-        if (typeof data.finalizedHeight === 'number') return data.finalizedHeight;
-      }
-    } catch (e) { /* ignore */ }
-  }
-
-  if (typeof callZebraRPC === 'function') {
-    try {
-      const result = await callZebraRPC('get_tfl_final_block_height_and_hash');
-      if (result) return result.height ?? result[0] ?? null;
-    } catch (e) { /* ignore */ }
-  }
-
-  return null;
-}
-
 // ============================================================================
 // HEALTH & INFO
 // ============================================================================
 
 // Health check — fast liveness probe for Docker/LB
 router.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: Date.now() });
+  res.json({
+    status: 'ok',
+    service: 'wcashexplorer-api',
+    network: 'wcash',
+    ticker: 'TWC',
+    timestamp: Date.now(),
+  });
 });
 
 // Deep health check — external monitoring (Better Stack, status page)
@@ -177,7 +145,7 @@ router.get('/health/deep', async (req, res) => {
     checks.redis = { status: 'not_configured' };
   }
 
-  // Zakura/Zebra node via RPC
+  // W.cash Wolf node via RPC
   try {
     const nodeHeight = await Promise.race([
       callZebraRPC('getblockcount'),
@@ -205,6 +173,9 @@ router.get('/health/deep', async (req, res) => {
 
   res.status(httpCode).json({
     status,
+    network: 'wcash',
+    ticker: 'TWC',
+    dataNetwork: process.env.WCASH_CHAIN || 'wcash-testnet-v5',
     checks,
     timestamp: new Date().toISOString(),
   });
@@ -220,6 +191,10 @@ router.get('/api/info', async (req, res) => {
     const currentHeight = Number(result.rows[0]?.max_height ?? 0);
 
     res.json({
+      success: true,
+      network: 'wcash',
+      ticker: 'TWC',
+      dataNetwork: process.env.WCASH_CHAIN || 'wcash-testnet-v5',
       blocks: currentHeight,
       height: currentHeight,
     });
@@ -312,11 +287,7 @@ router.get('/api/blocks/list', async (req, res) => {
           );
         }
 
-        const finalizedHeight = await measure('finality', () => getFinalizedHeight());
         const rows = result.rows.map(b => {
-          if (finalizedHeight !== null) {
-            b.finality_status = parseInt(b.height) <= finalizedHeight ? 'Finalized' : 'NotYetFinalized';
-          }
           b.miner_pool = getPoolName(b.miner_address, b.coinbase_hex);
           return b;
         });
@@ -382,6 +353,7 @@ router.get('/api/blocks', async (req, res) => {
         size,
         difficulty,
         miner_address,
+        coinbase_hex,
         total_fees
       FROM blocks
       ORDER BY height DESC
@@ -389,16 +361,10 @@ router.get('/api/blocks', async (req, res) => {
       [limit, offset]
     );
 
-    const [countResult, finalizedHeight] = await Promise.all([
-      pool.query('SELECT MAX(height) as max_height FROM blocks'),
-      getFinalizedHeight(),
-    ]);
+    const countResult = await pool.query('SELECT MAX(height) as max_height FROM blocks');
     const totalBlocks = countResult.rows[0]?.max_height || 0;
 
     const blocks = result.rows.map(b => {
-      if (finalizedHeight !== null) {
-        b.finality_status = parseInt(b.height) <= finalizedHeight ? 'Finalized' : 'NotYetFinalized';
-      }
       b.miner_pool = getPoolName(b.miner_address, b.coinbase_hex);
       return b;
     });
@@ -437,7 +403,7 @@ function parseBlockIdentifier(param) {
 
 async function fetchCanonicalBlockSummary(blockHeight) {
   const result = await pool.query(
-    `SELECT height, hash, timestamp, transaction_count, size, miner_address
+    `SELECT height, hash, timestamp, transaction_count, size, miner_address, coinbase_hex
      FROM blocks WHERE height = $1`,
     [blockHeight]
   );
@@ -676,10 +642,6 @@ router.get('/api/block/:heightOrHash', async (req, res) => {
 
     // Bind transactions to the block's immutable hash. Heights can identify
     // different blocks over time when the chain reorganizes.
-    const staking = await checkStakingColumns(pool);
-    const stakingCols = staking
-      ? ', staking_action_type, staking_bond_key, staking_delegatee, staking_amount_zats'
-      : '';
     const txResult = await pool.query(
       `SELECT
         txid, block_height, block_hash, block_time, size, version, locktime,
@@ -688,7 +650,7 @@ router.get('/api/block/:heightOrHash', async (req, res) => {
         has_sapling, has_orchard, has_ironwood, has_sprout,
         ironwood_actions, orchard_actions, sapling_spend_count, sapling_output_count,
         fee, total_input, total_output, is_coinbase,
-        tx_index${stakingCols}
+        tx_index
       FROM transactions
       WHERE block_hash = $1
       ORDER BY tx_index`,
@@ -740,10 +702,7 @@ router.get('/api/block/:heightOrHash', async (req, res) => {
       outputs: outputsByTxid[tx.txid] || [],
     }));
 
-    const [currentHeightResult, finalizedHeight] = await Promise.all([
-      pool.query('SELECT MAX(height) as max_height FROM blocks'),
-      getFinalizedHeight(),
-    ]);
+    const currentHeightResult = await pool.query('SELECT MAX(height) as max_height FROM blocks');
     const currentHeight = currentHeightResult.rows[0]?.max_height || blockHeight;
     const confirmations = currentHeight - blockHeight + 1;
 
@@ -773,19 +732,9 @@ router.get('/api/block/:heightOrHash', async (req, res) => {
       coinbase_text: coinbaseText,
     };
 
-    if (finalizedHeight !== null) {
-      response.finality_status = blockHeight <= finalizedHeight ? 'Finalized' : 'NotYetFinalized';
-    }
-
-    // Backwards-compatible addition: only a response header, never a body
-    // change. A finalized block (or one with many confirmations, when the
-    // TFL finality RPC is unavailable) cannot be replaced by a reorg, so it
-    // is safe to cache aggressively; a recent/unconfirmed-relative block is
-    // cached briefly to stay correct across a possible reorg.
-    const isEffectivelyFinal = finalizedHeight !== null
-      ? blockHeight <= finalizedHeight
-      : confirmations >= 100;
-    res.set('Cache-Control', isEffectivelyFinal
+    // Older blocks are stable enough for a longer cache window. Recent blocks
+    // remain short-lived because ordinary PoW reorgs can replace them.
+    res.set('Cache-Control', confirmations >= 100
       ? 'public, s-maxage=3600, stale-while-revalidate=86400, immutable'
       : 'public, s-maxage=15, stale-while-revalidate=120');
 

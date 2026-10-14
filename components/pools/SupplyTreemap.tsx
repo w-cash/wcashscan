@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { formatZecCompact } from '@/lib/format-numbers';
+import { formatTwcCompact } from '@/lib/format-numbers';
 import {
   MAX_SUPPLY_ZAT,
   isShieldedPoolKey,
@@ -51,7 +51,7 @@ function BandLabel({
       {mode === 'full' ? (
         <>
           <span className={`mt-0.5 text-[10px] font-mono tabular-nums sm:text-[11px] ${valueClass}`}>
-            {zat === 0 ? '0 ZEC' : `${formatZecCompact(zat / 1e8)} ZEC`}
+            {zat === 0 ? '0 TWC' : `${formatTwcCompact(zat / 1e8)} TWC`}
           </span>
           <span className={`mt-0.5 text-[10px] font-mono tabular-nums ${pctClass}`}>{capPct.toFixed(1)}%</span>
         </>
@@ -103,7 +103,7 @@ function TopSegment({
       onFocus={() => onHover(segment.key)}
       onBlur={() => onHover(null)}
       onClick={onClick}
-      aria-label={`${segment.label}, ${formatZecCompact(segment.zat / 1e8)} ZEC, ${capPct.toFixed(1)} percent of cap`}
+      aria-label={`${segment.label}, ${formatTwcCompact(segment.zat / 1e8)} TWC, ${capPct.toFixed(1)} percent of cap`}
     >
       {segment.hatch ? (
         <div
@@ -178,7 +178,7 @@ function ShieldedPoolStack({
         }
       }}
       aria-pressed={pinnedShielded}
-      aria-label="Shielded pool composition. Click to pin open."
+      aria-label="Ironwood pool composition. Click to pin open."
     >
       {segments.map((child, index) => {
         const weight = flexWeight(child.zat);
@@ -231,7 +231,7 @@ export function SupplyTreemap({
     <div
       className="flex h-[220px] w-full gap-0.5 p-0.5 sm:h-[280px]"
       role="img"
-      aria-label="Zcash supply map: public supply (transparent balances and other issued value, including lockbox), shielded, and unmined portions of the 21 million cap"
+      aria-label="W.cash supply map: transparent supply, Ironwood shielded supply, and unmined portions of the 21 million TWC cap"
       onMouseLeave={handleMapLeave}
     >
       {topLevel.filter((segment) => segment.zat > 0).map((segment) => {

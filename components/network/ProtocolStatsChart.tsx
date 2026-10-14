@@ -1,101 +1,72 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Brush,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getChartColors } from '@/lib/chart-theme';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { ChartCard } from './ChartCard';
 
-export interface RawPoint {
+export interface ProtocolPoint {
   month: string;
-  saplingCommitments: number;
-  saplingNullifiers: number;
-  orchardCommitments: number;
-  orchardNullifiers: number;
-  ironwoodCommitments: number;
-  ironwoodNullifiers: number;
+  ironwoodActions: number;
 }
 
-interface ChartPoint extends RawPoint {
-  label: string;
+export interface ProtocolStatsResponse {
+  success: boolean;
+  network?: string;
+  ticker?: string;
+  current: { ironwoodActions: number };
+  history: ProtocolPoint[];
 }
 
-function formatMillions(v: number): string {
-  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
-  if (v >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
-  return v.toString();
+function formatCount(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return Math.round(value).toLocaleString();
 }
 
 type Period = '2y' | '4y' | 'all';
 
-export interface ProtocolStatsResponse {
-  success: boolean;
-  current: RawPoint;
-  history: RawPoint[];
-}
-
 export function ProtocolStatsChart({ initialData }: { initialData?: ProtocolStatsResponse | null }) {
   const { theme } = useTheme();
   const colors = getChartColors(theme);
-  const [view, setView] = useState<'commitments' | 'nullifiers'>('commitments');
   const [period, setPeriod] = useState<Period>('4y');
 
-  const { data: apiData, loading } = useApiQuery<ProtocolStatsResponse>(
+  const { data, loading } = useApiQuery<ProtocolStatsResponse>(
     '/api/network/protocol-stats',
     undefined,
     { initialData: initialData ?? undefined },
   );
-  const current = apiData?.current ?? null;
-  const rawData = useMemo(
-    () => (apiData?.history ?? []).filter((p) =>
-      p.saplingCommitments > 0 || p.orchardCommitments > 0 || p.ironwoodCommitments > 0
-    ),
-    [apiData],
-  );
 
-  const data: ChartPoint[] = useMemo(() => {
-    if (!rawData.length) return [];
+  const points = useMemo(() => {
+    const history = (data?.history ?? []).filter((point) => point.ironwoodActions > 0);
+    if (period === 'all') return history;
+    const years = period === '2y' ? 2 : 4;
+    const cutoff = new Date();
+    cutoff.setFullYear(cutoff.getFullYear() - years);
+    return history.filter((point) => new Date(point.month) >= cutoff);
+  }, [data, period]);
 
-    let filtered = rawData;
-    if (period !== 'all') {
-      const years = period === '2y' ? 2 : 4;
-      const cutoff = new Date();
-      cutoff.setFullYear(cutoff.getFullYear() - years);
-      filtered = rawData.filter(p => new Date(p.month) >= cutoff);
-    }
-
-    return filtered.map(p => ({
-      ...p,
-      label: new Date(p.month).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-    }));
-  }, [rawData, period]);
+  const chartData = points.map((point) => ({
+    ...point,
+    label: new Date(point.month).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+  }));
 
   const controls = (
     <div className="flex gap-1">
-      {(['commitments', 'nullifiers'] as const).map(v => (
+      {(['2y', '4y', 'all'] as const).map((value) => (
         <button
-          key={v}
-          onClick={() => setView(v)}
+          key={value}
+          type="button"
+          onClick={() => setPeriod(value)}
           className={`px-2 py-0.5 text-[10px] font-mono rounded transition-colors ${
-            view === v ? 'bg-cipher-cyan/20 text-cipher-cyan' : 'text-muted hover:text-secondary'
+            period === value ? 'bg-cipher-cyan/20 text-cipher-cyan' : 'text-muted hover:text-secondary'
           }`}
         >
-          {v === 'commitments' ? 'Trees' : 'Nullifiers'}
-        </button>
-      ))}
-      <span className="w-px bg-cipher-border-alpha/30 mx-1" />
-      {(['2y', '4y', 'all'] as const).map(p => (
-        <button
-          key={p}
-          onClick={() => setPeriod(p)}
-          className={`px-2 py-0.5 text-[10px] font-mono rounded transition-colors ${
-            period === p ? 'bg-cipher-cyan/20 text-cipher-cyan' : 'text-muted hover:text-secondary'
-          }`}
-        >
-          {p === 'all' ? 'All' : p.toUpperCase()}
+          {value === 'all' ? 'All' : value.toUpperCase()}
         </button>
       ))}
     </div>
@@ -103,171 +74,44 @@ export function ProtocolStatsChart({ initialData }: { initialData?: ProtocolStat
 
   if (loading) {
     return (
-      <ChartCard title="PROTOCOL_GROWTH" height={280} watermarkSize="sm" controls={controls}>
-        <div className="flex items-center justify-center h-[280px] text-xs text-muted">
-          Loading protocol stats...
-        </div>
+      <ChartCard title="IRONWOOD_ACTIVITY" height={280} watermarkSize="sm" controls={controls}>
+        <div className="flex items-center justify-center h-[280px] text-xs text-muted">Loading Ironwood activity…</div>
       </ChartCard>
     );
   }
 
-  if (!data.length) {
+  if (!chartData.length) {
     return (
-      <ChartCard title="PROTOCOL_GROWTH" height={280} watermarkSize="sm" controls={controls}>
-        <div className="flex items-center justify-center h-[280px] text-xs text-muted">
-          No protocol data available
+      <ChartCard title="IRONWOOD_ACTIVITY" height={280} watermarkSize="sm" controls={controls}>
+        <div className="flex items-center justify-center h-[280px] text-xs text-muted text-center px-6">
+          No Ironwood action history is available for this window yet.
         </div>
       </ChartCard>
     );
   }
 
   return (
-    <ChartCard title="PROTOCOL_GROWTH" height={280} watermarkSize="sm" controls={controls}>
-      {current && (
-        <div className="mb-3">
-          <div className="flex gap-4 flex-wrap">
-            {view === 'commitments' ? (
-              <>
-                <div className="text-[10px] font-mono">
-                  <span className="text-muted">Sapling tree: </span>
-                  <span className="text-blue-400 font-semibold">{formatMillions(current.saplingCommitments)}</span>
-                </div>
-                <div className="text-[10px] font-mono">
-                  <span className="text-muted">Orchard tree: </span>
-                  <span className="text-emerald-400 font-semibold">{formatMillions(current.orchardCommitments)}</span>
-                </div>
-                {(current.ironwoodCommitments || 0) > 0 && (
-                  <div className="text-[10px] font-mono">
-                    <span className="text-muted">Ironwood tree: </span>
-                    <span className="text-amber-400 font-semibold">{formatMillions(current.ironwoodCommitments)}</span>
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <div className="text-[10px] font-mono">
-                  <span className="text-muted">Sapling nullifiers: </span>
-                  <span className="text-blue-400 font-semibold">{formatMillions(current.saplingNullifiers)}</span>
-                </div>
-                <div className="text-[10px] font-mono">
-                  <span className="text-muted">Orchard nullifiers: </span>
-                  <span className="text-emerald-400 font-semibold">{formatMillions(current.orchardNullifiers)}</span>
-                </div>
-                {(current.ironwoodNullifiers || 0) > 0 && (
-                  <div className="text-[10px] font-mono">
-                    <span className="text-muted">Ironwood nullifiers: </span>
-                    <span className="text-amber-400 font-semibold">{formatMillions(current.ironwoodNullifiers)}</span>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-          <p className="text-[9px] font-mono text-muted/60 mt-1.5">
-            {view === 'commitments'
-              ? 'Note commitments added to each pool\u2019s Merkle tree. Each shielded output creates one commitment. Larger tree = more private transactions processed.'
-              : 'Nullifiers revealed when notes are spent. Sapling counts real spends only. Orchard includes padding (each Action = 1 spend + 1 output for uniform privacy).'}
-          </p>
+    <ChartCard title="IRONWOOD_ACTIVITY" height={280} watermarkSize="sm" controls={controls}>
+      <div className="mb-3">
+        <div className="text-[10px] font-mono text-muted">
+          Indexed Ironwood actions:{' '}
+          <span className="text-cipher-yellow font-semibold">{formatCount(data?.current?.ironwoodActions ?? 0)}</span>
         </div>
-      )}
-      <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height={240}>
-        <AreaChart data={data}>
+        <p className="text-[9px] font-mono text-muted/60 mt-1.5">
+          Action counts come from canonical W.cash transactions. They are not a user count and are not a separate nullifier census.
+        </p>
+      </div>
+      <ResponsiveContainer initialDimension={{ width: 500, height: 300 }} width="100%" height={235}>
+        <AreaChart data={chartData}>
           <CartesianGrid strokeDasharray="2 6" stroke={colors.grid} opacity={0.5} />
-          <XAxis
-            dataKey="label"
-            stroke={colors.axis}
-            tick={{ fill: colors.axis, fontSize: 9 }}
-            interval="preserveStartEnd"
-          />
-          <YAxis
-            stroke={colors.axis}
-            tick={{ fill: colors.axis, fontSize: 9 }}
-            tickFormatter={formatMillions}
-            width={42}
-            domain={period === 'all' || period === '4y' ? [0, 'auto'] : ['dataMin', 'auto']}
-          />
+          <XAxis dataKey="label" stroke={colors.axis} tick={{ fill: colors.axis, fontSize: 9 }} interval="preserveStartEnd" />
+          <YAxis stroke={colors.axis} tick={{ fill: colors.axis, fontSize: 9 }} tickFormatter={formatCount} width={42} domain={[0, 'auto']} />
           <Tooltip
-            contentStyle={{ backgroundColor: 'var(--color-surface-solid)', border: '1px solid var(--color-border-subtle)', borderRadius: 8, fontSize: 11 }}
-            labelStyle={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)', fontSize: 10 }}
-            formatter={(value) => formatMillions(Number(value))}
+            contentStyle={{ backgroundColor: colors.tooltipBg, border: `1px solid ${colors.tooltipBorder}`, borderRadius: 8, fontSize: 11 }}
+            labelStyle={{ color: colors.tooltipText, fontFamily: 'var(--font-mono)', fontSize: 10 }}
+            formatter={(value) => [formatCount(Number(value)), 'Ironwood actions']}
           />
-          <Legend
-            wrapperStyle={{ fontSize: 10, fontFamily: 'var(--font-mono)' }}
-          />
-          {view === 'commitments' ? (
-            <>
-              <Area
-                type="monotone"
-                dataKey="saplingCommitments"
-                name="Sapling notes"
-                stroke="#60a5fa"
-                fill="#60a5fa"
-                fillOpacity={0.15}
-                strokeWidth={1.5}
-                dot={false}
-              />
-              <Area
-                type="monotone"
-                dataKey="orchardCommitments"
-                name="Orchard notes"
-                stroke="#34d399"
-                fill="#34d399"
-                fillOpacity={0.15}
-                strokeWidth={1.5}
-                dot={false}
-              />
-              <Area
-                type="monotone"
-                dataKey="ironwoodCommitments"
-                name="Ironwood notes"
-                stroke="#f59e0b"
-                fill="#f59e0b"
-                fillOpacity={0.15}
-                strokeWidth={1.5}
-                dot={false}
-              />
-            </>
-          ) : (
-            <>
-              <Area
-                type="monotone"
-                dataKey="saplingNullifiers"
-                name="Sapling nullifiers"
-                stroke="#60a5fa"
-                fill="#60a5fa"
-                fillOpacity={0.15}
-                strokeWidth={1.5}
-                dot={false}
-              />
-              <Area
-                type="monotone"
-                dataKey="orchardNullifiers"
-                name="Orchard nullifiers"
-                stroke="#34d399"
-                fill="#34d399"
-                fillOpacity={0.15}
-                strokeWidth={1.5}
-                dot={false}
-              />
-              <Area
-                type="monotone"
-                dataKey="ironwoodNullifiers"
-                name="Ironwood nullifiers"
-                stroke="#f59e0b"
-                fill="#f59e0b"
-                fillOpacity={0.15}
-                strokeWidth={1.5}
-                dot={false}
-              />
-            </>
-          )}
-          <Brush
-            dataKey="label"
-            height={20}
-            stroke="var(--color-border-subtle)"
-            fill="var(--color-surface-solid)"
-            travellerWidth={8}
-            tickFormatter={() => ''}
-          />
+          <Area type="monotone" dataKey="ironwoodActions" name="Ironwood actions" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.15} strokeWidth={1.5} dot={false} />
         </AreaChart>
       </ResponsiveContainer>
     </ChartCard>

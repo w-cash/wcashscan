@@ -29,7 +29,7 @@ export function MempoolPendingView({
   onCopy,
 }: MempoolPendingViewProps) {
   const txTypeLabel =
-    mempoolTx.type === 'shielded' ? 'SHIELDED' : mempoolTx.type === 'mixed' ? 'MIXED' : 'TRANSPARENT';
+    mempoolTx.type === 'shielded' ? 'IRONWOOD' : mempoolTx.type === 'mixed' ? 'MIXED' : 'TRANSPARENT';
   const txTypeColor =
     mempoolTx.type === 'shielded' ? 'purple' : mempoolTx.type === 'mixed' ? 'yellow' : 'cyan';
 
@@ -158,22 +158,10 @@ export function MempoolPendingView({
                 <span className="text-sm font-mono text-primary">{mempoolTx.voutCount}</span>
               </div>
             )}
-            {mempoolTx.saplingSpendCount > 0 && (
+            {mempoolTx.ironwoodActions > 0 && (
               <div className="flex items-center justify-between py-2 border-b border-cipher-border">
-                <span className="text-xs font-mono text-muted">Sapling Spends</span>
-                <span className="text-sm font-mono text-primary">{mempoolTx.saplingSpendCount}</span>
-              </div>
-            )}
-            {mempoolTx.saplingOutputCount > 0 && (
-              <div className="flex items-center justify-between py-2 border-b border-cipher-border">
-                <span className="text-xs font-mono text-muted">Sapling Outputs</span>
-                <span className="text-sm font-mono text-primary">{mempoolTx.saplingOutputCount}</span>
-              </div>
-            )}
-            {mempoolTx.orchardActions > 0 && (
-              <div className="flex items-center justify-between py-2 border-b border-cipher-border">
-                <span className="text-xs font-mono text-muted">Orchard Actions</span>
-                <span className="text-sm font-mono text-primary">{mempoolTx.orchardActions}</span>
+                <span className="text-xs font-mono text-muted">Ironwood Actions</span>
+                <span className="text-sm font-mono text-primary">{mempoolTx.ironwoodActions}</span>
               </div>
             )}
             {mempoolTx.outputs && mempoolTx.outputs.length > 0 && mempoolTx.totalOutput > 0 && (

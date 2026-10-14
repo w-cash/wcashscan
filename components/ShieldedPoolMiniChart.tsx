@@ -6,15 +6,11 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { getChartColors } from '@/lib/chart-theme';
 import { useApiQuery } from '@/hooks/useApiQuery';
 import { formatChartDate, tooltipDate } from '@/lib/chart-dates';
-import { formatZecCompact } from '@/lib/format-numbers';
+import { formatTwcCompact } from '@/lib/format-numbers';
 
 interface PoolPoint {
   date: string;
-  sapling: number;
-  orchard: number;
   ironwood: number;
-  sprout: number;
-  shielded: number;
   transparent: number;
   shieldedSupplyPct: number | null;
 }
@@ -26,16 +22,9 @@ interface PoolPoint {
 // way around — stats row + legend can't push the total past this number.
 const CARD_HEIGHT_PX = 336.5;
 
-// Same stacking order as the full PoolDistributionChart (Ironwood on top,
-// Sprout at the base) — Sprout's balance is tiny (long-mined-out pool) but
-// omitting it made this chart's stack sum less than the "Shielded" total
-// stated right above it.
-const SERIES = [
-  { key: 'ironwood', label: 'Ironwood' },
-  { key: 'orchard', label: 'Orchard' },
-  { key: 'sapling', label: 'Sapling' },
-  { key: 'sprout', label: 'Sprout' },
-] as const;
+// W.cash exposes one native value pool, so the homepage chart deliberately
+// renders only the indexed Ironwood balance.
+const SERIES = [{ key: 'ironwood', label: 'Ironwood' }] as const;
 
 function MiniTooltip({
   active,
@@ -60,7 +49,7 @@ function MiniTooltip({
         if (!entry) return null;
         return (
           <p key={key} className="tabular-nums text-secondary">
-            <span style={{ color: colors[key] }}>{seriesLabel}</span>: {formatZecCompact(Number(entry.value ?? 0))} ZEC
+            <span style={{ color: colors[key] }}>{seriesLabel}</span>: {formatTwcCompact(Number(entry.value ?? 0))} TWC
           </p>
         );
       })}
@@ -69,7 +58,7 @@ function MiniTooltip({
 }
 
 /**
- * Homepage-sized shielded-pool trend widget — a chart, not a table. Fixed
+ * Homepage-sized Ironwood value-pool trend widget — a chart, not a table. Fixed
  * height regardless of data volume (no overflow risk), 30 days by default
  * (matches "recent activity" framing of the other Customize options rather
  * than the full-page PoolDistributionChart's default "all time"). Skips
@@ -95,7 +84,7 @@ export const ShieldedPoolMiniChart = memo(function ShieldedPoolMiniChart({ foote
     return (
       <div className="card p-0 overflow-hidden flex flex-col" style={{ height: CARD_HEIGHT_PX }}>
         <div className="flex-1 flex items-center justify-center px-4 text-center text-sm text-muted font-mono">
-          No shielded pool history available
+          No Ironwood pool history available
         </div>
         {footer && <div className="px-4 py-3 border-t border-cipher-border text-center">{footer}</div>}
       </div>
@@ -108,15 +97,15 @@ export const ShieldedPoolMiniChart = memo(function ShieldedPoolMiniChart({ foote
         {latest && (
           <div className="grid grid-cols-3 gap-3 pb-2 mb-2 border-b border-cipher-border/50 shrink-0">
             <div>
-              <span className="text-[10px] font-mono text-muted uppercase tracking-widest block mb-0.5">Shielded</span>
-              <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatZecCompact(latest.shielded)} ZEC</span>
+              <span className="text-[10px] font-mono text-muted uppercase tracking-widest block mb-0.5">Ironwood</span>
+              <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatTwcCompact(latest.ironwood)} TWC</span>
             </div>
             <div>
               <span className="text-[10px] font-mono text-muted uppercase tracking-widest block mb-0.5">Transparent</span>
-              <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatZecCompact(latest.transparent)} ZEC</span>
+              <span className="text-sm font-mono font-semibold text-primary tabular-nums">{formatTwcCompact(latest.transparent)} TWC</span>
             </div>
             <div>
-              <span className="text-[10px] font-mono text-muted uppercase tracking-widest block mb-0.5">Shielded %</span>
+              <span className="text-[10px] font-mono text-muted uppercase tracking-widest block mb-0.5">Ironwood %</span>
               <span className="text-sm font-mono font-semibold text-primary tabular-nums">
                 {latest.shieldedSupplyPct != null ? `${latest.shieldedSupplyPct.toFixed(1)}%` : '—'}
               </span>
@@ -149,9 +138,6 @@ export const ShieldedPoolMiniChart = memo(function ShieldedPoolMiniChart({ foote
               />
               <Tooltip content={<MiniTooltip colors={colors} />} />
               <Area type="monotone" dataKey="ironwood" stackId="1" stroke={colors.ironwood} fill={colors.ironwood} fillOpacity={0.65} isAnimationActive={false} />
-              <Area type="monotone" dataKey="orchard" stackId="1" stroke={colors.orchard} fill={colors.orchard} fillOpacity={0.6} isAnimationActive={false} />
-              <Area type="monotone" dataKey="sapling" stackId="1" stroke={colors.sapling} fill={colors.sapling} fillOpacity={0.6} isAnimationActive={false} />
-              <Area type="monotone" dataKey="sprout" stackId="1" stroke={colors.sprout} fill={colors.sprout} fillOpacity={0.5} isAnimationActive={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>

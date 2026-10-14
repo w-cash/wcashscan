@@ -10,7 +10,7 @@ const PAGE_SIZE = 25;
 
 export type TxType = 'all' | 'shielded' | 'transparent' | 'coinbase';
 export type FlowFilter = 'all' | 'shield' | 'deshield' | 'fully_shielded';
-export type PoolFilter = 'all' | 'ironwood' | 'sapling' | 'orchard' | 'mixed';
+export type PoolFilter = 'all' | 'ironwood';
 export type SearchParams = Record<string, string | string[] | undefined>;
 export type UnavailablePolicy = 'shell' | 'throw';
 
@@ -23,7 +23,7 @@ export interface TransactionsRequest {
   type: TxType;
   flow: FlowFilter;
   pool: PoolFilter;
-  minZec: number;
+  minTwc: number;
   pageParamConsistent: boolean;
 }
 
@@ -53,14 +53,14 @@ function parseFlow(value: string | undefined): FlowFilter {
 }
 
 function parsePool(value: string | undefined): PoolFilter {
-  return value === 'ironwood' || value === 'sapling' || value === 'orchard' || value === 'mixed'
+  return value === 'ironwood'
     ? value : 'all';
 }
 
-function parseMinZec(value: string | undefined): number {
+function parseMinTwc(value: string | undefined): number {
   if (!value || !/^\d+(?:\.\d+)?$/.test(value)) return 0;
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 && parsed <= 21_000_000 ? parsed : 0;
+  return Number.isFinite(parsed) && parsed > 0 && parsed <= 2_100_000_000_000_000 ? parsed : 0;
 }
 
 export function parseTransactionsRequest(searchParams: SearchParams): TransactionsRequest {
@@ -81,7 +81,7 @@ export function parseTransactionsRequest(searchParams: SearchParams): Transactio
     type,
     flow: type === 'shielded' ? parseFlow(firstValue(searchParams.flow_type)) : 'all',
     pool: type === 'shielded' ? parsePool(firstValue(searchParams.pool)) : 'all',
-    minZec: type === 'shielded' ? parseMinZec(firstValue(searchParams.min_zec)) : 0,
+    minTwc: type === 'shielded' ? parseMinTwc(firstValue(searchParams.min_twc)) : 0,
     pageParamConsistent: rawPage === undefined
       || (cursor !== null ? requestedPage !== null && requestedPage >= 2 : requestedPage === 1),
   };
@@ -93,7 +93,7 @@ export function getArchiveCanonicalPath(request: TransactionsRequest): string {
   if (request.type === 'shielded') {
     if (request.flow !== 'all') params.set('flow_type', request.flow);
     if (request.pool !== 'all') params.set('pool', request.pool);
-    if (request.minZec > 0) params.set('min_zec', String(request.minZec));
+    if (request.minTwc > 0) params.set('min_twc', String(request.minTwc));
   }
   if (request.cursor !== null) {
     params.set('cursor', String(request.cursor));
@@ -109,7 +109,7 @@ export function getArchiveCanonicalPath(request: TransactionsRequest): string {
 }
 
 export function hasShieldedSubFilters(request: TransactionsRequest): boolean {
-  return request.flow !== 'all' || request.pool !== 'all' || request.minZec > 0;
+  return request.flow !== 'all' || request.pool !== 'all' || request.minTwc > 0;
 }
 
 function unavailableData(policy: UnavailablePolicy, error: unknown, label: string) {
@@ -205,7 +205,7 @@ async function getInitialFlows(
       flow_type: request.flow,
       pool: request.pool,
     });
-    if (request.minZec > 0) params.set('min_zec', String(request.minZec));
+    if (request.minTwc > 0) params.set('min_twc', String(request.minTwc));
     if (request.cursor !== null) {
       params.set('cursor', String(request.cursor));
       params.set('cursor_id', String(request.cursorId ?? 0));
@@ -295,7 +295,7 @@ export async function renderTransactionsPage(
     available = result.available;
   }
 
-  const archiveKey = `${request.type}:${request.flow}:${request.pool}:${request.minZec}:${request.cursor ?? 'first'}:${request.cursorIdx ?? 0}:${request.cursorId ?? 0}:${request.direction}:${request.page}`;
+  const archiveKey = `${request.type}:${request.flow}:${request.pool}:${request.minTwc}:${request.cursor ?? 'first'}:${request.cursorIdx ?? 0}:${request.cursorId ?? 0}:${request.direction}:${request.page}`;
   const collectionUrl = new URL(getArchiveCanonicalPath(request), `${getBaseUrl()}/`).toString();
   const items = isShielded ? initialFlows : initialTxs;
   const uniqueItems = isShielded
@@ -312,8 +312,8 @@ export async function renderTransactionsPage(
         '@id': `${collectionUrl}#collection`,
         url: collectionUrl,
         name: request.page > 1
-          ? `Zcash ${isShielded ? 'shielded ' : ''}transaction archive page ${request.page}`
-          : `Latest Zcash ${isShielded ? 'shielded ' : ''}transactions`,
+          ? `W.cash ${isShielded ? 'shielded ' : ''}transaction archive page ${request.page}`
+          : `Latest W.cash ${isShielded ? 'shielded ' : ''}transactions`,
         isPartOf: { '@id': `${getBaseUrl()}/#website` },
         mainEntity: {
           '@type': 'ItemList',
@@ -321,7 +321,7 @@ export async function renderTransactionsPage(
             '@type': 'ListItem',
             position: index + 1,
             url: `${getBaseUrl()}/tx/${item.txid.toLowerCase()}`,
-            name: `Zcash ${isShielded ? 'shielded ' : ''}transaction ${item.txid.toLowerCase()}`,
+            name: `W.cash ${isShielded ? 'shielded ' : ''}transaction ${item.txid.toLowerCase()}`,
           })),
         },
       }
@@ -344,7 +344,7 @@ export async function renderTransactionsPage(
         initialType={request.type}
         initialFlowFilter={request.flow}
         initialPoolFilter={request.pool}
-        initialMinZec={request.minZec}
+        initialMinTwc={request.minTwc}
         initialCursor={request.cursor}
         initialCursorIdx={request.cursorIdx}
         initialCursorId={request.cursorId}
@@ -356,19 +356,19 @@ export async function renderTransactionsPage(
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         <div className="border-t border-cipher-border pt-8 max-w-3xl">
           <h2 className="text-sm font-bold font-mono text-secondary mb-3 uppercase tracking-wider">
-            About Zcash Transactions
+            About W.cash Transactions
           </h2>
           <div className="space-y-3 text-sm text-muted leading-relaxed">
             <p>
-              Zcash supports two kinds of value transfer: transparent transactions, which work
+              W.cash supports transparent transactions and Ironwood shielded transactions. Transparent outputs are
               like Bitcoin and expose addresses and amounts on-chain, and shielded
-              transactions, which use zero-knowledge proofs (Sapling, Orchard, and Ironwood) to keep
+              and Ironwood transactions use zero-knowledge proofs to keep
               sender, receiver, and amount private. Many transactions mix both — shielding
               funds into a private pool or deshielding them back out.
             </p>
             <p>
               This page lists every transaction as it is mined, with type badges for
-              transparent, Sapling, Orchard, Ironwood, and coinbase activity, plus flow indicators for
+              transparent, Ironwood, and coinbase activity, plus flow indicators for
               shielding and unshielding movements. Filter by type, pool, flow direction, or
               minimum amount to analyze specific transaction patterns.
             </p>

@@ -21,40 +21,40 @@ function decodeCoinbaseAscii(hex: string): string {
 interface RewardRecipient {
   address: string | null;
   label: string;
-  valueZec: number;
+  valueTwc: number;
 }
 
 /**
  * The coinbase transaction's visible outputs — transparent recipients and
- * shielded coinbase value. This deliberately excludes deferred-lockbox
- * accrual: that is part of the block subsidy but not a transaction output.
+ * Ironwood coinbase value. This deliberately excludes any accounting that is
+ * not serialized as a transaction output.
  * Previously only the first transparent recipient was shown, silently hiding
  * the rest of the coinbase distribution.
  */
 function getRewardRecipients(data: BlockData): RewardRecipient[] {
   const coinbaseTx = data.transactions?.[0];
-  // blocks.miner_address can resolve to the ZIP-207 dev-fund address (not a
-  // real miner) when the miner's actual reward is deposited entirely into a
-  // shielded pool and the funding stream is the only transparent coinbase
+  // blocks.miner_address can resolve to a funding-stream address (not a real
+  // miner) when the miner's reward is deposited into Ironwood and the funding
+  // stream is the only transparent coinbase
   // output left to look at — don't label that recipient "Miner".
   const minerAddressIsRealMiner = !data.minerPoolIsFundingStream;
   const outputs: RewardRecipient[] = (coinbaseTx?.vout || [])
     .map((o: any) => ({
       address: o.scriptPubKey?.addresses?.[0] as string | undefined,
-      valueZec: o.value as number,
+      valueTwc: o.value as number,
     }))
-    .filter((o: any) => o.address && o.valueZec > 0)
+    .filter((o: any) => o.address && o.valueTwc > 0)
     .map((o: any) => ({
       address: o.address,
       label: o.address === data.minerAddress && minerAddressIsRealMiner ? 'Miner' : 'Funding stream',
-      valueZec: o.valueZec,
+      valueTwc: o.valueTwc,
     }));
 
   const balance = coinbaseTx
-    ? parseInt(coinbaseTx.value_balance_sapling || 0) + parseInt(coinbaseTx.value_balance_orchard || 0) + parseInt(coinbaseTx.value_balance_ironwood || 0)
+    ? parseInt(coinbaseTx.value_balance_ironwood || 0)
     : 0;
   if (balance < 0) {
-    outputs.push({ address: null, label: 'Shielded coinbase output', valueZec: Math.abs(balance) / 1e8 });
+    outputs.push({ address: null, label: 'Ironwood coinbase output', valueTwc: Math.abs(balance) / 1e8 });
   }
 
   return outputs;
@@ -78,10 +78,10 @@ function BlockRewardBreakdown({
   minerPoolRegion?: string | null;
 }) {
   const recipients = getRewardRecipients(data);
-  const total = recipients.reduce((sum, r) => sum + r.valueZec, 0);
+  const total = recipients.reduce((sum, r) => sum + r.valueTwc, 0);
 
   return (
-    <FactBox label="Coinbase Outputs" tooltip="The visible outputs created by this block's coinbase transaction. Deferred-development-lockbox accrual is part of the subsidy but is not a transaction output.">
+    <FactBox label="Coinbase Outputs" tooltip="The visible outputs created by this block's coinbase transaction.">
       <BoldZec value={total} />
       <div className="mt-2 space-y-1">
         {recipients.map((r, i) => (
@@ -91,7 +91,7 @@ function BlockRewardBreakdown({
               {r.address ? (
                 <CopyableHash value={r.address} href={`/address/${r.address}`} textSize="text-[11px]" colorClass="text-primary" />
               ) : (
-                <span className="font-mono text-cipher-yellow">Shielded Pool</span>
+                <span className="font-mono text-cipher-yellow">Ironwood Pool</span>
               )}
               {r.label === 'Miner' && r.address === data.minerAddress && minerPool && (
                 <span className="font-mono text-muted whitespace-nowrap">
@@ -102,7 +102,7 @@ function BlockRewardBreakdown({
                 </span>
               )}
             </div>
-            <span className="font-mono text-secondary tabular-nums shrink-0">{r.valueZec.toFixed(4)} {CURRENCY}</span>
+            <span className="font-mono text-secondary tabular-nums shrink-0">{r.valueTwc.toFixed(4)} {CURRENCY}</span>
           </div>
         ))}
       </div>
@@ -279,18 +279,6 @@ export function BlockFactsCard({
               {data.merkleRoot && (
                 <FactBox label="Merkle Root" tooltip="Proves all transparent transactions in this block are valid and unmodified">
                   <CopyableHash value={data.merkleRoot} colorClass="text-primary" />
-                </FactBox>
-              )}
-
-              {data.finalOrchardRoot && (
-                <FactBox label="Orchard Root" tooltip="Root hash of the Orchard note commitment tree after this block">
-                  <CopyableHash value={data.finalOrchardRoot} colorClass="text-cipher-purple" />
-                </FactBox>
-              )}
-
-              {data.finalSaplingRoot && (
-                <FactBox label="Sapling Root" tooltip="Root hash of the Sapling note commitment tree after this block">
-                  <CopyableHash value={data.finalSaplingRoot} colorClass="text-cipher-purple" />
                 </FactBox>
               )}
 

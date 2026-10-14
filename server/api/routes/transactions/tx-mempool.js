@@ -9,7 +9,7 @@ const { applyListCacheHeaders } = require('../../list-cache');
 const { logSafeError } = require('../../lib/safe-log');
 
 // Runs `fn` over `items` with at most `limit` in flight at once, instead of
-// an unbounded Promise.all — caps concurrent Zebra RPC fan-out per request
+// an unbounded Promise.all — caps concurrent Wolf RPC fan-out per request
 // (mirrors the pattern used by /api/tx/raw/batch).
 async function mapWithConcurrency(items, limit, fn) {
   const results = new Array(items.length);
@@ -53,24 +53,20 @@ async function getMempoolTxids() {
 async function fetchMempoolTxSummary(txid) {
   const tx = await deps.callZebraRPC('getrawtransaction', [txid, 1]);
 
-  const hasShieldedInputs = (tx.vShieldedSpend && tx.vShieldedSpend.length > 0) ||
-                           (tx.vJoinSplit && tx.vJoinSplit.length > 0) ||
-                           (tx.orchard && tx.orchard.actions && tx.orchard.actions.length > 0) ||
-                           (tx.ironwood && tx.ironwood.actions && tx.ironwood.actions.length > 0);
-  const hasShieldedOutputs = (tx.vShieldedOutput && tx.vShieldedOutput.length > 0) ||
-                             (tx.vJoinSplit && tx.vJoinSplit.length > 0) ||
-                             (tx.orchard && tx.orchard.actions && tx.orchard.actions.length > 0) ||
-                             (tx.ironwood && tx.ironwood.actions && tx.ironwood.actions.length > 0);
+  const ironwoodActions = tx.ironwood?.actions?.length || 0;
+  const hasIronwood = ironwoodActions > 0 || tx.ironwood?.valueBalance != null;
   const hasTransparentInputs = tx.vin && tx.vin.length > 0 && !tx.vin[0].coinbase;
   const hasTransparentOutputs = tx.vout && tx.vout.length > 0;
 
-  // Determine transaction type
+  // W.cash has only transparent and Ironwood value pools. The RPC shape is
+  // intentionally normalized here so a non-W.cash pool cannot leak to
+  // the browser as a supported W.cash feature.
   let txType = 'transparent';
-  if (hasShieldedInputs || hasShieldedOutputs) {
+  if (hasIronwood) {
     if (hasTransparentInputs || hasTransparentOutputs) {
-      txType = 'mixed'; // Shielding or deshielding
+      txType = 'mixed';
     } else {
-      txType = 'shielded'; // Fully shielded
+      txType = 'shielded';
     }
   }
 
@@ -80,8 +76,6 @@ async function fetchMempoolTxSummary(txid) {
   // Sum transparent output value (shielded values are encrypted)
   const totalOutput = (tx.vout || []).reduce((sum, o) => sum + (o.value || 0), 0);
 
-  const valueBalanceSapling = tx.valueBalance ?? 0;
-  const valueBalanceOrchard = tx.orchard?.valueBalance ?? 0;
   const valueBalanceIronwood = tx.ironwood?.valueBalance ?? 0;
 
   return {
@@ -91,14 +85,9 @@ async function fetchMempoolTxSummary(txid) {
     time: tx.time || Math.floor(Date.now() / 1000),
     vin: tx.vin?.length || 0,
     vout: tx.vout?.length || 0,
-    vShieldedSpend: tx.vShieldedSpend?.length || 0,
-    vShieldedOutput: tx.vShieldedOutput?.length || 0,
-    orchardActions: tx.orchard?.actions?.length || 0,
-    ironwoodActions: tx.ironwood?.actions?.length || 0,
-    hasIronwood: (tx.ironwood?.actions?.length || 0) > 0,
+    ironwoodActions,
+    hasIronwood,
     totalOutput,
-    valueBalanceSapling,
-    valueBalanceOrchard,
     valueBalanceIronwood,
     version: tx.version,
   };
@@ -162,7 +151,7 @@ async function buildMempoolResponse() {
   };
 }
 
-// Mempool endpoint - calls Zebra RPC directly
+// Mempool endpoint - calls Wolf RPC directly
 router.get('/api/mempool', async (req, res) => {
   try {
     const cached = await deps.listCache.getOrLoad({
@@ -205,19 +194,13 @@ router.get('/api/mempool/tx/:txid', async (req, res) => {
 
     const tx = await deps.callZebraRPC('getrawtransaction', [txid, 1]);
 
-    const hasShieldedInputs = (tx.vShieldedSpend?.length > 0) ||
-                               (tx.vJoinSplit?.length > 0) ||
-                               (tx.orchard?.actions?.length > 0) ||
-                               (tx.ironwood?.actions?.length > 0);
-    const hasShieldedOutputs = (tx.vShieldedOutput?.length > 0) ||
-                                (tx.vJoinSplit?.length > 0) ||
-                                (tx.orchard?.actions?.length > 0) ||
-                                (tx.ironwood?.actions?.length > 0);
+    const ironwoodActions = tx.ironwood?.actions?.length || 0;
+    const hasIronwood = ironwoodActions > 0 || tx.ironwood?.valueBalance != null;
     const hasTransparentInputs = tx.vin?.length > 0 && !tx.vin[0]?.coinbase;
     const hasTransparentOutputs = tx.vout?.length > 0;
 
     let txType = 'transparent';
-    if (hasShieldedInputs || hasShieldedOutputs) {
+    if (hasIronwood) {
       txType = (hasTransparentInputs || hasTransparentOutputs) ? 'mixed' : 'shielded';
     }
 
@@ -237,11 +220,8 @@ router.get('/api/mempool/tx/:txid', async (req, res) => {
         firstSeen: Math.floor(Date.now() / 1000),
         vinCount: tx.vin?.length || 0,
         voutCount: tx.vout?.length || 0,
-        saplingSpendCount: tx.vShieldedSpend?.length || 0,
-        saplingOutputCount: tx.vShieldedOutput?.length || 0,
-        orchardActions: tx.orchard?.actions?.length || 0,
-        ironwoodActions: tx.ironwood?.actions?.length || 0,
-        hasIronwood: (tx.ironwood?.actions?.length || 0) > 0,
+        ironwoodActions,
+        hasIronwood,
         valueBalanceIronwood: tx.ironwood?.valueBalance ?? 0,
         totalOutput,
         outputs: (tx.vout || []).map(o => ({

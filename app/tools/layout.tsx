@@ -1,16 +1,9 @@
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
-  title: 'Developer Tools | CipherScan',
-  description: 'Free Zcash developer tools: decode raw transactions, broadcast signed transactions, decrypt shielded memos, and more. Built on a live Zebra node.',
-  keywords: [
-    'zcash developer tools',
-    'zcash raw transaction',
-    'zcash tx decoder',
-    'zcash broadcast transaction',
-    'zcash blockchain tools',
-    'ZEC developer',
-  ],
+  title: 'W.cash Developer Tools | WcashExplorer',
+  description: 'Read-only W.cash developer tools and API documentation.',
+  keywords: ['W.cash developer tools', 'TWC converter', 'W.cash API'],
   path: '/tools',
 });
 

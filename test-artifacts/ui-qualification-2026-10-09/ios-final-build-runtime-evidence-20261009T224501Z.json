@@ -1,0 +1,46 @@
+{
+  "observed_at_utc": "2026-10-09T22:45:02Z",
+  "platform": "iOS Simulator 26.5",
+  "device": "iPhone 17 Pro",
+  "application": {
+    "source_bundle": "/Users/rustdev/Library/Developer/Xcode/DerivedData/Zingo-cjwijublqpzlpvfvnfrslutxomaq/Build/Products/Release-iphonesimulator/Zingo.app",
+    "bundle_id": "com.wcashwallet.wallet",
+    "configuration": "Release",
+    "executable_sha256": "b03e00875ab86b5a3f219043d0a2db083122bd74e24cfa5518dcf6cd0dffc2fd",
+    "javascript_bundle_sha256": "85e13dcac350a1ddeaabebce009b630641c018fcd57703ed06eca4aad24db0f9"
+  },
+  "flow": {
+    "existing_wallet_data_preserved": true,
+    "mainnet_sync_completed": true,
+    "visible_status": "Fully Synced",
+    "visible_server_height": 23533,
+    "visible_wallet_height": 23532,
+    "database_scanned_height": 23533,
+    "database_attested_tip_height": 23533
+  },
+  "independent_server_observation": {
+    "endpoint": "mainnet.zecwec.com:443",
+    "transport": "TLS",
+    "tip_height": 23533,
+    "info_height": 23533,
+    "estimated_height": 23534,
+    "chain_name": "main",
+    "consensus_branch_id": "d9c6a7ee"
+  },
+  "evidence": {
+    "screenshot": {
+      "path": "/Users/rustdev/Documents/ChatGPT/wcashwallet/test-artifacts/ui-qualification-2026-10-09/ios-final-build-fully-synced-20261009T224501Z.png",
+      "sha256": "f90a4a83af83d600772d826c8d5cc1b4d4064d0ffb6cdff8f664587dfd7f854d"
+    },
+    "grpc_response": {
+      "path": "/Users/rustdev/Documents/ChatGPT/wcashwallet/test-artifacts/ui-qualification-2026-10-09/ios-final-build-mainnet-tip-20261009T224501Z-grpc.json",
+      "sha256": "013b5e760ff660e5139f0cc6a0a3877040e8700866e365006d7b5d17b0719421"
+    },
+    "wallet_state": {
+      "path": "/Users/rustdev/Documents/ChatGPT/wcashwallet/test-artifacts/ui-qualification-2026-10-09/ios-final-build-wallet-state-20261009T224501Z.json",
+      "sha256": "17c30dee70aa945786359eb2e5aa0d5be0f99a576414debe66207f7442b32458"
+    }
+  },
+  "privacy": "Evidence contains no seed phrase, viewing key, spending key, or wallet address.",
+  "scope": "Final simulator Release install, preserved wallet launch, Mainnet sync status, and evidence only; no transaction was sent or received."
+}

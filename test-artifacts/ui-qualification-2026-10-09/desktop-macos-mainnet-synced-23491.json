@@ -1,0 +1,21 @@
+{
+  "chain_name": "main",
+  "consensus_branch_id": "d9c6a7ee",
+  "endpoint": "https://mainnet.zecwec.com:443",
+  "info_height": 23491,
+  "node_observed_at_utc": "2026-10-09T21:56:43.004435+00:00",
+  "notes": [
+    "Read-only Mainnet sync.",
+    "Relaunch restored synchronized height within five seconds.",
+    "No Mainnet transaction was created or broadcast."
+  ],
+  "platform": "macOS desktop",
+  "screenshot": "/Users/rustdev/Documents/ChatGPT/wcashwallet/test-artifacts/ui-qualification-2026-10-09/desktop-macos-mainnet-synced-23491.png",
+  "screenshot_sha256": "7fd33ae8b0734e48a4108d18cf243a8f872a5108635801defaf23a13a73b152d",
+  "tip_hash": "026111bc155392909dbd9e378257727a0f0145798b9fc13597f37b11ffa72d62",
+  "tip_height": 23491,
+  "ui_block_height": 23491,
+  "ui_sync_status": "connected",
+  "wallet_core_commit": "f86cd05d1deb72b571b173ece3777df91c1d44e6",
+  "wallet_version": "2.0.25 (180)"
+}

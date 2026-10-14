@@ -1,17 +1,18 @@
 /**
- * Detect an address family from its prefix for routing/search hints only.
+ * Detect a Wcash address family from its prefix for routing/search hints only.
  * Authoritative checksum and receiver validation happens in the API and the
- * zcash_address WASM decoder; callers must not treat this as validation.
+ * Wcash decoder; callers must not treat this as validation.
  */
 export function detectAddressType(address: string): 'shielded' | 'transparent' | 'unified' | 'invalid' {
-  if (address.startsWith('utest') || address.startsWith('u1')) {
+  if (address.startsWith('wutest') || address.startsWith('wuregtest') || address.startsWith('wu1')) {
     return 'unified';
   }
-  if (address.startsWith('ztestsapling') || address.startsWith('zs')) {
-    return 'shielded';
+  if (address.startsWith('wtextest') || address.startsWith('wtexregtest') || address.startsWith('wtex1')) {
+    return 'transparent';
   }
-  // Transparent addresses: tm (testnet P2PKH), t1 (mainnet P2PKH), t2 (testnet P2SH), t3 (mainnet P2SH)
-  if (address.startsWith('tm') || address.startsWith('t1') || address.startsWith('t2') || address.startsWith('t3')) {
+  // Wcash transparent Base58Check namespaces:
+  // W1/W3 mainnet, WT/WU testnet, WR/WS regtest.
+  if (/^W[13TURS][1-9A-HJ-NP-Za-km-z]+$/.test(address)) {
     return 'transparent';
   }
   return 'invalid';
